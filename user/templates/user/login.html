@@ -1,0 +1,141 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="uz">
+
+<head>
+
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="Tibbiyot bo‘yicha o‘quv platformasi – edumed.uz">
+  <meta name="author" content="edumed.uz">
+
+  <title>edumed.uz - Tizimga kirish</title>
+
+  <link href="{% static 'vendor/fontawesome-free/css/all.min.css' %}" rel="stylesheet" type="text/css">
+  <link href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i" rel="stylesheet">
+
+  <link href="{% static 'css/sb-admin-2.min.css' %}" rel="stylesheet">
+
+  <style>
+    /* Add a style to load the background image via Django static files */
+    .bg-login-image {
+        /* Assuming 'img/login_med.jpg' is in your static files */
+        background-image: url("{% static 'img/login_med.jpg' %}");
+        background-size: cover;
+        background-position: center;
+    }
+  </style>
+
+</head>
+
+<body class="bg-gradient-primary">
+
+  <div class="container">
+
+    <div class="row justify-content-center">
+
+      <div class="col-xl-10 col-lg-12 col-md-9">
+
+        <div class="card o-hidden border-0 shadow-lg my-5">
+          <div class="card-body p-0">
+            <div class="row">
+                <div class="col-lg-6 d-none d-lg-block bg-gradient-success d-flex align-items-center justify-content-center" style="min-height: 500px;">
+                    <div class="text-center text-white p-4">
+                        <div class="mb-4">
+                          <div class="sidebar-brand-icon rotate-n-15">
+                            <i class="fas fa-plus-square fa-4x mb-3 animate-pulse"></i>
+                          </div>
+                            <h1 class="h3 font-weight-bold text-uppercase">EduMed Uz</h1>
+                            <p class="small px-4">Tibbiyot sohasidagi zamonaviy bilimlar va professional hamshiralik kursi platformasi</p>
+                        </div>
+
+                        <hr class="border-light mb-4" style="width: 50%; margin: auto;">
+
+                        <div class="mt-4">
+                            <p class="mb-3 small">Kurslarni ko'rish uchun mehmon bo'lib kiring:</p>
+                            <a class="btn btn-outline-light btn-lg rounded-pill px-4 shadow-sm" href="{% url 'courses:index' %}">
+                                <i class="fas fa-sign-in-alt mr-2"></i>
+                                Bosh sahifaga o'tish
+                            </a>
+                        </div>
+                    </div>
+                </div>              
+              <div class="col-lg-6">
+                <div class="p-5">
+                  <div class="text-center">
+                    <h1 class="h4 text-gray-900 mb-4">Qaytganingizdan xursandmiz!</h1>
+                  </div>
+                  
+                  {% if messages %}
+                      {% for message in messages %}
+                          <div class="alert alert-{{ message.tags }} text-center" role="alert">
+                              {{ message }}
+                          </div>
+                      {% endfor %}
+                  {% endif %}
+                  
+                  <form class="user" method="post" action="{% url 'user:login' %}">
+                    {% csrf_token %} 
+                    <div class="form-group">
+                      <input type="email" class="form-control form-control-user" id="exampleInputEmail" 
+                             aria-describedby="emailHelp" placeholder="Email manzilingizni kiriting..." 
+                             name="email" required>
+                    </div>
+                    
+                    <div class="form-group">
+                      <input type="password" class="form-control form-control-user" id="exampleInputPassword" 
+                             placeholder="Parol" name="password" required>
+                    </div>
+                    
+                    <div class="form-group">
+                      <div class="custom-control custom-checkbox small">
+                        <input type="checkbox" class="custom-control-input" id="customCheck" name="remember_me">
+                        <label class="custom-control-label" for="customCheck">Eslab qolinsin</label>
+                      </div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary btn-user btn-block">
+                      Kirish
+                    </button>
+                    <hr>
+                    
+                    <a href="#" class="btn btn-google btn-user btn-block">
+                      <i class="fab fa-google fa-fw"></i> Google orqali kirish
+                    </a>
+                    <a href="#" class="btn btn-facebook btn-user btn-block">
+                      <i class="fab fa-telegram fa-fw"></i> Telegram orqali kirish
+                    </a>
+                    <a href="#" class="btn btn-success btn-user btn-block">
+                      <i class="fas fa-edit fa-fw"></i> Hemis ID orqali kirish
+                    </a>
+                  </form>
+                  <hr>
+                  <div class="text-center">
+                    <a class="small" href="{% url 'user:forgot_password' %}">Parolni unutdingizmi?</a>
+                  </div>
+                  <div class="text-center">
+                    <a class="small" href="{% url 'user:register' %}">Yangi hisob yaratish</a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <script src="{% static 'vendor/jquery/jquery.min.js' %}"></script>
+  <script src="{% static 'vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+
+  <script src="{% static 'vendor/jquery-easing/jquery.easing.min.js' %}"></script>
+
+  <script src="{% static 'js/sb-admin-2.min.js' %}"></script>
+
+</body>
+
+</html>

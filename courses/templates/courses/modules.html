@@ -1,0 +1,591 @@
+{% extends "courses/layout.html" %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+/* Container for the text with limited height */
+.fade-text-container {
+    position: relative;
+    max-height: 150px; /* Adjust this height to show more or less text */
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+}
+
+/* The transparent gradient overlay */
+.fade-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 80px; /* Depth of the fade */
+    background: linear-gradient(to bottom, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 1) 100%);
+    pointer-events: none; /* Allows clicking through to the text if needed */
+}
+
+/* Styling for the Join button to make it pop */
+.btn-join {
+    border-radius: 20px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.attention-text {
+    color: #e74a3b; /* SB Admin 2 Red */
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    animation: blinker 2s linear infinite; /* Optional: adds a very subtle pulse */
+}
+
+@keyframes blinker {
+  50% { opacity: 0.7; }
+}
+</style>
+{% endblock extra_css %}
+
+{% block main %}
+        <!-- Begin Page Content -->
+        <div class="container-fluid">
+
+          <!-- Page Heading -->
+          <div class="d-sm-flex align-items-center justify-content-between mb-4">
+            <h1 class="h3 mb-0 text-gray-800">Mavzular</h1>
+          </div>
+
+          <div class="row">
+
+            <!-- Earnings (Monthly) Card Example -->
+            <div class="col-xl-3 col-md-6 mb-4">
+              <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                  <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                      <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Earnings (Monthly)</div>
+                      <div class="h5 mb-0 font-weight-bold text-gray-800">$40,000</div>
+                    </div>
+                    <div class="col-auto">
+                      <i class="fas fa-calendar fa-2x text-gray-300"></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Earnings (Monthly) Card Example -->
+            <div class="col-xl-3 col-md-6 mb-4">
+              <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                  <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                      <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Earnings (Annual)</div>
+                      <div class="h5 mb-0 font-weight-bold text-gray-800">$215,000</div>
+                    </div>
+                    <div class="col-auto">
+                      <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Earnings (Monthly) Card Example -->
+            <div class="col-xl-3 col-md-6 mb-4">
+              <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                  <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                      <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Tasks</div>
+                      <div class="row no-gutters align-items-center">
+                        <div class="col-auto">
+                          <div class="h5 mb-0 mr-3 font-weight-bold text-gray-800">50%</div>
+                        </div>
+                        <div class="col">
+                          <div class="progress progress-sm mr-2">
+                            <div class="progress-bar bg-info" role="progressbar" style="width: 50%" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100"></div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-auto">
+                      <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Pending Requests Card Example -->
+            <div class="col-xl-3 col-md-6 mb-4">
+              <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                  <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                      <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Pending Requests</div>
+                      <div class="h5 mb-0 font-weight-bold text-gray-800">18</div>
+                    </div>
+                    <div class="col-auto">
+                      <i class="fas fa-comments fa-2x text-gray-300"></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+
+            <div class="col-lg-6">
+              <div class="card shadow mb-4">
+                <a href="#collapseCard1" class="d-block card-header py- collapsed" data-toggle="collapse" role="button" aria-expanded="false" aria-controls="collapseCard1">
+                  <h6 class="m-0 font-weight-bold text-primary">1-MA'RUZA: Hamshiralik ishi tarixi, hamshiralik ishi namoyondalari faoliyati va roli. F.Naytingeyl, V. Xenderson hayoti va faoliyati.  Hamshiralik ishining jamiyatimizdagi vazifasi va o’rni.</h6>
+                </a>
+                <div class="collapse" id="collapseCard1">
+                  <div class="card-body">
+                    
+                    <div class="fade-text-container">
+                        <div style="text-align: justify">
+                            Hamshiralik ishining jamiyatimizdagi vazifasi va o’rni. Oliy ma’lumotli hamshiralik ishi–ochilish tarixi va sog’liqni saqlash tizimidagi o’rni. O’zbekiston Respublikasida hamshiralik ishi istiqbollari. 
+                            Hamshiralik ishi qadimdan mavjud bo‘lib, insoniyat bilan birga rivojlanib kelgan. Dastlab bu ishni diniy shaxslar, doyalar yoki oddiy insonlar bemorlarga yordam sifatida amalga oshirishgan. Keyinchalik hamshiralik asta-sekin alohida kasb va ilmiy yo‘nalish sifatida shakllandi.
+                        </div>
+                        <div class="fade-overlay"></div>
+                    </div>
+                      <div class="card-body">
+                          <div class="fade-text-container">
+                              {% if not user.is_authenticated %}
+                                  <div class="fade-overlay"></div>
+                              {% endif %}
+                          </div>
+
+                          {% if user.is_authenticated %}
+                              <div class="mt-4">
+                                  <div class="row no-gutters align-items-center mb-2">
+                                      <div class="col-auto">
+                                          <div class="h6 mb-0 mr-3 font-weight-bold text-gray-800">
+                                              100%
+                                          </div>
+                                      </div>
+                                      <div class="col">
+                                          <div class="progress progress-sm mr-2">
+                                              <div class="progress-bar bg-success" 
+                                                  role="progressbar" 
+                                                  style="width: 100%" 
+                                                  aria-valuenow="100" 
+                                                  aria-valuemin="0" 
+                                                  aria-valuemax="100">
+                                              </div>
+                                          </div>
+                                      </div>
+                                  </div>
+
+                                  <a href="{% url 'courses:topic' 1 %}" class="btn btn-success btn-icon-split btn-block shadow-sm">
+                                      <span class="icon text-white-50">
+                                          <i class="fas fa-flag"></i>
+                                      </span>
+                                      <span class="text">Davom ettirish</span>
+                                  </a>
+                              </div>
+
+                          {% else %}
+                              <div class="p-3 bg-light border-left-danger mt-3" style="border-radius: 5px;">
+                                  <div class="text-center">
+                                      <p class="small text-danger font-weight-bold mb-2">
+                                          <i class="fas fa-lock mr-1"></i>DAVOMINI O'QISH UCHUN KURSGA A'ZO BO'LING
+                                      </p>
+                                      <a href="{% url 'user:login' %}" class="btn btn-danger btn-sm rounded-pill px-4 shadow">
+                                          <span class="icon text-white-50">
+                                              <i class="fas fa-sign-in-alt"></i>
+                                          </span>
+                                          <span class="text">Kirish / Kursga yozilish</span>
+                                      </a>
+                                  </div>
+                              </div>
+                          {% endif %}
+                      </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-lg-6">
+              <div class="card shadow mb-4">
+                <a href="#collapseCard2" class="d-block card-header py-3 collapsed" data-toggle="collapse" role="buttshowon" aria-expanded="false" aria-controls="collapseCard2">
+                  <h6 class="m-0 font-weight-bold text-primary">2-MA'RUZA: Hamshiralik ishi bioetikasi va deontologiyasi. Tibbiy deontologiya haqida tushuncha. Hamshiralik kasbida bioetikaning o’rni. Oliy ma’lumotli hamshiralarning burchi va vazifalari.   Tibbiy sir va eftonaziya haqida tushuncha.</h6>
+                </a>
+                <div class="collapse" id="collapseCard2">
+                  <div class="card-body">
+                    
+                    <div class="fade-text-container">
+                        <div style="text-align: justify">
+                            Oliy ma’lumotli hamshiralarning burchi va vazifalari. Tibbiy sir va eftonaziya haqida tushuncha. Hamshiralik ishi bioetikasi va deontologiyasi. 
+                            Deontologiya (yunoncha deon – burch, logos – ta’limot) – bu tibbiyot xodimlarining kasbiy odob-axloq qoidalari va ularning kasbiy burchlarini bajarish tamoyillari to‘g‘risidagi ta’limotdir.
+                            Tibbiy deontologiya shifokor va hamshiraning bemor, uning qarindoshlari, hamkasblari hamda .
+                            jamiyat oldidagi xatti-harakatlarini tartibga soladi.
+                          </div>
+                        <div class="fade-overlay"></div>
+                    </div>
+
+                      <div class="card-body">
+                          <div class="fade-text-container">
+                              {% if not user.is_authenticated %}
+                                  <div class="fade-overlay"></div>
+                              {% endif %}
+                          </div>
+
+                          {% if user.is_authenticated %}
+                              <div class="mt-4">
+                                  <div class="row no-gutters align-items-center mb-2">
+                                      <div class="col-auto">
+                                          <div class="h6 mb-0 mr-3 font-weight-bold text-gray-800">
+                                              60%
+                                          </div>
+                                      </div>
+                                      <div class="col">
+                                          <div class="progress progress-sm mr-2">
+                                              <div class="progress-bar bg-warning" 
+                                                  role="progressbar" 
+                                                  style="width: 60%" 
+                                                  aria-valuenow="60" 
+                                                  aria-valuemin="0" 
+                                                  aria-valuemax="100">
+                                              </div>
+                                          </div>
+                                      </div>
+                                  </div>
+
+                                  <a href="{% url 'courses:topic' 1 %}" class="btn btn-warning btn-icon-split btn-block shadow-sm">
+                                      <span class="icon text-white-50">
+                                          <i class="fas fa-flag"></i>
+                                      </span>
+                                      <span class="text">Davom ettirish</span>
+                                  </a>
+                              </div>
+
+                          {% else %}
+                              <div class="p-3 bg-light border-left-danger mt-3" style="border-radius: 5px;">
+                                  <div class="text-center">
+                                      <p class="small text-danger font-weight-bold mb-2">
+                                          <i class="fas fa-lock mr-1"></i>DAVOMINI O'QISH UCHUN KURSGA A'ZO BO'LING
+                                      </p>
+                                      <a href="{% url 'user:login' %}" class="btn btn-danger btn-sm rounded-pill px-4 shadow">
+                                          <span class="icon text-white-50">
+                                              <i class="fas fa-sign-in-alt"></i>
+                                          </span>
+                                          <span class="text">Kirish / Kursga yozilish</span>
+                                      </a>
+                                  </div>
+                              </div>
+                          {% endif %}
+                      </div>
+
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-lg-6">
+              <div class="card shadow mb-4">
+                <a href="#collapseCard3" class="d-block card-header py-3 collapsed" data-toggle="collapse" role="button" aria-expanded="false" aria-controls="collapseCard3">
+                  <h6 class="m-0 font-weight-bold text-primary">3-MA'RUZA: Hamshiralik ishi bo’yicha xalqaro o’quv dasturi - “Lemon” loyihasinig o’rni va vazifasi. Yaratilish tarixi, boblari va ularning taxlili.  “Lemon” loyihasini Oliy ma’lumotli hamshiralik ishida tutgan o’rni.</h6>
+                </a>
+                <div class="collapse" id="collapseCard3">
+                  <div class="card-body">
+                    
+                    <div class="fade-text-container">
+                        <div style="text-align: justify">
+                          “LEMON” o‘quv dasturi (to‘liq nomi: Learning Materials on Nursing (LEMON)) — JSST (WHO) Yevropa Regional Byurosi ishtirokida 1988 yilda Vena shahrida bo‘lib o‘tgan birinchi Yevropa konferensiyasida tashkil qilingan. 
+                          Maqsadi: hamshiralik sohasida bilim, bilim materiyallari va o‘quv resurslarini takomillashtirish, hamshiralar, akusherlar, feldsherlar kabi o‘rta darajadagi tibbiyot xodimlarining malakasini oshirish. 
+                          “LEMON” loyihasi — umumiy ma’lumot
+                        </div>
+                        <div class="fade-overlay"></div>
+                    </div>
+                      <div class="card-body">
+                          <div class="fade-text-container">
+                              {% if not user.is_authenticated %}
+                                  <div class="fade-overlay"></div>
+                              {% endif %}
+                          </div>
+
+                          {% if user.is_authenticated %}
+                              <div class="mt-4">
+                                  <div class="row no-gutters align-items-center mb-2">
+                                      <div class="col-auto">
+                                          <div class="h6 mb-0 mr-3 font-weight-bold text-gray-800">
+                                              80%
+                                          </div>
+                                      </div>
+                                      <div class="col">
+                                          <div class="progress progress-sm mr-2">
+                                              <div class="progress-bar bg-success" 
+                                                  role="progressbar" 
+                                                  style="width: 80%" 
+                                                  aria-valuenow="80" 
+                                                  aria-valuemin="0" 
+                                                  aria-valuemax="100">
+                                              </div>
+                                          </div>
+                                      </div>
+                                  </div>
+
+                                  <a href="{% url 'courses:topic' 1 %}" class="btn btn-success btn-icon-split btn-block shadow-sm">
+                                      <span class="icon text-white-50">
+                                          <i class="fas fa-flag"></i>
+                                      </span>
+                                      <span class="text">Davom ettirish</span>
+                                  </a>
+                              </div>
+
+                          {% else %}
+                              <div class="p-3 bg-light border-left-danger mt-3" style="border-radius: 5px;">
+                                  <div class="text-center">
+                                      <p class="small text-danger font-weight-bold mb-2">
+                                          <i class="fas fa-lock mr-1"></i>DAVOMINI O'QISH UCHUN KURSGA A'ZO BO'LING
+                                      </p>
+                                      <a href="{% url 'user:login' %}" class="btn btn-danger btn-sm rounded-pill px-4 shadow">
+                                          <span class="icon text-white-50">
+                                              <i class="fas fa-sign-in-alt"></i>
+                                          </span>
+                                          <span class="text">Kirish / Kursga yozilish</span>
+                                      </a>
+                                  </div>
+                              </div>
+                          {% endif %}
+                      </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-lg-6">
+              <div class="card shadow mb-4">
+                <a href="#collapseCard4" class="d-block card-header py-3 collapsed" data-toggle="collapse" role="button" aria-expanded="false" aria-controls="collapseCard4">
+                  <h6 class="m-0 font-weight-bold text-primary">4-MA'RUZA: Salomatlik, salomatlikka yangicha qarashlar. Salomatlikni o‘rganish davrlari. Salomatlikka ta’sir etuvchi omillar. Hamshiralik ishida sog‘lomlashtirish va sanitar oqartiruv ishlarini olib borish qoidalari.</h6>
+                </a>
+                <div class="collapse" id="collapseCard4">
+                  <div class="card-body">
+                    
+                    <div class="fade-text-container">
+                        <div style="text-align: justify">
+                          Inson salomatligi — jamiyatning eng katta boyligi. 
+                          Sog‘lom inson mehnat qilish, ta’lim olish va jamiyat rivojiga hissa qo‘shishda faol ishtirok etadi.
+                          Shuning uchun ham sog‘liqni saqlash tizimi, jumladan, hamshiralik ishi oldida tibbiy xizmat bilan bir qatorda profilaktika va sog‘lomlashtirish vazifalari ham turadi.
+                          Salomatlik tushunchasi va unga yangicha qarashlar
+                          Dastlabki davrlarda salomatlik kasallikning yo‘qligi sifatida talqin qilingan.
+                        </div>
+                        <div class="fade-overlay"></div>
+                    </div>
+                                          <div class="card-body">
+                          <div class="fade-text-container">
+                              {% if not user.is_authenticated %}
+                                  <div class="fade-overlay"></div>
+                              {% endif %}
+                          </div>
+
+                          {% if user.is_authenticated %}
+                              <div class="mt-4">
+                                  <div class="row no-gutters align-items-center mb-2">
+                                      <div class="col-auto">
+                                          <div class="h6 mb-0 mr-3 font-weight-bold text-gray-800">
+                                              40%
+                                          </div>
+                                      </div>
+                                      <div class="col">
+                                          <div class="progress progress-sm mr-2">
+                                              <div class="progress-bar bg-warning" 
+                                                  role="progressbar" 
+                                                  style="width: 40%" 
+                                                  aria-valuenow="40" 
+                                                  aria-valuemin="0" 
+                                                  aria-valuemax="100">
+                                              </div>
+                                          </div>
+                                      </div>
+                                  </div>
+
+                                  <a href="{% url 'courses:topic' 1 %}" class="btn btn-warning btn-icon-split btn-block shadow-sm">
+                                      <span class="icon text-white-50">
+                                          <i class="fas fa-flag"></i>
+                                      </span>
+                                      <span class="text">Davom ettirish</span>
+                                  </a>
+                              </div>
+
+                          {% else %}
+                              <div class="p-3 bg-light border-left-danger mt-3" style="border-radius: 5px;">
+                                  <div class="text-center">
+                                      <p class="small text-danger font-weight-bold mb-2">
+                                          <i class="fas fa-lock mr-1"></i>DAVOMINI O'QISH UCHUN KURSGA A'ZO BO'LING
+                                      </p>
+                                      <a href="{% url 'user:login' %}" class="btn btn-danger btn-sm rounded-pill px-4 shadow">
+                                          <span class="icon text-white-50">
+                                              <i class="fas fa-sign-in-alt"></i>
+                                          </span>
+                                          <span class="text">Kirish / Kursga yozilish</span>
+                                      </a>
+                                  </div>
+                              </div>
+                          {% endif %}
+                      </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-lg-6">
+              <div class="card shadow mb-4">
+                <a href="#collapseCard5" class="d-block card-header py-3 collapsed" data-toggle="collapse" role="button" aria-expanded="false" aria-controls="collapseCard5">
+                  <h6 class="m-0 font-weight-bold text-primary">5-MA'RUZA: Profilaktik ishlar haqida umumiy tushuncha. Salomatlikni saqlashda profilaktikaning o’rni. Birlamchi, ikkilamchi profilaktikaning hamshiralik ishida yuritilishi.</h6>
+                </a>
+                <div class="collapse" id="collapseCard5">
+                  <div class="card-body">
+                    
+                    <div class="fade-text-container">
+                        <div style="text-align: justify">
+                          Profilaktika — bu kasalliklarning oldini olishga qaratilgan tizimli chora-tadbirlar majmuasidir. 
+                          Zamonaviy tibbiyotning asosiy tamoyili “davolashdan ko‘ra, oldini olish afzal” degan g‘oyaga asoslanadi. 
+                          Shu bois hamshiralik ishida profilaktika eng muhim yo‘nalishlardan biri hisoblanadi.
+                          Profilaktik ishlar haqida umumiy tushuncha:
+                          Profilaktika (yunoncha prophylaktikos – oldini olish) — sog‘lom insonlarda kasalliklarning paydo bo‘lishi, rivojlanishi va asoratlarini bartaraf etishga qaratilgan faoliyatdir.
+                        </div>
+                        <div class="fade-overlay"></div>
+                    </div>
+                      <div class="card-body">
+                          <div class="fade-text-container">
+                              {% if not user.is_authenticated %}
+                                  <div class="fade-overlay"></div>
+                              {% endif %}
+                          </div>
+
+                          {% if user.is_authenticated %}
+                              <div class="mt-4">
+                                  <div class="row no-gutters align-items-center mb-2">
+                                      <div class="col-auto">
+                                          <div class="h6 mb-0 mr-3 font-weight-bold text-gray-800">
+                                              30%
+                                          </div>
+                                      </div>
+                                      <div class="col">
+                                          <div class="progress progress-sm mr-2">
+                                              <div class="progress-bar bg-danger" 
+                                                  role="progressbar" 
+                                                  style="width: 30%" 
+                                                  aria-valuenow="30" 
+                                                  aria-valuemin="0" 
+                                                  aria-valuemax="100">
+                                              </div>
+                                          </div>
+                                      </div>
+                                  </div>
+
+                                  <a href="{% url 'courses:topic' 1 %}" class="btn btn-danger btn-icon-split btn-block shadow-sm">
+                                      <span class="icon text-white-50">
+                                          <i class="fas fa-flag"></i>
+                                      </span>
+                                      <span class="text">Davom ettirish</span>
+                                  </a>
+                              </div>
+
+                          {% else %}
+                              <div class="p-3 bg-light border-left-danger mt-3" style="border-radius: 5px;">
+                                  <div class="text-center">
+                                      <p class="small text-danger font-weight-bold mb-2">
+                                          <i class="fas fa-lock mr-1"></i>DAVOMINI O'QISH UCHUN KURSGA A'ZO BO'LING
+                                      </p>
+                                      <a href="{% url 'user:login' %}" class="btn btn-danger btn-sm rounded-pill px-4 shadow">
+                                          <span class="icon text-white-50">
+                                              <i class="fas fa-sign-in-alt"></i>
+                                          </span>
+                                          <span class="text">Kirish / Kursga yozilish</span>
+                                      </a>
+                                  </div>
+                              </div>
+                          {% endif %}
+                      </div>
+
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-lg-6">
+              <div class="card shadow mb-4">
+                <a href="#collapseCard6" class="d-block card-header py-3 collapsed" data-toggle="collapse" role="button" aria-expanded="false" aria-controls="collapseCard6">
+                  <h6 class="m-0 font-weight-bold text-primary">6-MA'RUZA: Tibbiy himoya haqida tushuncha. Hamshiraning ish joyidagi mehnat muhofazasi. Texnika xavsizligi haqida tushuncha. Hamshiralik ishida kasalxona ichki infeksiyasiga qarshi kurashish va nazorat ishlarini olib borish.</h6>
+                </a>
+
+                <div class="collapse" id="collapseCard6">
+                  <div class="card-body">
+                    
+                    <div class="fade-text-container">
+                        <div style="text-align: justify">
+                          Tibbiy himoya haqida tushuncha
+                          Tibbiy himoya — bu tibbiy xodimlar va bemorlarning sog‘lig‘ini saqlash, infeksion va noinfeksion xavflardan himoya qilishga qaratilgan chora-tadbirlar majmuasidir.
+                          Uning asosiy yo‘nalishlari:
+                          shaxsiy gigiyena va himoya vositalaridan foydalanish (xalat, niqob, qo‘lqop, ko‘zoynak),
+                          biologik materiallar bilan ishlashda xavfsizlik qoidalariga rioya qilish,
+                          dezinfeksiya, sterilizatsiya va chiqindilarni to‘g‘ri utilizatsiya qilish,
+                        </div>
+                        <div class="fade-overlay"></div>
+                    </div>
+                                          <div class="card-body">
+                          <div class="fade-text-container">
+                              {% if not user.is_authenticated %}
+                                  <div class="fade-overlay"></div>
+                              {% endif %}
+                          </div>
+
+                          {% if user.is_authenticated %}
+                              <div class="mt-4">
+                                  <div class="row no-gutters align-items-center mb-2">
+                                      <div class="col-auto">
+                                          <div class="h6 mb-0 mr-3 font-weight-bold text-gray-800">
+                                              100%
+                                          </div>
+                                      </div>
+                                      <div class="col">
+                                          <div class="progress progress-sm mr-2">
+                                              <div class="progress-bar bg-success" 
+                                                  role="progressbar" 
+                                                  style="width: 100%" 
+                                                  aria-valuenow="100" 
+                                                  aria-valuemin="0" 
+                                                  aria-valuemax="100">
+                                              </div>
+                                          </div>
+                                      </div>
+                                  </div>
+
+                                  <a href="{% url 'courses:topic' 1 %}" class="btn btn-success btn-icon-split btn-block shadow-sm">
+                                      <span class="icon text-white-50">
+                                          <i class="fas fa-flag"></i>
+                                      </span>
+                                      <span class="text">Davom ettirish</span>
+                                  </a>
+                              </div>
+
+                          {% else %}
+                              <div class="p-3 bg-light border-left-danger mt-3" style="border-radius: 5px;">
+                                  <div class="text-center">
+                                      <p class="small text-danger font-weight-bold mb-2">
+                                          <i class="fas fa-lock mr-1"></i>DAVOMINI O'QISH UCHUN KURSGA A'ZO BO'LING
+                                      </p>
+                                      <a href="{% url 'user:login' %}" class="btn btn-danger btn-sm rounded-pill px-4 shadow">
+                                          <span class="icon text-white-50">
+                                              <i class="fas fa-sign-in-alt"></i>
+                                          </span>
+                                          <span class="text">Kirish / Kursga yozilish</span>
+                                      </a>
+                                  </div>
+                              </div>
+                          {% endif %}
+                      </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+          </div>
+
+        </div>
+        <!-- /.container-fluid -->        
+{% endblock main %}

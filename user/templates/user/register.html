@@ -1,0 +1,252 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Ro'yxatdan o'tish</title>
+
+    <!-- SB Admin 2 Fonts & CSS -->
+    <!-- Assuming these files are correctly loaded via your Django static setup -->
+    <link href="{% static 'vendor/fontawesome-free/css/all.min.css' %}" rel="stylesheet" type="text/css">
+    <link href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i" rel="stylesheet">
+    <link href="{% static 'css/sb-admin-2.min.css' %}" rel="stylesheet">
+    
+    <!-- Select2 CSS CDN -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
+
+    <style>
+        /* Custom styling to make Select2 match the SB Admin form controls */
+        .select-user {
+            /* These styles are applied directly to the <select> element */
+            border-radius: 10rem;
+            padding: 1.5rem 1rem;
+            font-size: .8rem;
+            height: calc(1.5em + 1.5rem + 2px);
+        }
+        
+        /* Styles for the Select2 container to visually match form-control-user */
+        .select2-container--default .select2-selection--single {
+            border-radius: 10rem !important; /* Rounded corners */
+            height: calc(1.5em + 1.5rem + 2px) !important; /* Match height */
+            font-size: .8rem;
+            border: 1px solid #d1d3e2; /* Match input border color */
+            padding: 0.375rem 0.75rem;
+            display: flex; /* Centers text vertically */
+            align-items: center;
+        }
+
+        /* Adjust the arrow position */
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 100%;
+            top: 1px !important;
+            right: 0.5rem !important;
+        }
+
+        /* Fix issue where search box inside dropdown is too big */
+        .select2-search__field {
+            width: 100% !important; 
+        }
+    </style>
+</head>
+
+<body class="bg-gradient-primary">
+
+{% block main %}
+
+    <div class="container">
+
+        <div class="card o-hidden border-0 shadow-lg my-5">
+            <div class="card-body p-0">
+                <!-- Nested Row within Card Body -->
+                <div class="row">
+                    <!-- Placeholder image path -->
+                        <div class="col-lg-5 d-none d-lg-block bg-gradient-success d-flex align-items-center justify-content-center" style="min-height: 500px;">
+                            <div class="text-center text-white p-4">
+                                <div class="mb-4">
+                                <div class="sidebar-brand-icon rotate-n-15">
+                                    <i class="fas fa-plus-square fa-4x mb-3 animate-pulse"></i>
+                                </div>
+                                    <h1 class="h3 font-weight-bold text-uppercase">EduMed Uz</h1>
+                                    <p class="small px-4">Tibbiyot sohasidagi zamonaviy bilimlar va professional hamshiralik kursi platformasi</p>
+                                </div>
+
+                                <hr class="border-light mb-4" style="width: 50%; margin: auto;">
+
+                                <div class="mt-4">
+                                    <p class="mb-3 small">Kurslarni ko'rish uchun mehmon bo'lib kiring:</p>
+                                    <a class="btn btn-outline-light btn-lg rounded-pill px-4 shadow-sm" href="{% url 'courses:index' %}">
+                                        <i class="fas fa-sign-in-alt mr-2"></i>
+                                        Bosh sahifaga o'tish
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    <div class="col-lg-7">
+                        <div class="p-5">
+                            <div class="text-center">
+                                <h1 class="h4 text-gray-900 mb-4">Ro'yxatdan o'ting!</h1>
+                            </div>
+                                {% if messages %}
+                                    {% for message in messages %}
+                                        <div class="alert alert-{{ message.tags }}" role="alert">
+                                            {{ message }}
+                                        </div>
+                                    {% endfor %}
+                                {% endif %}
+                            <!-- Note: This form needs a method="POST" and action attribute for Django -->
+                            <form class="user" method="post" action="{% url 'user:register' %}">
+                                {% csrf_token %}
+                                <!-- Django CSRF token would go here: {% csrf_token %} -->
+                                <div class="form-group row">
+                                    <div class="col-sm-6 mb-3 mb-sm-0">
+                                        <input type="text" class="form-control form-control-user" id="exampleFirstName" placeholder="Ismi" name="first_name">
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <input type="text" class="form-control form-control-user" id="exampleLastName" placeholder="Familiya" name="last_name">
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <input type="email" class="form-control form-control-user" id="exampleInputEmail" placeholder="Email Address" name="email">
+                                </div>
+                                <div class="form-group">
+                                    <!-- Changed type to "tel" for phone number sematics -->
+                                    <input type="tel" class="form-control form-control-user" id="exampleInputNumber" placeholder="Telefon raqami" name="phone_number">
+                                </div>
+                                <div class="form-group">
+                                    <input type="date" class="form-control form-control-user" id="inputDateOfBirth" placeholder="Tug'ilgan sana" name="date_of_birth" required>
+                                </div>
+                                <div class="form-group row pl-3"> 
+                                    <div class="col-sm-3 mb-3 mb-sm-0">
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" type="radio" name="gender" id="genderMale" value="1" required>
+                                            <label class="form-check-label" for="genderMale">Erkak</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-3">
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" type="radio" name="gender" id="genderFemale" value="0" required>
+                                            <label class="form-check-label" for="genderFemale">Ayol</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <!-- Updated Select Tag for Select2 -->
+                                    <select class="form-control select-user" id="inputRegion" name="region" style="width: 100%;" data-placeholder="--- Viloyatni tanlang ---">
+                                        <!-- Select2 uses an empty <option> without a value for the placeholder -->
+                                        <option value=""></option> 
+                                        
+                                        <!-- Hardcoded options for static demonstration -->
+                                        <option value="Toshkent Shahri">Toshkent Shahri</option>
+                                        <option value="Toshkent Viloyati">Toshkent Viloyati</option>
+                                        <option value="Samarqand Viloyati">Samarqand Viloyati</option>
+                                        <option value="Buxoro Viloyati">Buxoro Viloyati</option>
+                                        <option value="Farg'ona Viloyati">Farg'ona Viloyati</option>
+                                        <option value="Namangan Viloyati">Namangan Viloyati</option>
+                                        <option value="Andijon Viloyati">Andijon Viloyati</option>
+                                        <option value="Qashqadaryo Viloyati">Qashqadaryo Viloyati</option>
+                                        <option value="Surxondaryo Viloyati">Surxondaryo Viloyati</option>
+                                        <option value="Xorazm Viloyati">Xorazm Viloyati</option>
+                                        <option value="Jizzax Viloyati">Jizzax Viloyati</option>
+                                        <option value="Sirdaryo Viloyati">Sirdaryo Viloyati</option>
+                                        <option value="Navoiy Viloyati">Navoiy Viloyati</option>
+                                        <option value="Qoraqalpog'iston Respublikasi">Qoraqalpog'iston Respublikasi</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <!-- Updated Select Tag for Select2 -->
+                                    <select class="form-control select-user" id="inputOtm" name="otm" style="width: 100%;" data-placeholder="--- Ta'lim muassasasi  tanlang ---">
+                                        <!-- Select2 uses an empty <option> without a value for the placeholder -->
+                                        <option value=""></option> 
+                                        
+                                        <!-- Hardcoded options for static demonstration -->
+                                        <option value="Toshkent Davlat Tibbiyot Universiteti">Toshkent Davlat Tibbiyot Universiteti</option>
+                                        <option value="Toshkent Farmatsevtika Instituti">Toshkent Farmatsevtika Instituti</option>
+                                        <option value="Andijon Davlat Tibbiyot Universiteti">Andijon Davlat Tibbiyot Universiteti</option>
+                                        <option value="Samarqand Davlat Tibbiyot Universiteti">Samarqand Davlat Tibbiyot Universiteti</option>
+                                        <option value="Buxoro Davlat Tibbiyot Instituti">Buxoro Davlat Tibbiyot Instituti</option>
+                                        <option value="Farg'ona Jamoat Salomatligi Tibbiyot Instituti">Farg'ona Jamoat Salomatligi Tibbiyot Instituti</option>
+                                        <option value="Toshkent Tibbiyot Akademiyasi Termiz Filiali">Toshkent Tibbiyot Akademiyasi Termiz Filiali</option>
+                                        <option value="Toshkent Tibbiyot Akademiyasi Urganch Filiali">Toshkent Tibbiyot Akademiyasi Urganch Filiali</option>
+                                        <option value="Toshkent Tibbiyot Akademiyasi Chirchiq Filiali">Toshkent Tibbiyot Akademiyasi Chirchiq Filiali</option>
+                                        <option value="Qoraqalpog'iston Tibbiyot Instituti">Qoraqalpog'iston Tibbiyot Instituti</option>
+                                    </select>
+                                </div>
+                                <div class="form-group row">
+                                    <div class="col-sm-6 mb-3 mb-sm-0">
+                                        <input type="password" class="form-control form-control-user" id="exampleInputPassword" placeholder="Parol" name="password">
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <input type="password" class="form-control form-control-user" id="exampleRepeatPassword" placeholder="Parolni takrorlang" name="password2">
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-primary btn-user btn-block">
+                                    Ro'yxatdan o'tish
+                                </button>
+                                <hr>
+                                <a href="index.html" class="btn btn-google btn-user btn-block">
+                                    <i class="fab fa-google fa-fw"></i> Google orqali ro'yxatdan o'tish
+                                </a>
+                                <a href="index.html" class="btn btn-facebook btn-user btn-block">
+                                    <i class="fab fa-telegram fa-fw"></i> Telegram orqali ro'yxatdan o'tish
+                                </a>
+                            </form>
+                            <hr>
+                            <div class="text-center">
+                                <a class="small" href="{% url 'user:forgot_password' %}">Parolni unutdingizmi?</a>
+                            </div>
+                            <div class="text-center">
+                                <a class="small" href="{% url 'user:login' %}">Hisobingiz bormi? Kirish!</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- JAVASCRIPT LIBRARIES -->
+    <!-- jQuery (Must be loaded before Select2 and Bootstrap JS) -->
+    <script src="{% static 'vendor/jquery/jquery.min.js' %}"></script>
+    <script src="{% static 'vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+    <script src="{% static 'vendor/jquery-easing/jquery.easing.min.js' %}"></script>
+    <script src="{% static 'js/sb-admin-2.min.js' %}"></script>
+    
+    <!-- Select2 JavaScript CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
+
+    <!-- Select2 Initialization Script -->
+    <script>
+        $(document).ready(function() {
+            // Initialize Select2 on the region select field
+            $('#inputRegion').select2({
+                placeholder: "--- Viloyatni tanlang ---", // Uses the data-placeholder value
+                allowClear: true, // Allows clearing the selection
+                theme: 'default' // Use default theme, styled by custom CSS
+            });
+            
+            // Apply the custom SB Admin 2 user class visually to the Select2 container
+            // This ensures it looks like the other inputs on the page
+            $('.select2-container').find('.select2-selection').addClass('form-control-user');
+
+        });
+    </script>
+    <script>
+        $(document).ready(function() {
+            // Initialize Select2 on the region select field
+            $('#inputOtm').select2({
+                placeholder: "--- Ta'lim muassasasi tanlang ---", // Uses the data-placeholder value
+                allowClear: true, // Allows clearing the selection
+                theme: 'default' // Use default theme, styled by custom CSS
+            });
+            
+            // Apply the custom SB Admin 2 user class visually to the Select2 container
+            // This ensures it looks like the other inputs on the page
+            $('.select2-container').find('.select2-selection').addClass('form-control-user');
+
+        });
+    </script>
+</body>
+{% endblock main %}

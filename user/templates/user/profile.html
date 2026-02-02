@@ -1,0 +1,184 @@
+{% extends "courses/layout.html" %}
+{% load static %}
+{% block main %}
+
+
+        <!-- Begin Page Content -->
+<div class="container-fluid">
+          <h1 class="h3 mb-4 text-gray-800">Talaba Statistikasi — Edumed.uz</h1>
+
+          <!-- Student Info & AI Evaluation Row -->
+          <div class="row">
+            <div class="col-lg-6">
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">Talaba Ma'lumotlari</h6>
+                    </div>
+                    
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-4">
+                            <div class="mr-4">
+                                <img class="img-profile rounded-circle" 
+                                    src="{% if profile.profile_image %}{{ profile.profile_image.url }}{% else %}{% static 'img/avatar.png' %}{% endif %}" 
+                                    alt="{{ full_name|default:'Profil rasmi' }}" 
+                                    style="width: 80px; height: 80px; object-fit: cover;">
+                            </div>
+                            <div>                          
+                                <p><strong>Ism Familiya:</strong> {{ full_name }}</p>
+                                <p><strong>Tizimda roli:</strong> {{ role }}</p>
+                                <p><strong>Email:</strong> {{ email }}</p>
+                                <p><strong>Yoshi:</strong> {{ age }}</p>
+                                <p><strong>Jinsi:</strong> {{ gender_display }}</p>
+                                <p><strong>Yashash manzili:</strong> {{ region }}</p>
+                                <p><strong>Ta'lim muassasasi:</strong> {{ otm }}</p>
+                                <p><strong>Ro'yxatdan o'tgan sana:</strong> {{ join_date }}</p>
+                                <p><strong>Yozilgan kurslar soni:</strong> {{ course_count }} ta</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-6">
+              <div class="card shadow mb-4 border-left-success">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                  <h6 class="m-0 font-weight-bold text-success">AI orqali baholash</h6>
+                  <img src="https://upload.wikimedia.org/wikipedia/commons/0/04/ChatGPT_logo.svg" width="40">
+                </div>
+                <div class="card-body">
+                  <p>Talaba faoliyati bo‘yicha sun'iy intellekt asosida baho oling.</p>
+                  <button class="btn btn-success btn-block" data-toggle="modal" data-target="#aiModal">🤖 Talabani AI orqali baholash</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Statistics Cards Row -->
+          <div class="row">
+            <div class="col-xl-3 col-md-6 mb-4">
+              <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                  <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                      <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">O‘rtacha baho</div>
+                      <div class="h5 mb-0 font-weight-bold text-gray-800">87%</div>
+                    </div>
+                    <div class="col-auto"><i class="fas fa-star fa-2x text-gray-300"></i></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-xl-3 col-md-6 mb-4">
+              <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                  <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                      <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Qatnashayotgan kurslar</div>
+                      <div class="h5 mb-0 font-weight-bold text-gray-800">12 ta</div>
+                    </div>
+                    <div class="col-auto"><i class="fas fa-book fa-2x text-gray-300"></i></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-xl-3 col-md-6 mb-4">
+              <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                  <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                      <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Tugatgan kurslar</div>
+                      <div class="h5 mb-0 font-weight-bold text-gray-800">8 ta</div>
+                    </div>
+                    <div class="col-auto"><i class="fas fa-check-circle fa-2x text-gray-300"></i></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Charts Row -->
+          <div class="row">
+            <div class="col-xl-8 col-lg-7">
+              <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                  <h6 class="m-0 font-weight-bold text-primary">Oylar kesimida faollik</h6>
+                </div>
+                <div class="card-body">
+                  <canvas id="studentActivityChart"></canvas>
+                </div>
+              </div>
+
+              <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                  <h6 class="m-0 font-weight-bold text-primary">Modullar bo‘yicha o‘zlashtirish</h6>
+                </div>
+                <div class="card-body">
+                  <h4 class="small font-weight-bold">Matematika <span class="float-right">80%</span></h4>
+                  <div class="progress mb-4"><div class="progress-bar bg-info" style="width: 80%"></div></div>
+                  <h4 class="small font-weight-bold">Fizika <span class="float-right">70%</span></h4>
+                  <div class="progress mb-4"><div class="progress-bar bg-success" style="width: 70%"></div></div>
+                  <h4 class="small font-weight-bold">Kimyo <span class="float-right">60%</span></h4>
+                  <div class="progress mb-4"><div class="progress-bar bg-warning" style="width: 60%"></div></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-xl-4 col-lg-5">
+              <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                  <h6 class="m-0 font-weight-bold text-primary">Topshiriq turlari bo‘yicha o‘zlashtirish</h6>
+                </div>
+                <div class="card-body">
+                  <canvas id="taskTypeChart"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+
+        <!-- /.container-fluid -->
+         
+{% endblock main %}
+
+{% block extra_js %}
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    // Student Activity Chart
+    var ctx1 = document.getElementById("studentActivityChart").getContext('2d');
+    new Chart(ctx1, {
+        type: 'line',
+        data: {
+            labels: ["Yanvar","Fevral","Mart","Aprel","May","Iyun","Iyul"],
+            datasets: [{
+                label: "Faol vaqt (soat)",
+                data: [15, 18, 20, 25, 22, 28, 30],
+                borderColor: "rgba(78, 115, 223, 1)",
+                backgroundColor: "rgba(78, 115, 223, 0.05)",
+                tension: 0.3,
+                fill: true
+            }]
+        },
+        options: { maintainAspectRatio: false }
+    });
+
+    // Task Type Chart
+    var ctx2 = document.getElementById("taskTypeChart").getContext('2d');
+    new Chart(ctx2, {
+        type: 'doughnut',
+        data: {
+            labels: ["Test", "Savol-javob", "Yozma topshiriq"],
+            datasets: [{
+                data: [75, 60, 50],
+                backgroundColor: ['#4e73df', '#1cc88a', '#f6c23e'],
+                hoverBackgroundColor: ['#2e59d9', '#17a673', '#d4a72b']
+            }]
+        },
+        options: { maintainAspectRatio: false, cutout: '70%' }
+    });
+});
+</script>
+{% endblock extra_js %}

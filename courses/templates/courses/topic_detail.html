@@ -1,0 +1,245 @@
+{% extends "courses/layout.html" %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+    /* Timeline uslubi */
+    .timeline-item { position: relative; padding-left: 3rem; margin-bottom: 2rem; border-left: 2px solid #4e73df; }
+    .timeline-item::before {
+        content: ""; position: absolute; left: -9px; top: 0;
+        width: 16px; height: 16px; border-radius: 50%;
+        background: #4e73df; border: 3px solid #fff;
+    }
+    /* Infografika ranglari */
+    .badge-qadim { background-color: #0084c8; color: white; }
+    .badge-orta { background-color: #20c997; color: white; }
+    .badge-19asr { background-color: #f6c23e; color: white; }
+    .badge-20asr { background-color: #858796; color: white; }
+    
+    .infographic-box { transition: transform 0.2s; cursor: pointer; text-align: center; font-weight: bold; }
+    .infographic-box:hover { transform: translateY(-5px); }
+
+    /* Rasm overlay uslubi */
+    .bg-password-image {
+        background-image: url("{% static 'img/medical_history_hero.jpg' %}");
+        background-size: cover;
+        background-position: center;
+    }
+</style>
+{% endblock extra_css %}
+
+{% block main %}
+<div class="container-fluid">
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb bg-white shadow-sm">
+        <li class="breadcrumb-item"><a href="{% url 'courses:modules' %}">Mavzular</a></li>
+        <li class="breadcrumb-item active" aria-current="page">1-Ma'ruza</li>
+      </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-lg-8">
+            
+            <div class="card shadow mb-4 border-left-primary">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="icon-circle bg-primary mr-3">
+                            <i class="fas fa-history text-white"></i>
+                        </div>
+                        <h4 class="m-0 font-weight-bold text-primary">Hamshiralik ishi tarixi, hamshiralik ishi namoyondalari faoliyati va roli.</h4>
+                    </div>
+                    <p class="text-justify text-gray-800">
+                        Hamshiralik ishi qadimdan mavjud bo‘lib, insoniyat bilan birga rivojlanib kelgan. Dastlab bu ishni diniy shaxslar, doyalar yoki oddiy insonlar bemorlarga yordam sifatida amalga oshirishgan. Keyinchalik hamshiralik asta-sekin alohida <b>kasb</b> va <b>ilmiy</b> yo‘nalish sifatida shakllandi.
+                    </p>
+                    <blockquote class="border-left-primary p-3 bg-light font-italic text-gray-700">
+                        "Hamshira — bu nafaqat parvarishchi, balki inson hayotini saqlovchi ilmiy mutaxassis."
+                    </blockquote>
+                </div>
+            </div>
+
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-lamp mr-2"></i>Florence Nightingale (1820–1910)</h6>
+                    <span class="badge badge-secondary">“Chiroq tutgan ayol”</span>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item"><strong><i class="fas fa-university mr-2 text-info"></i>1850-60-yil:</strong> 1850-yillarda Florens Naytingeyl hamshiralik ishini professional darajaga olib chiqdi.U Krim urushi (1853–1856) davrida askarlarni parvarish qilib, infektsiyalarni kamaytirishda katta rol o‘ynadi. 1860-yilda Londonda birinchi Hamshiralik maktabini ochdi.Naytingeylning qarashlari: gigiyena, tozalik, bemorga individual yondashuv.</li>
+                        <li class="list-group-item"><strong><i class="fas fa-lightbulb mr-2 text-warning"></i>Keyinchalik:</strong> 1899- yilga kelib  Xalqaro Hamshiralik Assotsatsiyasi ochildi(shatab kvartirasi Jeneva(Shevsariya)da ).1900-yilda kengash nizomi qabul qilindi va uning birinchi prezidenti etib angliyalik Bezfard Fenvik saylandi.  Bu Tashkilot har 4 yilda bir  marta konferemsiyalar o’tkazadi. Ushbu tashkilot tashabbusi bilan 1971-yildan boshlab 12- may(F.Naytingeyl tug’ilgan kuni) Xalqaro hamshiralar kuni deb e’lon qilindi.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-brain mr-2"></i>Virginia Henderson (1897–1996)</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-9">
+                            <p class="text-gray-800">XX asrning yirik nazariyotchisi. U <strong>“Hamshiralikning 14 asosiy ehtiyoji”</strong> nazariyasini yaratdi. Uning fikricha, hamshira shifokor yordamchisi emas, balki mustaqil mutaxassisdir.</p>
+                        </div>
+                        <div class="col-md-3 text-center d-none d-md-block">
+                             <i class="fas fa-user-md fa-5x text-gray-200"></i>
+                        </div>
+                        <div class="p-3 bg-light border-left-info rounded">
+                            <p class="small mb-0"><strong>Vazifa:</strong> Bemorning mustaqil hayotini davom ettirishi uchun unga ko‘maklashish.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow mb-4">
+                <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-primary">O'zbekistonda rivojlanish bosqichlari</h6></div>
+                <div class="card-body">
+                    <div class="timeline-item">
+                        <h6 class="font-weight-bold text-primary">1918-1920 yillar</h6>
+                        <p class="small text-gray-600">Turkiston umumtibbiyot komissiyasi tashkil etildi,barcha tibbiyot xodimlari ro‘yxatdan o‘tkazildi. Toshkentda birinchi tibbiyot bilim yurti ochildi.</p>
+                    </div>
+                    <div class="timeline-item">
+                        <h6 class="font-weight-bold text-success">1931-1932 yillar</h6>
+                        <p class="small text-gray-600">Toshkent Davlat Tibbiyot Instituti shakllandi va vrachlar malakasini oshirish instituti tashkil etildi.</p>
+                    </div>
+                    <div class="timeline-item">
+                        <h6 class="font-weight-bold text-warning">1990-yildan hozirgacha</h6>
+                        <p class="small text-gray-600">1998- yil 10- noyabrda O’zbekiston Respublikasi Prezidentining 2107-sonli qarori asosida “ Tibbiy oliygohlar qoshida “Oliy malakali hamshira” tayyorlash yo’lga qo’yildi.</p>
+                            <ul>
+                                <li>O‘zbekiston mustaqillikka erishgach, “Hamshiralik ishi” alohida mutaxassislik sifatida e’tirof etildi.</li>
+                                <li>1998- yildan boshlab tibbiyot bilim yurtlarida “Hamshiralik ishi” mutaxassisligi joriy etildi.</li>
+                                <li>Hamshiralik kasbining huquqiy asoslari mustahkamlandi.</li>
+                            </ul>
+                    </div>
+                    <div class="timeline-item">
+                        <h6 class="font-weight-bold text-secondary">Hozirgi davr</h6>
+                        <ul>
+                            <li>Hamshiralar nafaqat parvarish, balki profilaktika, sog‘lom turmush tarzini targ‘ib qilish, jamoat salomatligi yo‘nalishida ham faoliyat yuritmoqda.</li>
+                            <li>Istiqbol: xalqaro tajribani joriy etish, oliy ma’lumotli hamshiralar rolini kengaytirish, ilmiy tadqiqotlarda hamshiralarni jalb qilish.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 bg-primary">
+                    <h6 class="m-0 font-weight-bold text-white">Asosiy nuqtalar</h6>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled small">
+                        <li class="mb-2"><i class="fas fa-check-circle text-success mr-2"></i> Hamshiralik — mustaqil ilmiy fan [cite: 36]</li>
+                        <li class="mb-2"><i class="fas fa-check-circle text-success mr-2"></i> 12-may — Xalqaro hamshiralar kuni </li>
+                        <li class="mb-2"><i class="fas fa-check-circle text-success mr-2"></i> O'zbekistonda 1998-yildan oliy ta'lim [cite: 26]</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card shadow mb-4">
+                <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-gray-800">Tarixiy davrlar</h6></div>
+                <div class="card-body">
+                    <div class="row no-gutters">
+                        <div class="col-6 mb-2"><div class="p-3 infographic-box badge-qadim rounded m-1">Qadim</div></div>
+                        <div class="col-6 mb-2"><div class="p-3 infographic-box badge-orta rounded m-1">O'rta asr</div></div>
+                        <div class="col-6"><div class="p-3 infographic-box badge-19asr rounded m-1">XIX asr</div></div>
+                        <div class="col-6"><div class="p-3 infographic-box badge-20asr rounded m-1">XX asr</div></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border-left-warning shadow mb-4">
+                <div class="card-body">
+                    <h6 class="font-weight-bold text-warning text-uppercase mb-2 small">Bilasizmi? (Test)</h6>
+                    <p class="small text-gray-800">Florence Nightingale tarixda yana qaysi nom bilan mashhur bo‘lgan? [cite: 47]</p>
+                    <form>
+                        <div class="custom-control custom-radio small">
+                            <input type="radio" id="ans1" name="quiz" class="custom-control-input">
+                            <label class="custom-control-label" for="ans1">A) "Ilm onasi"</label>
+                        </div>
+                        <div class="custom-control custom-radio small">
+                            <input type="radio" id="ans2" name="quiz" class="custom-control-input" checked>
+                            <label class="custom-control-label" for="ans2">B) "Chiroq tutgan ayol" ✅</label>
+                        </div>
+                        <div class="custom-control custom-radio small">
+                            <input type="radio" id="ans3" name="quiz" class="custom-control-input">
+                            <label class="custom-control-label" for="ans3">C) "Sog'liq posboni"</label>
+                        </div>
+                        <button type="button" class="btn btn-warning btn-sm btn-block mt-3 shadow-sm">Tekshirish</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card shadow mb-4">
+                <div class="card-body text-center">
+                    <h6 class="font-weight-bold text-gray-800 mb-3">Audio versiya</h6>
+                    <button class="btn btn-primary btn-block mb-3">
+                        <i class="fas fa-volume-up mr-2"></i> Matnni ovozda eshiting
+                    </button>
+                    <hr>
+                    <h6 class="font-weight-bold text-gray-800 mb-2">Sahifani yuklab oling</h6>
+                    <a href="#" class="btn btn-outline-danger btn-sm">
+                        <i class="fas fa-file-pdf mr-1"></i> PDF sifatda yuklab olish
+                    </a>
+                </div>
+            </div>
+
+            <div class="card shadow mb-4">
+                <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-primary">O'zbekistonda rivojlanish bosqichlari</h6></div>
+                <div class="card-body">
+                    <div class="timeline-item">
+                        <h6 class="font-weight-bold text-primary">1918-1920 yillar</h6>
+                        <p class="small text-gray-600">Turkiston umumtibbiyot komissiyasi tashkil etildi, Toshkentda birinchi tibbiyot bilim yurti ochildi[cite: 21, 22].</p>
+                    </div>
+                    <div class="timeline-item">
+                        <h6 class="font-weight-bold text-success">1931-1932 yillar</h6>
+                        <p class="small text-gray-600">Toshkent Davlat Tibbiyot Instituti shakllandi va vrachlar malakasini oshirish instituti tashkil etildi[cite: 23].</p>
+                    </div>
+                    <div class="timeline-item">
+                        <h6 class="font-weight-bold text-warning">1998-yil</h6>
+                        <p class="small text-gray-600">Oliy malakali hamshiralar tayyorlash yo‘lga qo‘yildi (Prezidentning 2107-sonli qarori)[cite: 26].</p>
+                    </div>
+                    <div class="timeline-item">
+                        <h6 class="font-weight-bold text-secondary">Hozirgi davr</h6>
+                        <p class="small text-gray-600">Tayyorlov ikki darajada: tibbiyot kollejlari va universitetlar (bakalavr/magistr)[cite: 32, 33].</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-comments mr-2"></i>Mavzu muhokamasi</h6>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <textarea class="form-control" name="comment_text" rows="3" placeholder="Savol yoki fikringizni yozing..." required></textarea>
+                        </div>
+                        <div class="text-right">
+                            <button type="submit" class="btn btn-primary btn-sm px-4 shadow-sm">Yuborish</button>
+                        </div>
+                    </form>
+                    <hr>
+                    <div class="comment-list">
+                        {% for comment in comments %}
+                            <div class="media mb-4">
+                                <img class="mr-3 rounded-circle border" src="{% if comment.user.userprofile.profile_image %}{{ comment.user.userprofile.profile_image.url }}{% else %}{% static 'img/avatar.png' %}{% endif %}" style="width: 45px; height: 45px; object-fit: cover;">
+                                <div class="media-body">
+                                    <h6 class="mt-0 mb-1 font-weight-bold">{{ comment.user.get_full_name }} <span class="small text-gray-500 font-weight-normal ml-2">{{ comment.created_at|timesince }} oldin</span></h6>
+                                    <p class="text-gray-700 small">{{ comment.text }}</p>
+                                    <a href="{% url 'courses:like_comment' comment.id %}" class="btn btn-sm {% if request.user in comment.likes.all %}btn-primary{% else %}btn-outline-primary{% endif %} py-0 px-2" style="font-size: 0.7rem;">
+                                        <i class="fas fa-thumbs-up mr-1"></i> Foydali ({{ comment.total_likes }})
+                                    </a>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock main %}
