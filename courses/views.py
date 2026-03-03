@@ -46,7 +46,7 @@ def topic_detail(request, topic_id):
 
     comments = TopicComment.objects.filter(topic_id=topic_id).order_by('-created_at')
     
-    return render(request, 'courses/topic_detail.html', {
+    return render(request, f'courses/topic_detail_{topic_id}.html', {
         'topic_id': topic_id,
         'comments': comments,
         'title': "1-MA'RUZA: Hamshiralik ishi tarixi",

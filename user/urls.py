@@ -11,6 +11,6 @@ urlpatterns = [
     
     # Authentication views
     path('login/', views.login_view, name='login'),
-    path('logout/', views.logout_view, name='logout'), # <-- NEW LOGOUT URL
+    path('logout/', views.logout_view, name='logout'),
     path('forgot-password/', views.forgot_password_view, name='forgot_password'),
 ]

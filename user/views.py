@@ -14,7 +14,7 @@ def calculate_age(dob):
 
 def index(request):
     if not request.user.is_authenticated:
-        return redirect('courses:index') # Use the correct URL name
+        return redirect('courses:index')
     
     # 1. Get the currently logged-in user and their profile
     user = request.user

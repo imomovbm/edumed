@@ -1,0 +1,228 @@
+{% extends "courses/layout.html" %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+    .timeline-item { position: relative; padding-left: 3rem; margin-bottom: 2rem; border-left: 2px solid #4e73df; }
+    .timeline-item::before {
+        content: ""; position: absolute; left: -9px; top: 0;
+        width: 16px; height: 16px; border-radius: 50%;
+        background: #4e73df; border: 3px solid #fff;
+    }
+    .badge-qadim { background-color: #0084c8; color: white; }
+    .badge-orta { background-color: #20c997; color: white; }
+    .badge-19asr { background-color: #f6c23e; color: white; }
+    .badge-20asr { background-color: #858796; color: white; }
+    
+    .infographic-box {
+        transition: transform 0.2s;
+        cursor: pointer;
+    }
+    .infographic-box:hover { transform: translateY(-5px); }
+</style>
+{% endblock extra_css %}
+
+{% block main %}
+<div class="container-fluid">
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb bg-white shadow-sm">
+        <li class="breadcrumb-item"><a href="{% url 'courses:modules' %}">Mavzular</a></li>
+        <li class="breadcrumb-item active" aria-current="page">1-Ma'ruza: Hamshiralik ishi tarixi, hamshiralik ishi namoyondalari faoliyati va roli. F.Naytingeyl, V. Xenderson hayoti va faoliyati.  Hamshiralik ishining jamiyatimizdagi vazifasi va o’rni. Oliy ma’lumotli hamshiralik ishi–ochilish tarixi va sog’liqni saqlash tizimidagi o’rni.  O’zbekiston Respublikasida hamshiralik ishi istiqbollari</li>
+      </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-lg-8">
+            
+            <div class="card shadow mb-4 border-left-primary">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="icon-circle bg-primary mr-3">
+                            <i class="fas fa-book-open text-white"></i>
+                        </div>
+                        <h4 class="m-0 font-weight-bold text-primary">Hamshiralik: Kechmishdan Kelajakka</h4>
+                    </div>
+                    <p class="text-justify text-gray-800">
+                        Hamshiralik — qadimdan kelgan insonparvarlik san'ati. Bu mavzuda siz tarixi, asosiy bosqichlari va jamiyatdagi o'rni haqida qisqa, amaliy, xotirada qoluvchi qilib o'qishingiz mumkin.
+                    </p>
+                    <blockquote class="border-left-primary p-3 bg-light font-italic text-gray-700">
+                        "Hamshira — bu nafaqat parvarishchi, balki inson hayotini saqlovchi ilmiy mutaxassis."
+                    </blockquote>
+                </div>
+            </div>
+
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-star mr-2"></i>Florence Nightingale — qahramon</h6>
+                    <span class="badge badge-secondary">1820–1910</span>
+                </div>
+                <div class="card-body">
+                    <p class="text-gray-800">Florence Nightingale Krym urushi davrida yarador askarlar uchun sharoitni yaxshiladi, o'lim ko'rsatkichlarini keskin kamaytirdi va 1860 yilda hamshiralik maktabini ochdi.</p>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item"><strong><i class="fas fa-vial mr-2 text-info"></i>Amaliy dars:</strong> Shifoxonada havo aylanishi va gigiyena — bemorning tiklanishida hal qiluvchi.</li>
+                        <li class="list-group-item"><strong><i class="fas fa-tasks mr-2 text-warning"></i>Vazifa:</strong> Kasalxonadagi oddiy nuqsonlarni topib, tezkor chora belgilash mashqi.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-graduation-cap mr-2"></i>Virginia Henderson — nazariyotchi</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-9">
+                            <p class="text-gray-800">Henderson 14 ta asosiy ehtiyojni ajratib, hamshiraning funksiyasini keng qamrovda belgiladi. U hamshirani mustaqil, bemor ehtiyojlarini qondirishga yo'naltirilgan mutaxassis sifatida ko'rdi.</p>
+                            <a href="#" class="btn btn-info btn-sm btn-icon-split shadow-sm">
+                                <span class="icon text-white-50"><i class="fas fa-list-ol"></i></span>
+                                <span class="text">14 ehtiyojni ko'rish</span>
+                            </a>
+                        </div>
+                        <div class="col-md-3 text-center d-none d-md-block">
+                             <i class="fas fa-user-md fa-5x text-gray-200"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow mb-4">
+                <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-primary">Qisqa Timeline</h6></div>
+                <div class="card-body">
+                    <div class="timeline-item">
+                        <h6 class="font-weight-bold text-primary">Qadim davr</h6>
+                        <p class="small text-gray-600">Oddiy parvarish va lozim ishlar</p>
+                    </div>
+                    <div class="timeline-item">
+                        <h6 class="font-weight-bold text-success">O'rta asr</h6>
+                        <p class="small text-gray-600">Diniy jamoalar tomonidan parvarish</p>
+                    </div>
+                    <div class="timeline-item">
+                        <h6 class="font-weight-bold text-warning">19-asr</h6>
+                        <p class="small text-gray-600">Florence Nightingale va zamonaviy hamshiralik boshlanishi</p>
+                    </div>
+                    <div class="timeline-item">
+                        <h6 class="font-weight-bold text-secondary">20-asr</h6>
+                        <p class="small text-gray-600">Nazariy va oliy ta'limning shakllanishi</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-comments mr-2"></i>Muhokama va Fikrlar</h6>
+                </div>
+                <div class="card-body">
+                    
+                    <form method="POST" class="mb-4">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <label class="small font-weight-bold" for="commentText">Fikringizni qoldiring:</label>
+                            <textarea class="form-control" name="comment_text" id="commentText" rows="3" placeholder="Savolingiz yoki fikringiz bormi?" required></textarea>
+                        </div>
+                        <div class="text-right">
+                            <button type="submit" class="btn btn-primary btn-sm px-4 shadow-sm">
+                                <i class="fas fa-paper-plane mr-1"></i> Yuborish
+                            </button>
+                        </div>
+                    </form>
+
+                    <hr>
+
+                    <div class="comment-list">
+                        {% if comments %}
+                            {% for comment in comments %}
+                                <div class="media mb-4">
+                                    <img class="mr-3 rounded-circle border shadow-sm" 
+                                        src="{% if comment.user.userprofile.profile_image %}{{ comment.user.userprofile.profile_image.url }}{% else %}{% static 'img/avatar.png' %}{% endif %}" 
+                                        alt="User" style="width: 45px; height: 45px; object-fit: cover;">
+                                    <div class="media-body">
+                                        <h6 class="mt-0 mb-1 font-weight-bold text-gray-800" style="font-size: 0.9rem;">
+                                            {{ comment.user.get_full_name|default:comment.user.username }}
+                                            <span class="small text-gray-500 font-weight-normal ml-2">{{ comment.created_at|timesince }} oldin</span>
+                                        </h6>
+                                        <p class="text-gray-700 mb-1" style="font-size: 0.85rem;">{{ comment.text }}</p>
+                                        
+                                        <a href="{% url 'courses:like_comment' comment.id %}" 
+                                        class="btn btn-sm {% if request.user in comment.likes.all %}btn-primary{% else %}btn-outline-light text-primary border-primary{% endif %} py-0 px-2" 
+                                        style="font-size: 0.75rem; border-radius: 10px;">
+                                            <i class="fas fa-thumbs-up mr-1"></i> 
+                                            Foydali {% if comment.total_likes > 0 %}({{ comment.total_likes }}){% endif %}
+                                        </a>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="text-center py-4">
+                                <i class="fas fa-comment-slash fa-2x text-gray-300 mb-2"></i>
+                                <p class="text-gray-500 small">Hali fikrlar yo'q. Birinchi bo'lib fikr qoldiring!</p>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+
+        <div class="col-lg-4">
+            
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 bg-primary">
+                    <h6 class="m-0 font-weight-bold text-white">Tez qarash</h6>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled small">
+                        <li class="mb-2"><i class="fas fa-check text-success mr-2"></i>Hamshiralik — qadimiy kasb</li>
+                        <li class="mb-2"><i class="fas fa-check text-success mr-2"></i>Florence Nightingale — gigiyena</li>
+                        <li class="mb-2"><i class="fas fa-check text-success mr-2"></i>Virginia Henderson — nazariy asos</li>
+                        <li><i class="fas fa-check text-success mr-2"></i>Oliy ma'lumot rolni kengaytiradi</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card shadow mb-4">
+                <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-gray-800">Infografika</h6></div>
+                <div class="card-body text-center">
+                    <div class="row no-gutters">
+                        <div class="col-6 mb-2"><div class="p-3 infographic-box badge-qadim rounded m-1">Qadim</div></div>
+                        <div class="col-6 mb-2"><div class="p-3 infographic-box badge-orta rounded m-1">O'rta asr</div></div>
+                        <div class="col-6"><div class="p-3 infographic-box badge-19asr rounded m-1">19-asr</div></div>
+                        <div class="col-6"><div class="p-3 infographic-box badge-20asr rounded m-1">20-asr</div></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow mb-4">
+                <div class="card-body text-center">
+                    <h6 class="font-weight-bold text-gray-800 mb-3">Audio versiya</h6>
+                    <button class="btn btn-primary btn-block mb-3">
+                        <i class="fas fa-volume-up mr-2"></i> Matnni ovozda eshiting
+                    </button>
+                    <hr>
+                    <h6 class="font-weight-bold text-gray-800 mb-2">Sahifani yuklab oling</h6>
+                    <a href="#" class="btn btn-outline-danger btn-sm">
+                        <i class="fas fa-file-pdf mr-1"></i> PDF sifatda yuklab olish
+                    </a>
+                </div>
+            </div>
+
+            <div class="card border-left-warning shadow h-100 py-2 mb-4">
+                <div class="card-body">
+                    <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Mini-test: 'Bilasizmi?'</div>
+                    <p class="small text-gray-800">Florence Nightingale qaysi urush davrida mashhur bo'ldi?</p>
+                    <div class="custom-control custom-radio small">
+                        <input type="radio" id="q1" name="quiz" class="custom-control-input">
+                        <label class="custom-control-label" for="q1">Ikkinchi jahon urushi</label>
+                    </div>
+                    <div class="custom-control custom-radio small">
+                        <input type="radio" id="q2" name="quiz" class="custom-control-input">
+                        <label class="custom-control-label" for="q2">Krym urushi</label>
+                    </div>
+                    <button class="btn btn-warning btn-sm btn-block mt-3">Javobni tekshirish</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock main %}
