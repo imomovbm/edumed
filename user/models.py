@@ -27,9 +27,8 @@ class UserProfile(models.Model):
     region = models.CharField(max_length=100, null=True, blank=True)
     otm = models.CharField(max_length=100, verbose_name="Ta'lim Muassasasi", null=True, blank=True)
     
-    # --- NEW FIELDS ---
+    # --- dates ---
     date_of_birth = models.DateField(verbose_name="Tug'ilgan sana", null=True, blank=True)
-    # automatically sets the date when the object is first created
     join_date = models.DateField(auto_now_add=True) 
 
     def __str__(self):
