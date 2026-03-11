@@ -178,18 +178,16 @@
         /* ── Question Navigator ── */
     .q-navigator {
       position: fixed;
-      right: 20px;
-      top: 50%;
-      transform: translateY(-50%);
+      left: 20px;
+      top: 70px;
       background: #fff;
       border-radius: 14px;
-      padding: 14px 10px;
+      padding: 12px;
       box-shadow: 0 4px 16px rgba(0,0,0,0.12);
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
       z-index: 99;
-      max-height: 80vh;
+      /* 5 circles × 36px + 4 gaps × 8px + 24px padding = 228px */
+      width: 228px;
+      max-height: calc(100vh - 100px);
       overflow-y: auto;
     }
 
@@ -198,28 +196,37 @@
       color: #a0aec0;
       text-align: center;
       font-weight: 600;
-      margin-bottom: 4px;
       text-transform: uppercase;
       letter-spacing: 0.5px;
+      margin-bottom: 10px;
+    }
+
+    .q-nav-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 36px);  /* exactly 5 × 36px columns */
+      gap: 8px;
     }
 
     .q-nav-btn {
-      width: 36px; height: 36px;
+      width: 36px;
+      height: 36px;
       border-radius: 50%;
       border: 2px solid #e2e8f0;
       background: #fff;
       color: #718096;
-      font-size: 0.85rem;
+      font-size: 0.82rem;
       font-weight: 700;
       cursor: pointer;
       transition: all 0.2s;
-      display: flex; align-items: center; justify-content: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
     }
     .q-nav-btn:hover    { border-color: #4e73df; color: #4e73df; }
     .q-nav-btn.answered { background: #4e73df; border-color: #4e73df; color: #fff; }
     .q-nav-btn.active   { box-shadow: 0 0 0 3px rgba(78,115,223,0.35); }
 
-    /* Hide navigator on small screens */
     @media (max-width: 1024px) { .q-navigator { display: none; } }
   </style>
 </head>
@@ -227,13 +234,16 @@
   <!-- ⑥ Question Navigator -->
   <div class="q-navigator" id="q-navigator">
     <div class="nav-title">Savollar</div>
-    {% for qq in questions %}
-    <button class="q-nav-btn" id="nav-btn-{{ forloop.counter }}"
-      onclick="scrollToQuestion({{ forloop.counter }})">
-      {{ forloop.counter }}
-    </button>
-    {% endfor %}
+    <div class="q-nav-grid">
+      {% for qq in questions %}
+      <button class="q-nav-btn" id="nav-btn-{{ forloop.counter }}"
+        onclick="scrollToQuestion({{ forloop.counter }})">
+        {{ forloop.counter }}
+      </button>
+      {% endfor %}
+    </div>
   </div>
+  
   <!-- ① Fullscreen warning -->
   <div id="fullscreen-warning">
     <i class="fas fa-expand fa-3x" style="color:#f6c23e"></i>
@@ -537,7 +547,11 @@
     }
 
     // Highlight which question is currently in view
+    let observerReady = false;
+    setTimeout(() => { observerReady = true; }, 1000);
+
     const observer = new IntersectionObserver((entries) => {
+      if (!observerReady) return;  // ← ignore initial fire
       entries.forEach(entry => {
         if (entry.isIntersecting) {
           const num = entry.target.id.replace('qcard-', '');
@@ -549,6 +563,7 @@
     }, { threshold: 0.5 });
 
     document.querySelectorAll('.question-card').forEach(card => observer.observe(card));
+
 
     // ── PROGRESS ─────────────────────────────────────────────
   function updateProgress() {
@@ -608,3 +623,6 @@
     });
   }
 </script>
+
+</body>
+</html>
