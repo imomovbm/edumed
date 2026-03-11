@@ -281,7 +281,7 @@
 
   <form id="quiz-form" method="POST" action="{% url 'courses:submit_quiz' quiz.id %}">
     {% csrf_token %}
-
+    <input type="hidden" name="quiz_id" value="{{ quiz.id }}">
     {% for qq in questions %}
     {% with q=qq.question %}
     <div class="question-card" id="qcard-{{ forloop.counter }}">
@@ -333,7 +333,6 @@
     </div>
     {% endwith %}
     {% endfor %}
-
     <div class="submit-wrap">
       <button type="button" class="submit-btn" onclick="confirmSubmit()">
         <i class="fas fa-paper-plane mr-2"></i>Testni yakunlash

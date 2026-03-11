@@ -1,0 +1,180 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Natija — {{ quiz.title }}</title>
+  <link href="{% static 'vendor/fontawesome-free/css/all.min.css' %}" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f0f4ff;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .result-card {
+      background: #fff;
+      border-radius: 20px;
+      padding: 48px 40px;
+      max-width: 520px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 8px 32px rgba(78,115,223,0.12);
+    }
+
+    /* ── Score circle ── */
+    .score-circle {
+      width: 140px; height: 140px;
+      border-radius: 50%;
+      margin: 0 auto 28px;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      font-size: 2.4rem; font-weight: 800;
+      color: #fff;
+      position: relative;
+    }
+    .score-circle .score-label {
+      font-size: 0.85rem; font-weight: 500;
+      opacity: 0.85; margin-top: 2px;
+    }
+    .score-circle.excellent { background: linear-gradient(135deg, #1cc88a, #17a673); }
+    .score-circle.good      { background: linear-gradient(135deg, #4e73df, #2e59d9); }
+    .score-circle.average   { background: linear-gradient(135deg, #f6c23e, #dda20a); }
+    .score-circle.poor      { background: linear-gradient(135deg, #e74a3b, #c0392b); }
+
+    .result-title {
+      font-size: 1.4rem; font-weight: 700;
+      color: #2d3748; margin-bottom: 8px;
+    }
+    .result-subtitle {
+      font-size: 0.95rem; color: #718096; margin-bottom: 32px;
+    }
+
+    /* ── Stats row ── */
+    .stats {
+      display: flex; gap: 12px;
+      margin-bottom: 36px;
+    }
+    .stat-box {
+      flex: 1;
+      background: #f8faff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 14px 10px;
+    }
+    .stat-box .stat-value {
+      font-size: 1.3rem; font-weight: 700;
+      color: #2d3748; margin-bottom: 4px;
+    }
+    .stat-box .stat-label {
+      font-size: 0.75rem; color: #a0aec0;
+      font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+    .stat-box.correct   .stat-value { color: #1cc88a; }
+    .stat-box.incorrect .stat-value { color: #e74a3b; }
+    .stat-box.skipped   .stat-value { color: #f6c23e; }
+
+    /* ── Buttons ── */
+    .btn-group {
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .btn {
+      padding: 13px 24px;
+      border: none; border-radius: 10px;
+      font-size: 1rem; font-weight: 600;
+      cursor: pointer; text-decoration: none;
+      display: flex; align-items: center; justify-content: center;
+      gap: 8px; transition: opacity 0.2s, transform 0.15s;
+    }
+    .btn:hover { opacity: 0.88; transform: translateY(-1px); }
+    .btn-primary  { background: #4e73df; color: #fff; }
+    .btn-success  { background: #1cc88a; color: #fff; }
+    .btn-outline  {
+      background: #fff; color: #4e73df;
+      border: 2px solid #4e73df;
+    }
+
+    .quiz-title-small {
+      font-size: 0.82rem; color: #a0aec0;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="result-card">
+
+  <!-- Score circle -->
+  {% if score >= 90 %}
+    <div class="score-circle excellent">
+  {% elif score >= 70 %}
+    <div class="score-circle good">
+  {% elif score >= 50 %}
+    <div class="score-circle average">
+  {% else %}
+    <div class="score-circle poor">
+  {% endif %}
+    {{ score|floatformat:0 }}%
+    <span class="score-label">ball</span>
+  </div>
+
+  <div class="quiz-title-small">
+    <i class="fas fa-file-alt mr-1"></i> {{ quiz.title }}
+  </div>
+
+  <!-- Title based on score -->
+  {% if score >= 90 %}
+    <div class="result-title">🎉 Ajoyib natija!</div>
+    <div class="result-subtitle">Siz testni a'lo darajada yakunladingiz.</div>
+  {% elif score >= 70 %}
+    <div class="result-title">👍 Yaxshi natija!</div>
+    <div class="result-subtitle">Siz testni muvaffaqiyatli yakunladingiz.</div>
+  {% elif score >= 50 %}
+    <div class="result-title">📚 O'rtacha natija</div>
+    <div class="result-subtitle">Mavzuni qayta ko'rib chiqishingiz tavsiya etiladi.</div>
+  {% else %}
+    <div class="result-title">😔 Natija past</div>
+    <div class="result-subtitle">Mavzuni qayta o'rganib, testni qayta topshiring.</div>
+  {% endif %}
+
+  <!-- Stats -->
+  <div class="stats">
+    <div class="stat-box correct">
+      <div class="stat-value">{{ correct_count }}</div>
+      <div class="stat-label">To'g'ri</div>
+    </div>
+    <div class="stat-box incorrect">
+      <div class="stat-value">{{ incorrect_count }}</div>
+      <div class="stat-label">Noto'g'ri</div>
+    </div>
+    <div class="stat-box skipped">
+      <div class="stat-value">0</div>
+      <div class="stat-label">O'tkazilgan</div>
+    </div>
+  </div>
+
+  <!-- Buttons -->
+  <div class="btn-group">
+    {% if quiz.topic %}
+    <a href="{% url 'courses:topic' quiz.topic.id %}" class="btn btn-primary">
+      <i class="fas fa-book-open"></i> Mavzuga qaytish
+    </a>
+    {% endif %}
+    <a href="{% url 'courses:index' %}" class="btn btn-outline">
+      <i class="fas fa-home"></i> Bosh sahifaga qaytish
+    </a>
+  </div>
+
+</div>
+
+</body>
+</html>
