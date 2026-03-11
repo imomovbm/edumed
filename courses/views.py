@@ -141,6 +141,7 @@ def submit_quiz(request, quiz_id):
             # compare users answer to correct choice if true add to score
             if int(correct_choice.pk) == int(user_choice):
                 correct_count +=1
+
         # calculate score in percentage
         number_of_questions = len(questions)
         score = (correct_count/number_of_questions)*100
@@ -158,5 +159,4 @@ def submit_quiz(request, quiz_id):
         'score': score,
         'correct_count':correct_count,
         'incorrect_count':incorrect_count,
-
     })

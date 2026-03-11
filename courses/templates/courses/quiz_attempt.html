@@ -547,10 +547,13 @@
 
     // Highlight which question is currently in view
     let observerReady = false;
-    setTimeout(() => { observerReady = true; }, 1000);
+
+    window.addEventListener('scroll', () => {
+      observerReady = true;
+    }, { once: true });
 
     const observer = new IntersectionObserver((entries) => {
-      if (!observerReady) return;  // ← ignore initial fire
+      if (!observerReady) return;
       entries.forEach(entry => {
         if (entry.isIntersecting) {
           const num = entry.target.id.replace('qcard-', '');
@@ -563,14 +566,17 @@
 
     document.querySelectorAll('.question-card').forEach(card => observer.observe(card));
 
-
+    // ── HELPER ───────────────────────────────────────────────
+    function getQuestionNames() {
+      const names = new Set();
+      document.querySelectorAll('#quiz-form [name]').forEach(el => {
+        if (el.name !== 'csrfmiddlewaretoken' && el.name !== 'quiz_id') names.add(el.name);
+      });
+      return names;
+    }
     // ── PROGRESS ─────────────────────────────────────────────
   function updateProgress() {
-    const names = new Set();
-    document.querySelectorAll('#quiz-form [name]').forEach(el => {
-      if (el.name !== 'csrfmiddlewaretoken') names.add(el.name);
-    });
-
+    const names = getQuestionNames();
     let answered = 0;
     names.forEach(name => {
       const els = document.querySelectorAll(`[name="${name}"]`);
@@ -578,20 +584,15 @@
         (el.type === 'radio' || el.type === 'checkbox') ? el.checked : el.value.trim() !== ''
       );
       if (done) answered++;
-      updateNavigatorBtn(name);  // ← add this
+      updateNavigatorBtn(name);
     });
-
     const pct = Math.round((answered / TOTAL_QUESTIONS) * 100);
     document.getElementById('progress-pct').textContent  = `${answered} / ${TOTAL_QUESTIONS}`;
     document.getElementById('progress-fill').style.width = pct + '%';
   }
 
-  // ── SUBMIT ───────────────────────────────────────────────
   function confirmSubmit() {
-    const names = new Set();
-    document.querySelectorAll('#quiz-form [name]').forEach(el => {
-      if (el.name !== 'csrfmiddlewaretoken') names.add(el.name);
-    });
+    const names = getQuestionNames();
     let unanswered = 0;
     names.forEach(name => {
       const els = document.querySelectorAll(`[name="${name}"]`);
@@ -601,12 +602,25 @@
       if (!answered) unanswered++;
     });
 
+    // ── If you want ALL answers required, block submission ──
+    if (unanswered > 0) {
+      showModal({
+        icon: '⚠️',
+        title: 'Barcha savollarga javob bering',
+        body: `Hali ${unanswered} ta savol javobsiz qoldi. Testni yakunlash uchun barcha savollarga javob bering.`,
+        buttons: [{
+          label: 'Davom etish',
+          style: 'background:#4e73df; color:#fff;',
+          onClick: null
+        }]
+      });
+      return;  // ← blocks submission entirely
+    }
+
     showModal({
-      icon: unanswered > 0 ? '⚠️' : '✅',
+      icon: '✅',
       title: 'Testni yakunlash',
-      body: unanswered > 0
-        ? `${unanswered} ta savol javobsiz qoldi. Shunga qaramay yuborasizmi?`
-        : "Barcha savollarga javob berdingiz. Testni yakunlamoqchimisiz?",
+      body: 'Barcha savollarga javob berdingiz. Testni yakunlamoqchimisiz?',
       buttons: [
         {
           label: 'Ortga',
