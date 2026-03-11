@@ -27,20 +27,18 @@ class TopicComment(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.topic_id}"
-
-class TypeQuestion(models.Model):
-    TYPE_CHOICES = [
-        ('1', 'Multiple choice'),
-        ('2', 'O\'qituvchi'),
-        ('3', 'Talaba'),
-        ('4', 'Moder'),
-    ]
-    type = models.CharField(max_length=50, choices=TYPE_CHOICES) 
-    
+  
 class Question(models.Model):
     question_text = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
-    type_question = models.ForeignKey(TypeQuestion, on_delete=models.PROTECT)
+    TYPE_CHOICES = [
+        ('mc', "Bir variantli ochiq test"),
+        ('ms', "Ko'p variantli ochiq test"),
+        ('tf', "To'g'ri va Noto'g'ri"),
+        ('sha', 'Qisqa javobli'),
+        ('es', 'Essey, yozma ish'),
+    ]
+    type = models.CharField(max_length=50, choices=TYPE_CHOICES) 
     image = models.CharField(max_length=255, null=True, blank=True)
     audio = models.CharField(max_length=255, null=True, blank=True)
     video = models.CharField(max_length=255, null=True, blank=True)
@@ -50,19 +48,14 @@ class QuestionChoice(models.Model):
     choice_text = models.TextField()
     is_correct = models.BooleanField()
 
-class QuizType(models.Model):
-    TYPE_CHOICES = [
-        ('1', 'Oraliq'),
-        ('2', 'O\'qituvchi'),
-        ('3', 'Talaba'),
-        ('4', 'Moder'),
-    ]
-    type = models.CharField(max_length=50, choices=TYPE_CHOICES)     
-
 class Quiz(models.Model):
     title = models.TextField()
     topic = models.ForeignKey(Topic, on_delete=models.SET_NULL, null=True, blank=True)
-    quiz_type = models.ForeignKey(QuizType, on_delete=models.PROTECT)
+    TYPE_CHOICES = [
+        ('1', 'Mavzuga biriktirilgan topshiriq'),
+        ('2', 'Umumiy topshiriqlar'),
+    ]
+    type = models.CharField(max_length=50, choices=TYPE_CHOICES)     
     description = models.TextField(blank=True)
 
 class QuizQuestion(models.Model):

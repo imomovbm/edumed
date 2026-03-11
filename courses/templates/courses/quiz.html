@@ -1,0 +1,66 @@
+{% extends "courses/layout.html" %}
+{% load static %}
+{% block main %}
+        <!-- Begin Page Content -->
+        <div class="container-fluid">
+
+          <!-- Page Heading -->
+          <div class="d-sm-flex align-items-center justify-content-between mb-4">
+            <h1 class="h3 mb-0 text-gray-800">Topshiriq yaratish</h1>
+            <a href="#" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm"><i class="fas fa-download fa-sm text-white-50"></i> Hisobot olish</a>
+          </div>
+
+          <!-- Content Row -->
+    <div class="row">
+
+          <!-- Content Row -->
+          <div class="row">
+            <div class="container-fluid">
+                    <div class="col-xl-12 col-lg-12">
+                                {% if messages %}
+                                    {% for message in messages %}
+                                        <div class="alert alert-{{ message.tags }}" role="alert">
+                                            {{ message }}
+                                        </div>
+                                    {% endfor %}
+                                {% endif %}
+                            <!-- Note: This form needs a method="POST" and action attribute for Django -->
+                            <form class="user" method="post" action="#">
+                                {% csrf_token %}
+                                <!-- Django CSRF token would go here: {% csrf_token %} -->
+                                <div class="form-group">
+                                        <input type="text" class="form-control form-control-user" id="exampleFirstName" placeholder="Savol" name="first_name">
+                                </div>
+                                <div class="form-group">
+                                        <input type="radio" name="first_name"> Variant 1
+                                </div>
+                                <div class="form-group">
+                                        <input type="radio" name="first_name"> Variant 1
+                                </div>
+                                <div class="form-group">
+                                        <input type="radio" name="first_name"> Variant 1
+                                </div>
+                                <div class="form-group">
+                                        <input type="radio" name="first_name"> Variant 1
+                                </div>
+                                <button type="submit" class="btn btn-success btn-user btn-block">
+                                    Saqlash
+                                </button>
+                                <a href="#" class="btn btn-google btn-user btn-block">
+                                    <i class="fab fa-exit fa-fw"></i> Orqaga qaytish
+                                </a>
+                            </form>
+                    </div>
+            </div>
+          </div>
+
+        </div>
+        <!-- /.container-fluid -->
+         
+{% endblock main %}
+
+
+{% block extra_js %}
+
+  
+{% endblock extra_js %}

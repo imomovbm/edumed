@@ -62,3 +62,16 @@ def like_comment(request, comment_id):
     
     # Redirect back to the same page
     return redirect(request.META.get('HTTP_REFERER', 'courses:index'))
+
+
+def quiz_view(request):
+    user_profile = None
+    if request.user.is_authenticated:
+        try:
+            user_profile = request.user.userprofile
+        except:
+            pass
+
+    return render(request, "courses/quiz.html", {
+        "profile": user_profile,
+    })
