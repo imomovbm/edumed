@@ -1,8 +1,11 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from .models import TopicComment
+from .models import TopicComment, Quiz, QuizQuestion
 from django.contrib.auth.models import User
+import json
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
 
 # Create your views here.
 def index(request):
@@ -48,6 +51,7 @@ def topic_detail(request, topic_id):
     
     return render(request, f'courses/topic_detail_{topic_id}.html', {
         'topic_id': topic_id,
+        'quiz_id': topic_id,
         'comments': comments,
         'title': "1-MA'RUZA: Hamshiralik ishi tarixi",
     })
@@ -64,7 +68,7 @@ def like_comment(request, comment_id):
     return redirect(request.META.get('HTTP_REFERER', 'courses:index'))
 
 
-def quiz_view(request):
+def create_quiz_view(request):
     user_profile = None
     if request.user.is_authenticated:
         try:
@@ -73,5 +77,39 @@ def quiz_view(request):
             pass
 
     return render(request, "courses/quiz.html", {
+        "profile": user_profile,
+    })
+
+def quiz_attempt(request, quiz_id):
+    user_profile = None
+    if request.user.is_authenticated:
+        try:
+            user_profile = request.user.userprofile
+        except:
+            pass
+    quiz = get_object_or_404(Quiz, pk=quiz_id)
+    questions = QuizQuestion.objects.filter(quiz=quiz).order_by('order').select_related('question')
+    return render(request, 'courses/quiz_attempt.html', {
+        "profile": user_profile,
+        'quiz': quiz,
+        'questions': questions,
+        'quiz_duration': 15,  # minutes
+    })
+
+@require_POST
+def log_violation(request):
+    # Save to session or a Violation model if you want to track it
+    data = json.loads(request.body)
+    # e.g. ViolationLog.objects.create(user=request.user, quiz_id=data['quiz_id'], reason=data['reason'])
+    return JsonResponse({'ok': True})
+
+def submit_quiz(request, quiz_id):
+    user_profile = None
+    if request.user.is_authenticated:
+        try:
+            user_profile = request.user.userprofile
+        except:
+            pass
+    return render(request, 'courses/index.html', {
         "profile": user_profile,
     })

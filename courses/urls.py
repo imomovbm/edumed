@@ -11,5 +11,8 @@ urlpatterns = [
     path("comment/<int:comment_id>/like/", views.like_comment, name="like_comment"),
     
     # admin panel
-    path("quiz/", views.quiz_view, name="admin_quiz"),
+    path("create-quiz/", views.create_quiz_view, name="admin_quiz"),
+    path('quiz/<int:quiz_id>/', views.quiz_attempt, name='quiz_attempt'),
+    path('quiz/violation/', views.log_violation, name='log_violation'),
+    path('quiz/submit/<int:quiz_id>', views.submit_quiz, name='submit_quiz'),
 ]

@@ -157,13 +157,13 @@
                         </div>
                         <div class="custom-control custom-radio small">
                             <input type="radio" id="ans2" name="quiz" class="custom-control-input" checked>
-                            <label class="custom-control-label" for="ans2">B) "Chiroq tutgan ayol" ✅</label>
+                            <label class="custom-control-label" for="ans2">B) "Chiroq tutgan ayol"</label>
                         </div>
                         <div class="custom-control custom-radio small">
                             <input type="radio" id="ans3" name="quiz" class="custom-control-input">
                             <label class="custom-control-label" for="ans3">C) "Sog'liq posboni"</label>
                         </div>
-                        <button type="button" class="btn btn-warning btn-sm btn-block mt-3 shadow-sm">Tekshirish</button>
+                        <button type="button" class="btn btn-warning btn-sm btn-block mt-3 shadow-sm" data-toggle="modal" data-target="#quiz_start">Tekshirish</button>
                     </form>
                 </div>
             </div>
@@ -241,5 +241,24 @@
             </div>
         </div>
     </div>
+</div>
+
+<!-- block of modal to start quiz --> 
+<div class="modal fade" id="quiz_start" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="exampleModalLabel">Ushbu mavzu uchun testlarni boshlashni xoxlaysizmi?</h5>
+        <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">×</span>
+        </button>
+      </div>
+      <div class="modal-body"> <i class="fas fa-desktop mr-1"></i> Ushbu test sizning progressingizda saqlanadi</div>
+      <div class="modal-footer">
+          <a class="btn btn-success" href="{% url 'courses:quiz_attempt' quiz_id %}">Boshlash</a>
+          <button class="btn btn-danger" type="button" data-dismiss="modal">Ortga</button>
+      </div>    
+    </div>
+  </div>
 </div>
 {% endblock main %}

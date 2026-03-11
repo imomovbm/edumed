@@ -1,0 +1,610 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test — {{ quiz.title }}</title>
+  <link href="{% static 'vendor/fontawesome-free/css/all.min.css' %}" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f0f4ff;
+      min-height: 100vh;
+      user-select: none;           /* disable text selection */
+      -webkit-user-select: none;
+    }
+
+    /* ── Fullscreen warning overlay ── */
+    #fullscreen-warning {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.92);
+      z-index: 9999;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      text-align: center;
+      gap: 16px;
+    }
+    #fullscreen-warning.show { display: flex; }
+    #fullscreen-warning h2 { font-size: 1.8rem; color: #f6c23e; }
+    #fullscreen-warning p  { font-size: 1rem; opacity: 0.85; }
+    #fullscreen-warning button {
+      margin-top: 12px;
+      padding: 10px 28px;
+      background: #4e73df; color: #fff;
+      border: none; border-radius: 8px;
+      font-size: 1rem; cursor: pointer;
+    }
+
+    /* ── Top bar ── */
+    .quiz-topbar {
+      position: sticky; top: 0; z-index: 100;
+      background: #4e73df;
+      color: #fff;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 28px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+    .quiz-topbar .title { font-size: 1.1rem; font-weight: 600; }
+    .quiz-topbar .timer {
+      display: flex; align-items: center; gap: 8px;
+      background: rgba(255,255,255,0.15);
+      padding: 6px 16px; border-radius: 20px;
+      font-size: 1.1rem; font-weight: 700;
+    }
+    .quiz-topbar .timer.danger { background: #e74a3b; animation: pulse 1s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.6} }
+
+    /* ── Main layout ── */
+    .quiz-container {
+      max-width: 780px;
+      margin: 32px auto;
+      padding: 0 16px 60px;
+    }
+
+    /* ── Question card ── */
+    .question-card {
+      background: #fff;
+      border-radius: 14px;
+      padding: 28px 32px;
+      margin-bottom: 24px;
+      box-shadow: 0 2px 12px rgba(78,115,223,0.08);
+    }
+    .question-header {
+      display: flex; align-items: flex-start; gap: 14px;
+      margin-bottom: 20px;
+    }
+    .q-number {
+      min-width: 36px; height: 36px;
+      background: #4e73df; color: #fff;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 0.9rem;
+      flex-shrink: 0;
+    }
+    .q-text { font-size: 1.05rem; font-weight: 600; color: #2d3748; line-height: 1.5; }
+
+    /* ── Choices ── */
+    .choices { display: flex; flex-direction: column; gap: 10px; }
+
+    .choice-label {
+      display: flex; align-items: center; gap: 14px;
+      padding: 13px 18px;
+      border: 2px solid #e2e8f0;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.18s;
+      font-size: 0.97rem;
+      color: #4a5568;
+      position: relative;
+    }
+    .choice-label:hover { border-color: #4e73df; background: #f0f4ff; }
+
+    /* Hide native radio */
+    .choice-label input[type="radio"],
+    .choice-label input[type="checkbox"] { display: none; }
+
+    /* Custom circle */
+    .choice-label .custom-radio {
+      width: 22px; height: 22px; flex-shrink: 0;
+      border: 2px solid #cbd5e0; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.18s;
+    }
+    .choice-label input:checked ~ .choice-text { color: #2b6cb0; font-weight: 600; }
+    .choice-label:has(input:checked) {
+      border-color: #4e73df;
+      background: #ebf4ff;
+    }
+    .choice-label:has(input:checked) .custom-radio {
+      background: #4e73df; border-color: #4e73df;
+    }
+    .choice-label:has(input:checked) .custom-radio::after {
+      content: ''; width: 8px; height: 8px;
+      background: #fff; border-radius: 50%;
+    }
+
+    /* Text answer */
+    .text-answer {
+      width: 100%; padding: 12px 16px;
+      border: 2px solid #e2e8f0; border-radius: 10px;
+      font-size: 0.97rem; resize: vertical;
+      outline: none; transition: border 0.2s;
+    }
+    .text-answer:focus { border-color: #4e73df; }
+
+    /* ── Progress bar ── */
+    .progress-wrap { margin-bottom: 24px; }
+    .progress-wrap .label {
+      display: flex; justify-content: space-between;
+      font-size: 0.85rem; color: #718096; margin-bottom: 6px;
+    }
+    .progress-bar-bg {
+      height: 8px; background: #e2e8f0; border-radius: 999px; overflow: hidden;
+    }
+    .progress-bar-fill {
+      height: 100%; background: #4e73df; border-radius: 999px;
+      transition: width 0.3s;
+    }
+
+    /* ── Submit button ── */
+    .submit-wrap { text-align: center; margin-top: 8px; }
+    .submit-btn {
+      padding: 13px 48px;
+      background: #1cc88a; color: #fff;
+      border: none; border-radius: 10px;
+      font-size: 1.05rem; font-weight: 700;
+      cursor: pointer; transition: background 0.2s;
+    }
+    .submit-btn:hover { background: #17a673; }
+
+    /* ── Violation toast ── */
+    #violation-toast {
+      position: fixed; top: 70px; right: 20px;
+      background: #e74a3b; color: #fff;
+      padding: 12px 20px; border-radius: 10px;
+      font-size: 0.9rem; font-weight: 600;
+      z-index: 9998; opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+    }
+    #violation-toast.show { opacity: 1; }
+
+        /* ── Question Navigator ── */
+    .q-navigator {
+      position: fixed;
+      right: 20px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: #fff;
+      border-radius: 14px;
+      padding: 14px 10px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 99;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+
+    .q-navigator .nav-title {
+      font-size: 0.7rem;
+      color: #a0aec0;
+      text-align: center;
+      font-weight: 600;
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .q-nav-btn {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      border: 2px solid #e2e8f0;
+      background: #fff;
+      color: #718096;
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .q-nav-btn:hover    { border-color: #4e73df; color: #4e73df; }
+    .q-nav-btn.answered { background: #4e73df; border-color: #4e73df; color: #fff; }
+    .q-nav-btn.active   { box-shadow: 0 0 0 3px rgba(78,115,223,0.35); }
+
+    /* Hide navigator on small screens */
+    @media (max-width: 1024px) { .q-navigator { display: none; } }
+  </style>
+</head>
+<body>
+  <!-- ⑥ Question Navigator -->
+  <div class="q-navigator" id="q-navigator">
+    <div class="nav-title">Savollar</div>
+    {% for qq in questions %}
+    <button class="q-nav-btn" id="nav-btn-{{ forloop.counter }}"
+      onclick="scrollToQuestion({{ forloop.counter }})">
+      {{ forloop.counter }}
+    </button>
+    {% endfor %}
+  </div>
+  <!-- ① Fullscreen warning -->
+  <div id="fullscreen-warning">
+    <i class="fas fa-expand fa-3x" style="color:#f6c23e"></i>
+    <h2>To'liq ekran rejimi talab qilinadi</h2>
+    <p>Test davomida brauzer to'liq ekranda bo'lishi shart.<br>Qoidabuzarlik qayd etiladi.</p>
+    <button onclick="enterFullscreen()">
+      <i class="fas fa-expand"></i> To'liq ekranga o'tish
+    </button>
+  </div>
+
+  <!-- ② Violation toast -->
+  <div id="violation-toast"></div>
+
+  <!-- ③ Top bar -->
+  <div class="quiz-topbar">
+    <div class="title"><i class="fas fa-pen-alt mr-2"></i>{{ quiz.title }}</div>
+    <div class="timer" id="timer">
+      <i class="fas fa-clock"></i>
+      <span id="time-display">15:00</span>
+    </div>
+  </div>
+
+<!-- ④ Quiz body -->
+<div class="quiz-container">
+
+  <div class="progress-wrap">
+    <div class="label">
+      <span>Javob berilgan savollar</span>
+      <span id="progress-pct">0 / {{ questions|length }}</span>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" id="progress-fill" style="width:0%"></div>
+    </div>
+  </div>
+
+  <form id="quiz-form" method="POST" action="{% url 'courses:submit_quiz' quiz.id %}">
+    {% csrf_token %}
+
+    {% for qq in questions %}
+    {% with q=qq.question %}
+    <div class="question-card" id="qcard-{{ forloop.counter }}">
+      <div class="question-header">
+        <div class="q-number">{{ forloop.counter }}</div>
+        <div class="q-text">{{ q.question_text }}</div>
+      </div>
+
+      <div class="choices">
+        {% if q.type == 'mc' %}
+          {% for choice in q.questionchoice_set.all %}
+          <label class="choice-label">
+            <input type="radio" name="q_{{ q.id }}" value="{{ choice.id }}" onchange="updateProgress()">
+            <span class="custom-radio"></span>
+            <span class="choice-text">{{ choice.choice_text }}</span>
+          </label>
+          {% endfor %}
+
+        {% elif q.type == 'ms' %}
+          {% for choice in q.questionchoice_set.all %}
+          <label class="choice-label">
+            <input type="checkbox" name="q_{{ q.id }}" value="{{ choice.id }}" onchange="updateProgress()">
+            <span class="custom-radio" style="border-radius:4px"></span>
+            <span class="choice-text">{{ choice.choice_text }}</span>
+          </label>
+          {% endfor %}
+
+        {% elif q.type == 'tf' %}
+          <label class="choice-label">
+            <input type="radio" name="q_{{ q.id }}" value="true" onchange="updateProgress()">
+            <span class="custom-radio"></span>
+            <span class="choice-text">To'g'ri</span>
+          </label>
+          <label class="choice-label">
+            <input type="radio" name="q_{{ q.id }}" value="false" onchange="updateProgress()">
+            <span class="custom-radio"></span>
+            <span class="choice-text">Noto'g'ri</span>
+          </label>
+
+        {% elif q.type == 'sha' %}
+          <textarea class="text-answer" name="q_{{ q.id }}" rows="3"
+            placeholder="Javobingizni yozing..." oninput="updateProgress()"></textarea>
+
+        {% elif q.type == 'es' %}
+          <textarea class="text-answer" name="q_{{ q.id }}" rows="6"
+            placeholder="Kengaytirilgan javob yozing..." oninput="updateProgress()"></textarea>
+        {% endif %}
+      </div>
+    </div>
+    {% endwith %}
+    {% endfor %}
+
+    <div class="submit-wrap">
+      <button type="button" class="submit-btn" onclick="confirmSubmit()">
+        <i class="fas fa-paper-plane mr-2"></i>Testni yakunlash
+      </button>
+    </div>
+  </form>
+</div>
+
+<!-- ⑤ Custom Modal -->
+<div id="custom-modal" style="
+  display:none; position:fixed; inset:0; z-index:10000;
+  background:rgba(0,0,0,0.5);
+  align-items:center; justify-content:center;">
+  <div style="
+    background:#fff; border-radius:14px;
+    padding:32px; max-width:420px; width:90%;
+    text-align:center; box-shadow:0 8px 32px rgba(0,0,0,0.2);">
+    <div id="modal-icon" style="font-size:2.5rem; margin-bottom:12px"></div>
+    <h5 id="modal-title" style="font-size:1.2rem; font-weight:700; color:#2d3748; margin-bottom:8px"></h5>
+    <p id="modal-body" style="color:#718096; font-size:0.95rem; margin-bottom:24px"></p>
+    <div id="modal-buttons" style="display:flex; gap:10px; justify-content:center;"></div>
+  </div>
+</div>
+
+<script>
+  const TOTAL_QUESTIONS = {{ questions|length }};
+  const TIMER_MINUTES   = {{ quiz_duration|default:45 }};
+  let violations = 0;
+  const MAX_VIOLATIONS = 3;
+  let isSubmitting = false;  // ← prevents false violations on submit
+
+  // ── MODAL ────────────────────────────────────────────────
+  function showModal({ icon, title, body, buttons }) {
+    document.getElementById('modal-icon').innerHTML  = icon  || '';
+    document.getElementById('modal-title').textContent = title || '';
+    document.getElementById('modal-body').textContent  = body  || '';
+
+    const btnContainer = document.getElementById('modal-buttons');
+    btnContainer.innerHTML = '';
+    buttons.forEach(({ label, style, onClick }) => {
+      const btn = document.createElement('button');
+      btn.textContent = label;
+      btn.style.cssText = `padding:10px 24px; border:none; border-radius:8px; 
+        font-size:0.95rem; font-weight:600; cursor:pointer; ${style}`;
+      btn.onclick = () => {
+        document.getElementById('custom-modal').style.display = 'none';
+        onClick && onClick();
+      };
+      btnContainer.appendChild(btn);
+    });
+
+    document.getElementById('custom-modal').style.display = 'flex';
+  }
+
+  function closeModal() {
+    document.getElementById('custom-modal').style.display = 'none';
+  }
+
+  // ── FULLSCREEN ───────────────────────────────────────────
+  function enterFullscreen() {
+    const el = document.documentElement;
+    if (el.requestFullscreen)            el.requestFullscreen();
+    else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+    else if (el.mozRequestFullScreen)    el.mozRequestFullScreen();
+  }
+
+  function isFullscreen() {
+    return !!(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement);
+  }
+
+  function checkFullscreen() {
+    const warning = document.getElementById('fullscreen-warning');
+    if (!isFullscreen()) {
+      warning.classList.add('show');
+    } else {
+      warning.classList.remove('show');
+    }
+  }
+
+  document.addEventListener('fullscreenchange',       checkFullscreen);
+  document.addEventListener('webkitfullscreenchange', checkFullscreen);
+  document.addEventListener('mozfullscreenchange',    checkFullscreen);
+
+  window.addEventListener('load', () => {
+    document.getElementById('fullscreen-warning').classList.add('show');
+    setTimeout(enterFullscreen, 500);
+  });
+
+  // ── ANTI-CHEAT ───────────────────────────────────────────
+  function showToast(msg) {
+    const t = document.getElementById('violation-toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+  }
+
+  function logViolation(reason) {
+    if (isSubmitting) return;  // ← ignore violations during submit
+    violations++;
+    showToast(`⚠️ Qoidabuzarlik (${violations}/${MAX_VIOLATIONS}): ${reason}`);
+
+    fetch("{% url 'courses:log_violation' %}", {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+      body: JSON.stringify({ quiz_id: {{ quiz.id }}, reason, count: violations })
+    });
+
+    if (violations >= MAX_VIOLATIONS) {
+      showModal({
+        icon: '🚫',
+        title: 'Test yakunlandi',
+        body: 'Siz test qoidalarini 3 marta buzganligi sababli test avtomatik yakunlanmoqda.',
+        buttons: [{
+          label: 'Tasdiqlash',
+          style: 'background:#e74a3b; color:#fff;',
+          onClick: () => { isSubmitting = true; document.getElementById('quiz-form').submit(); }
+        }]
+      });
+    }
+  }
+
+  document.addEventListener('contextmenu', e => {
+    e.preventDefault();
+    showToast('⚠️ Nusxa olish taqiqlangan!');
+  });
+
+  document.addEventListener('copy', e => { e.preventDefault(); logViolation('Nusxa olishga urinish'); });
+  document.addEventListener('cut',  e => { e.preventDefault(); });
+
+  document.addEventListener('keydown', e => {
+    const blocked = [
+      e.key === 'PrintScreen',
+      e.key === 'F12',
+      e.ctrlKey && ['s','u','a','c','p'].includes(e.key.toLowerCase()),
+      e.ctrlKey && e.shiftKey && ['i','j','c'].includes(e.key.toLowerCase()),
+      e.altKey && e.key === 'Tab',
+    ];
+    if (blocked.some(Boolean)) {
+      e.preventDefault();
+      logViolation(`Taqiqlangan tugma: ${e.key}`);
+    }
+  });
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) logViolation("Boshqa oynaga o'tish");
+  });
+
+  window.addEventListener('blur', () => {
+    if (isSubmitting) return;
+    logViolation("Brauzerdan chiqish");
+  });
+
+  // ── TIMER ────────────────────────────────────────────────
+  let remaining = TIMER_MINUTES * 60;
+
+  function formatTime(s) {
+    const m = Math.floor(s / 60).toString().padStart(2,'0');
+    const sec = (s % 60).toString().padStart(2,'0');
+    return `${m}:${sec}`;
+  }
+
+  const timerEl  = document.getElementById('timer');
+  const timeDisp = document.getElementById('time-display');
+
+  const timerInterval = setInterval(() => {
+    remaining--;
+    timeDisp.textContent = formatTime(remaining);
+    if (remaining <= 300) timerEl.classList.add('danger');
+    if (remaining <= 0) {
+      clearInterval(timerInterval);
+      showModal({
+        icon: '⏰',
+        title: 'Vaqt tugadi!',
+        body: 'Test vaqti tugadi. Javoblaringiz avtomatik yuborilmoqda.',
+        buttons: [{
+          label: 'OK',
+          style: 'background:#4e73df; color:#fff;',
+          onClick: () => { isSubmitting = true; document.getElementById('quiz-form').submit(); }
+        }]
+      });
+    }
+  }, 1000);
+
+
+      // ── QUESTION NAVIGATOR ───────────────────────────────────
+    function scrollToQuestion(num) {
+      // Scroll to card
+      const card = document.getElementById(`qcard-${num}`);
+      if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+      // Highlight active button
+      document.querySelectorAll('.q-nav-btn').forEach(b => b.classList.remove('active'));
+      const btn = document.getElementById(`nav-btn-${num}`);
+      if (btn) btn.classList.add('active');
+    }
+
+    // Highlight navigator button when question is answered
+    function updateNavigatorBtn(name) {
+      // name is like "q_5" — find which question number this is
+      const card = document.querySelector(`[name="${name}"]`)?.closest('.question-card');
+      if (!card) return;
+      const num = card.id.replace('qcard-', '');
+      const btn = document.getElementById(`nav-btn-${num}`);
+      if (!btn) return;
+
+      const els = document.querySelectorAll(`[name="${name}"]`);
+      const answered = Array.from(els).some(el =>
+        (el.type === 'radio' || el.type === 'checkbox') ? el.checked : el.value.trim() !== ''
+      );
+      btn.classList.toggle('answered', answered);
+    }
+
+    // Highlight which question is currently in view
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const num = entry.target.id.replace('qcard-', '');
+          document.querySelectorAll('.q-nav-btn').forEach(b => b.classList.remove('active'));
+          const btn = document.getElementById(`nav-btn-${num}`);
+          if (btn) btn.classList.add('active');
+        }
+      });
+    }, { threshold: 0.5 });
+
+    document.querySelectorAll('.question-card').forEach(card => observer.observe(card));
+
+    // ── PROGRESS ─────────────────────────────────────────────
+  function updateProgress() {
+    const names = new Set();
+    document.querySelectorAll('#quiz-form [name]').forEach(el => {
+      if (el.name !== 'csrfmiddlewaretoken') names.add(el.name);
+    });
+
+    let answered = 0;
+    names.forEach(name => {
+      const els = document.querySelectorAll(`[name="${name}"]`);
+      const done = Array.from(els).some(el =>
+        (el.type === 'radio' || el.type === 'checkbox') ? el.checked : el.value.trim() !== ''
+      );
+      if (done) answered++;
+      updateNavigatorBtn(name);  // ← add this
+    });
+
+    const pct = Math.round((answered / TOTAL_QUESTIONS) * 100);
+    document.getElementById('progress-pct').textContent  = `${answered} / ${TOTAL_QUESTIONS}`;
+    document.getElementById('progress-fill').style.width = pct + '%';
+  }
+
+  // ── SUBMIT ───────────────────────────────────────────────
+  function confirmSubmit() {
+    const names = new Set();
+    document.querySelectorAll('#quiz-form [name]').forEach(el => {
+      if (el.name !== 'csrfmiddlewaretoken') names.add(el.name);
+    });
+    let unanswered = 0;
+    names.forEach(name => {
+      const els = document.querySelectorAll(`[name="${name}"]`);
+      const answered = Array.from(els).some(el =>
+        (el.type === 'radio' || el.type === 'checkbox') ? el.checked : el.value.trim() !== ''
+      );
+      if (!answered) unanswered++;
+    });
+
+    showModal({
+      icon: unanswered > 0 ? '⚠️' : '✅',
+      title: 'Testni yakunlash',
+      body: unanswered > 0
+        ? `${unanswered} ta savol javobsiz qoldi. Shunga qaramay yuborasizmi?`
+        : "Barcha savollarga javob berdingiz. Testni yakunlamoqchimisiz?",
+      buttons: [
+        {
+          label: 'Ortga',
+          style: 'background:#e2e8f0; color:#4a5568;',
+          onClick: null
+        },
+        {
+          label: 'Yuborish',
+          style: 'background:#1cc88a; color:#fff;',
+          onClick: () => { isSubmitting = true; document.getElementById('quiz-form').submit(); }
+        }
+      ]
+    });
+  }
+</script>
