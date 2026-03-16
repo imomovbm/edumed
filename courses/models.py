@@ -67,6 +67,9 @@ class Response(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE)
     score = models.FloatField()
+    correct_count = models.IntegerField(default=0)
+    incorrect_count = models.IntegerField(default=0)
+    skipped_count = models.IntegerField(default=0)
     created_date_time = models.DateTimeField(auto_now_add=True)
 
 class ResponseDetails(models.Model):

@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from .models import TopicComment, Quiz, QuizQuestion, Response, Question, QuestionChoice
+from .models import TopicComment, Quiz, QuizQuestion, Response, ResponseDetails, QuestionChoice
 from django.contrib.auth.models import User
 import json
 from django.http import JsonResponse
@@ -107,56 +107,77 @@ def log_violation(request):
 @require_POST
 def submit_quiz(request, quiz_id):
     # check if there is a actual user, if not redirect to index
+    try:
+        if request.user.is_authenticated:
+            user_profile = request.user.userprofile
+    except:
+        return redirect('courses:index')
+    
+    # take the quiz_id and its object from db
+    quiz = get_object_or_404(Quiz, pk=quiz_id)
+    response = Response.objects.create(
+        user=user_profile.user,
+        quiz=quiz,
+        score = 0,
+    )
+    # now take all the questions related or linked to this quiz
+    questions = QuizQuestion.objects.filter(quiz=quiz).select_related('question')
+    # initialize score, from 0 to calculate overall
+    correct_count = 0
+    incorrect_count = 0
+    skipped_count = 0
+    # debug for checking number of questions in quiz
+    # print(f'quiz question amount: {len(questions)}')
+
+    # now for loop to iterate each question
+    for qq in questions:
+        # qq is only one instance of QuizQestion
+       # we need question of that instance 
+        q = qq.question
+        # take users input from POST (q = one question, we take id of that question)
+        user_choice = request.POST.get(f'q_{q.pk}')
+        # if user is not selected anything
+        if not user_choice:
+            skipped_count +=1
+            ResponseDetails.objects.create(response=response, question=q)
+        else:
+            # take this questions correct choice
+            correct_choice = QuestionChoice.objects.filter(pk = user_choice, question=q).first()    
+            # check if there is actually users choice and is his choice correct. If there is not actual user choice mark it as incorrect
+            if correct_choice and correct_choice.is_correct:
+                print(correct_choice.is_correct)
+                correct_count +=1
+                ResponseDetails.objects.create(response=response, question=q, question_choice = correct_choice)
+            else:
+                incorrect_count +=1
+
+    # calculate score in percentage
+    number_of_questions = len(questions)
+    score = round((correct_count/number_of_questions)*100,1) if number_of_questions > 0 else 0
+    # save to db score and quiz response
+    response.score = score
+    response.correct_count = correct_count
+    response.incorrect_count = incorrect_count
+    response.skipped_count = skipped_count
+    response.save()
+    return redirect('courses:score_view', response_id=response.pk)
+
+def score_view(request, response_id):
+    response = get_object_or_404(Response, pk=response_id, user=request.user)
+    quiz = response.quiz
+
     user_profile = None
     if request.user.is_authenticated:
         try:
             user_profile = request.user.userprofile
         except:
-            return redirect('courses:index')
-    
-    # check if there is a submitted quiz POST
-    if request.method == 'POST':
-        # take the quiz_id and its object from db
-        quiz_id = request.POST.get('quiz_id')
-        quiz = get_object_or_404(Quiz, pk=quiz_id)
-        # if there is no quiz object just return user to index page
-        if not quiz:
-            return redirect('courses:index')
-        
-        # now take all the questions related or linked to this quiz
-        questions = QuizQuestion.objects.filter(quiz=quiz).select_related('question')
-        # initialize score, from 0 to calculate overall
-        correct_count = 0
-        # debug for checking number of questions in quiz
-        # print(f'quiz question amount: {len(questions)}')
+            pass
 
-        # now for loop to iterate each question
-        for question in questions:
-            # take users input from POST
-            user_choice = request.POST.get(f'q_{question.pk}')
-            # take this questions correct choice
-            question = get_object_or_404(Question, pk=question.pk)
-            correct_choice = QuestionChoice.objects.filter(question=question, is_correct = True).first()
-            
-            # compare users answer to correct choice if true add to score
-            if int(correct_choice.pk) == int(user_choice):
-                correct_count +=1
-
-        # calculate score in percentage
-        number_of_questions = len(questions)
-        score = (correct_count/number_of_questions)*100
-        # save to db score and quiz response
-        response = Response.objects.create(
-            user=user_profile.user,
-            quiz=quiz,
-            score = round(score,2),
-        ) 
-        incorrect_count = number_of_questions - correct_count
-
-    return render(request, 'courses/quiz_response.html', {
-        "profile": user_profile,
+    return render(request, 'courses/quiz_result.html', {
+        'profile': user_profile,
         'quiz': quiz,
-        'score': score,
-        'correct_count':correct_count,
-        'incorrect_count':incorrect_count,
+        'score': response.score,
+        'correct_count': response.correct_count,
+        'incorrect_count': response.incorrect_count,
+        'skipped_count': response.skipped_count,
     })
