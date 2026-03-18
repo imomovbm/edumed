@@ -92,7 +92,7 @@ def register_view(request):
             return render(request, "user/register.html")
 
         # 4. Email existence check (using filter and exists is generally preferred)
-        if User.objects.filter(email=email).exists():
+        if User.objects.filter(email=email.lower()).exists():
             messages.error(request, "Bu email avval ro'yxatdan o'tgan.")
             return render(request, "user/register.html")
         
@@ -108,8 +108,8 @@ def register_view(request):
         # 6. Create the built-in Django User
         try:
             user = User.objects.create_user(
-                username=email,
-                email=email,
+                username=email.lower(),
+                email=email.lower(),
                 password=password,
                 first_name=first_name,
                 last_name=last_name
@@ -154,12 +154,9 @@ def login_view(request):
         password = request.POST.get('password')
         remember_me = request.POST.get('remember_me')
         
-        username_to_authenticate = None
-        user = None
-
         try:
             # FIX: Find the user by email (case-insensitive)
-            user_by_email = User.objects.get(email__iexact=submitted_email)
+            user_by_email = User.objects.get(email=submitted_email.lower())
             # Use the user's username (which is the email) for the authenticate function
             username_to_authenticate = user_by_email.username
             
@@ -172,7 +169,8 @@ def login_view(request):
             
         except User.DoesNotExist:
             # If no user found with that email, 'user' remains None, which triggers the error message below
-            redirect('user:index') 
+            messages.error(request, "Bunday email mavjud emas")
+            return render(request, "user/login.html")
         
         # 4. Check authentication result
         if user is not None:

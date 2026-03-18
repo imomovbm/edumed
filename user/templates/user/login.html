@@ -30,6 +30,37 @@
 </head>
 
 <body class="bg-gradient-primary">
+  
+<!-- ── Django Messages ── -->
+{% if messages %}
+<div id="messages-container" style="position:fixed; top:20px; right:20px; z-index:9999; display:flex; flex-direction:column; gap:8px; max-width:360px;">
+  {% for message in messages %}
+  <div class="alert-toast alert-{{ message.tags }}" style="
+    display:flex; align-items:flex-start; justify-content:space-between; gap:12px;
+    padding:14px 16px; border-radius:10px; box-shadow:0 4px 16px rgba(0,0,0,0.12);
+    font-size:0.9rem; font-weight:500; animation: slideIn 0.3s ease;
+    {% if message.tags == 'success' %}background:#d4f5e9; color:#1a7a56; border-left:4px solid #1cc88a;
+    {% elif message.tags == 'error' %}background:#fde8e6; color:#a02020; border-left:4px solid #e74a3b;
+    {% elif message.tags == 'warning' %}background:#fef9e7; color:#8a6200; border-left:4px solid #f6c23e;
+    {% else %}background:#ebf4ff; color:#2b4fa0; border-left:4px solid #4e73df;{% endif %}
+  ">
+    <div style="display:flex; align-items:center; gap:8px;">
+      {% if message.tags == 'success' %}<i class="fas fa-check-circle"></i>
+      {% elif message.tags == 'error' %}<i class="fas fa-times-circle"></i>
+      {% elif message.tags == 'warning' %}<i class="fas fa-exclamation-triangle"></i>
+      {% else %}<i class="fas fa-info-circle"></i>{% endif %}
+      <span>{{ message }}</span>
+    </div>
+    <button onclick="this.parentElement.remove()" style="
+      background:none; border:none; cursor:pointer; font-size:1rem;
+      opacity:0.6; padding:0; line-height:1; color:inherit;">
+      <i class="fas fa-times"></i>
+    </button>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
 
   <div class="container">
 
@@ -66,14 +97,6 @@
                   <div class="text-center">
                     <h1 class="h4 text-gray-900 mb-4">Qaytganingizdan xursandmiz!</h1>
                   </div>
-                  
-                  {% if messages %}
-                      {% for message in messages %}
-                          <div class="alert alert-{{ message.tags }} text-center" role="alert">
-                              {{ message }}
-                          </div>
-                      {% endfor %}
-                  {% endif %}
                   
                   <form class="user" method="post" action="{% url 'user:login' %}">
                     {% csrf_token %} 
@@ -135,7 +158,23 @@
   <script src="{% static 'vendor/jquery-easing/jquery.easing.min.js' %}"></script>
 
   <script src="{% static 'js/sb-admin-2.min.js' %}"></script>
+<style>
+@keyframes slideIn {
+  from { opacity:0; transform:translateX(40px); }
+  to   { opacity:1; transform:translateX(0); }
+}
+</style>
 
+<script>
+// Auto-dismiss messages after 5 seconds
+document.querySelectorAll('.alert-toast').forEach(el => {
+  setTimeout(() => {
+    el.style.transition = 'opacity 0.4s';
+    el.style.opacity = '0';
+    setTimeout(() => el.remove(), 400);
+  }, 5000);
+});
+</script>
 </body>
 
 </html>
