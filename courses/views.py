@@ -139,17 +139,17 @@ def submit_quiz(request, quiz_id):
         # if user is not selected anything
         if not user_choice:
             skipped_count +=1
-            ResponseDetails.objects.create(response=response, question=q)
+            ResponseDetails.objects.create(response=response, question=q, is_correct=None)
         else:
             # take this questions correct choice
             correct_choice = QuestionChoice.objects.filter(pk = user_choice, question=q).first()    
             # check if there is actually users choice and is his choice correct. If there is not actual user choice mark it as incorrect
             if correct_choice and correct_choice.is_correct:
-                print(correct_choice.is_correct)
                 correct_count +=1
-                ResponseDetails.objects.create(response=response, question=q, question_choice = correct_choice)
+                ResponseDetails.objects.create(response=response, question=q, question_choice = correct_choice, is_correct= True)
             else:
                 incorrect_count +=1
+                ResponseDetails.objects.create(response=response, question=q, question_choice = correct_choice, is_correct= False)
 
     # calculate score in percentage
     number_of_questions = len(questions)
@@ -192,11 +192,13 @@ def score_details_view(request, response_id):
     response = get_object_or_404(Response, pk=response_id, user=request.user)
     details = ResponseDetails.objects.filter(response=response).all()
     quiz = response.quiz
-
+    for detail in details:
+        correct = QuestionChoice.objects.filter(question=detail.question, is_correct=True).first()
+        detail.correct_answer_text = correct.choice_text if correct else ''
 
     return render(request, 'courses/quiz_details.html', {
         'profile': user_profile,
         'quiz': quiz,
         'score': response.score,
-        'details':details
+        'details':details,
     })

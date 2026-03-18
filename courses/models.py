@@ -76,4 +76,5 @@ class ResponseDetails(models.Model):
     response = models.ForeignKey(Response, on_delete=models.CASCADE)
     question = models.ForeignKey(Question, on_delete=models.CASCADE)
     question_choice = models.ForeignKey(QuestionChoice, on_delete=models.CASCADE, null=True, blank=True)
+    is_correct = models.BooleanField(default=None, null=True)
     user_text_answer = models.TextField(blank=True, null=True)

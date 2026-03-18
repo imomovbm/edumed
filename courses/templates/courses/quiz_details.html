@@ -125,7 +125,7 @@
   {% for detail in details %}
   {% with q=detail.question %}
 
-    {% if not detail.question_choice and not detail.user_text_answer %}
+    {% if detail.is_correct is None %}
       {# Skipped #}
       <div class="detail-card skipped">
         <div class="status-icon"><i class="fas fa-minus"></i></div>
@@ -138,7 +138,7 @@
         </div>
       </div>
 
-    {% elif detail.question_choice.is_correct %}
+    {% elif detail.is_correct %}
       {# Correct #}
       <div class="detail-card correct">
         <div class="status-icon"><i class="fas fa-check"></i></div>
@@ -168,7 +168,7 @@
             </span>
             <span class="correct-answer">
               <i class="fas fa-check-circle mr-1"></i>
-              To'g'ri javob: {{ q.questionchoice_set.all|dictsort:"is_correct"|last }}
+              To'g'ri javob: {{ detail.correct_answer_text }}
             </span>
           </div>
         </div>
