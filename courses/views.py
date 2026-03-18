@@ -163,21 +163,40 @@ def submit_quiz(request, quiz_id):
     return redirect('courses:score_view', response_id=response.pk)
 
 def score_view(request, response_id):
+    try:
+        if request.user.is_authenticated:
+            user_profile = request.user.userprofile
+    except:
+        return redirect('courses:index')
+    
     response = get_object_or_404(Response, pk=response_id, user=request.user)
     quiz = response.quiz
-
-    user_profile = None
-    if request.user.is_authenticated:
-        try:
-            user_profile = request.user.userprofile
-        except:
-            pass
 
     return render(request, 'courses/quiz_result.html', {
         'profile': user_profile,
         'quiz': quiz,
+        'response_id': response.pk,
         'score': response.score,
         'correct_count': response.correct_count,
         'incorrect_count': response.incorrect_count,
         'skipped_count': response.skipped_count,
+    })
+
+def score_details_view(request, response_id):
+    try:
+        if request.user.is_authenticated:
+            user_profile = request.user.userprofile
+    except:
+        return redirect('courses:index')
+    
+    response = get_object_or_404(Response, pk=response_id, user=request.user)
+    details = ResponseDetails.objects.filter(response=response).all()
+    quiz = response.quiz
+
+
+    return render(request, 'courses/quiz_details.html', {
+        'profile': user_profile,
+        'quiz': quiz,
+        'score': response.score,
+        'details':details
     })

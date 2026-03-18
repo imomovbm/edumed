@@ -1,0 +1,195 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Natija tafsiloti — {{ quiz.title }}</title>
+  <link href="{% static 'vendor/fontawesome-free/css/all.min.css' %}" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f0f4ff;
+      min-height: 100vh;
+      padding: 32px 16px;
+    }
+
+    .page-container {
+      max-width: 780px;
+      margin: 0 auto;
+    }
+
+    /* ── Header ── */
+    .page-header {
+      background: #4e73df;
+      border-radius: 14px;
+      padding: 24px 28px;
+      color: #fff;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .page-header h1 { font-size: 1.2rem; font-weight: 700; }
+    .page-header .score-badge {
+      background: rgba(255,255,255,0.2);
+      padding: 8px 20px;
+      border-radius: 20px;
+      font-size: 1.3rem;
+      font-weight: 800;
+    }
+
+    /* ── Question card ── */
+    .detail-card {
+      background: #fff;
+      border-radius: 14px;
+      padding: 20px 24px;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 12px rgba(78,115,223,0.07);
+      border-left: 5px solid #e2e8f0;
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+    }
+    .detail-card.correct  { border-left-color: #1cc88a; }
+    .detail-card.incorrect { border-left-color: #e74a3b; }
+    .detail-card.skipped  { border-left-color: #f6c23e; }
+
+    .status-icon {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem; flex-shrink: 0;
+    }
+    .correct  .status-icon { background: #d4f5e9; color: #1cc88a; }
+    .incorrect .status-icon { background: #fde8e6; color: #e74a3b; }
+    .skipped  .status-icon { background: #fef9e7; color: #f6c23e; }
+
+    .detail-body { flex: 1; }
+    .q-number-label {
+      font-size: 0.75rem; color: #a0aec0;
+      font-weight: 600; text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    .q-text {
+      font-size: 1rem; font-weight: 600;
+      color: #2d3748; margin-bottom: 10px;
+      line-height: 1.5;
+    }
+
+    .answer-row {
+      font-size: 0.88rem;
+      color: #718096;
+      display: flex; flex-direction: column; gap: 4px;
+    }
+    .answer-row .label { font-weight: 600; }
+    .answer-row .your-answer { color: #e74a3b; }
+    .answer-row .correct-answer { color: #1cc88a; }
+    .answer-row .skipped-text { color: #f6c23e; }
+
+    /* ── Back button ── */
+    .btn-group {
+      display: flex; gap: 10px;
+      margin-top: 24px;
+    }
+    .btn {
+      padding: 12px 24px;
+      border: none; border-radius: 10px;
+      font-size: 0.95rem; font-weight: 600;
+      cursor: pointer; text-decoration: none;
+      display: inline-flex; align-items: center; gap: 8px;
+      transition: opacity 0.2s;
+    }
+    .btn:hover { opacity: 0.85; }
+    .btn-primary { background: #4e73df; color: #fff; }
+    .btn-outline  { background: #fff; color: #4e73df; border: 2px solid #4e73df; }
+  </style>
+</head>
+<body>
+<div class="page-container">
+
+  <!-- Header -->
+  <div class="page-header">
+    <div>
+      <div style="font-size:0.8rem; opacity:0.75; margin-bottom:4px;">
+        <i class="fas fa-file-alt mr-1"></i> Test natijalari
+      </div>
+      <h1>{{ quiz.title }}</h1>
+    </div>
+    <div class="score-badge">{{ score }}%</div>
+  </div>
+
+  <!-- Question detail cards -->
+  {% for detail in details %}
+  {% with q=detail.question %}
+
+    {% if not detail.question_choice and not detail.user_text_answer %}
+      {# Skipped #}
+      <div class="detail-card skipped">
+        <div class="status-icon"><i class="fas fa-minus"></i></div>
+        <div class="detail-body">
+          <div class="q-number-label">Savol {{ forloop.counter }}</div>
+          <div class="q-text">{{ q.question_text }}</div>
+          <div class="answer-row">
+            <span class="skipped-text"><i class="fas fa-forward mr-1"></i>O'tkazib yuborildi</span>
+          </div>
+        </div>
+      </div>
+
+    {% elif detail.question_choice.is_correct %}
+      {# Correct #}
+      <div class="detail-card correct">
+        <div class="status-icon"><i class="fas fa-check"></i></div>
+        <div class="detail-body">
+          <div class="q-number-label">Savol {{ forloop.counter }}</div>
+          <div class="q-text">{{ q.question_text }}</div>
+          <div class="answer-row">
+            <span class="correct-answer">
+              <i class="fas fa-check-circle mr-1"></i>
+              {{ detail.question_choice.choice_text }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+    {% else %}
+      {# Incorrect #}
+      <div class="detail-card incorrect">
+        <div class="status-icon"><i class="fas fa-times"></i></div>
+        <div class="detail-body">
+          <div class="q-number-label">Savol {{ forloop.counter }}</div>
+          <div class="q-text">{{ q.question_text }}</div>
+          <div class="answer-row">
+            <span class="your-answer">
+              <i class="fas fa-times-circle mr-1"></i>
+              Sizning javobingiz: {{ detail.question_choice.choice_text }}
+            </span>
+            <span class="correct-answer">
+              <i class="fas fa-check-circle mr-1"></i>
+              To'g'ri javob: {{ q.questionchoice_set.all|dictsort:"is_correct"|last }}
+            </span>
+          </div>
+        </div>
+      </div>
+    {% endif %}
+
+  {% endwith %}
+  {% endfor %}
+
+  <!-- Buttons -->
+  <div class="btn-group">
+    {% if quiz.topic %}
+    <a href="{% url 'courses:topic' quiz.topic.id %}" class="btn btn-primary">
+      <i class="fas fa-book-open"></i> Mavzuga qaytish
+    </a>
+    {% endif %}
+    <a href="{% url 'courses:index' %}" class="btn btn-outline">
+      <i class="fas fa-home"></i> Bosh sahifa
+    </a>
+  </div>
+
+</div>
+</body>
+</html>
