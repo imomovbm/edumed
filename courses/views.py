@@ -162,16 +162,19 @@ def submit_quiz(request, quiz_id):
     response.save()
     return redirect('courses:score_view', response_id=response.pk)
 
+# it gets response_id from redirect above submit_quiz view
 def score_view(request, response_id):
+    # as always check if user exists
     try:
         if request.user.is_authenticated:
             user_profile = request.user.userprofile
     except:
         return redirect('courses:index')
-    
+    # take response and quiz objects
     response = get_object_or_404(Response, pk=response_id, user=request.user)
     quiz = response.quiz
 
+    # just display how many +/-/ answers and score of student. POST -> SAVE -> GET method for security
     return render(request, 'courses/quiz_result.html', {
         'profile': user_profile,
         'quiz': quiz,
@@ -182,23 +185,28 @@ def score_view(request, response_id):
         'skipped_count': response.skipped_count,
     })
 
+# add view for watching score details
 def score_details_view(request, response_id):
+    # as always check if user exists
     try:
         if request.user.is_authenticated:
             user_profile = request.user.userprofile
     except:
         return redirect('courses:index')
-    
+    # take response and quiz objects.
     response = get_object_or_404(Response, pk=response_id, user=request.user)
     details = ResponseDetails.objects.filter(response=response).all()
-    quiz = response.quiz
+    # for each detail, which is what user selected. First take correct answer of the exact question and assign it to new value
+    # with this new value we will show it to student
     for detail in details:
         correct = QuestionChoice.objects.filter(question=detail.question, is_correct=True).first()
         detail.correct_answer_text = correct.choice_text if correct else ''
 
     return render(request, 'courses/quiz_details.html', {
         'profile': user_profile,
-        'quiz': quiz,
+        'title': response.quiz.title,
+        # sometimes we may not have topic
+        'topic_id': response.quiz.topic.pk if response.quiz.topic else None,
         'score': response.score,
         'details':details,
     })
