@@ -79,13 +79,13 @@
               <label class="font-weight-bold">To'g'ri javobni tanlang <span class="text-danger">*</span></label>
               <div class="d-flex gap-3 mt-2">
                 <div class="form-check mr-4">
-                  <input class="form-check-input" type="radio" name="tf_answer" value="1" id="tfTrue">
+                  <input class="form-check-input" type="radio" name="tf_answer" value="true" id="tfTrue">
                   <label class="form-check-label font-weight-bold text-success" for="tfTrue">
                     ✅ To'g'ri
                   </label>
                 </div>
                 <div class="form-check">
-                  <input class="form-check-input" type="radio" name="tf_answer" value="0" id="tfFalse">
+                  <input class="form-check-input" type="radio" name="tf_answer" value="false" id="tfFalse">
                   <label class="form-check-label font-weight-bold text-danger" for="tfFalse">
                     ❌ Noto'g'ri
                   </label>
@@ -366,26 +366,28 @@
     const textSection    = document.getElementById('text-section');
     const hint           = document.getElementById('choices-hint');
 
-    // Hide all first
     choicesSection.style.display = 'none';
     tfSection.style.display      = 'none';
     textSection.style.display    = 'none';
 
-    if (type === 'mc' || type === 'ms') {
-      choicesSection.style.display = 'block';
-      hint.textContent = type === 'ms'
-        ? "Ko'p to'g'ri javob bo'lishi mumkin — barchasini belgilang."
-        : "Faqat bitta to'g'ri javobni belgilang.";
+    // Remove required from all choice inputs when hiding
+    document.querySelectorAll('.choice-input').forEach(el => el.required = false);
 
-      // Switch between radio and checkbox for correct answer
-      document.querySelectorAll('.correct-radio').forEach(el => {
-        el.type = type === 'ms' ? 'checkbox' : 'radio';
-      });
+    if (type === 'mc' || type === 'ms') {
+        choicesSection.style.display = 'block';
+        hint.textContent = type === 'ms'
+            ? "Ko'p to'g'ri javob bo'lishi mumkin — barchasini belgilang."
+            : "Faqat bitta to'g'ri javobni belgilang.";
+        document.querySelectorAll('.correct-radio').forEach(el => {
+            el.type = type === 'ms' ? 'checkbox' : 'radio';
+        });
+        // Re-add required when showing choices
+        document.querySelectorAll('.choice-input').forEach(el => el.required = true);
 
     } else if (type === 'tf') {
-      tfSection.style.display = 'block';
+        tfSection.style.display = 'block';
     } else {
-      textSection.style.display = 'block';
+        textSection.style.display = 'block';
     }
   }
 
@@ -408,7 +410,7 @@
              class="choice-input"
              name="choice_text_${choiceCount}"
              placeholder="Variant ${choiceCount} matni..."
-             required>
+             ${currentType === 'mc' || currentType === 'ms' ? 'required' : ''}>
       <button type="button" class="remove-btn" onclick="removeChoice(${choiceCount})" title="O'chirish">
         <i class="fas fa-times"></i>
       </button>

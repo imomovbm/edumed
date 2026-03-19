@@ -106,8 +106,8 @@ def save_question_view(request):
             i += 1
     elif type == 'tf':
         tf_answer = request.POST.get('tf_answer')  # 'true' or 'false'
-        QuestionChoice.objects.create(question=question, choice_text="To'g'ri", is_correct=(tf_answer == '1'))
-        QuestionChoice.objects.create(question=question, choice_text="Noto'g'ri", is_correct=(tf_answer == '0'))
+        QuestionChoice.objects.create(question=question, choice_text="To'g'ri", is_correct=(tf_answer == 'true'))
+        QuestionChoice.objects.create(question=question, choice_text="Noto'g'ri", is_correct=(tf_answer == 'false'))
             
     return redirect('courses:add_question')
 
