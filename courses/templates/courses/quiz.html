@@ -6,23 +6,22 @@
 
   <!-- Page Heading -->
   <div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h3 mb-0 text-gray-800">Yangi savol yaratish</h1>
-    <a href="{% url 'courses:admin_quiz' %}" class="btn btn-sm btn-secondary shadow-sm">
+    <h1 class="h3 mb-0 text-gray-800">Yangi test yaratish</h1>
+    <a href="{% url 'courses:index' %}" class="btn btn-sm btn-secondary shadow-sm">
       <i class="fas fa-arrow-left fa-sm mr-1"></i> Orqaga
     </a>
   </div>
 
-   <div class="row">
-     <div class="col-xl-8 col-lg-7">
+  <div class="row">
 
-      <!-- Messages -->
+    <!-- ── Left: Quiz Form ── -->
+    <div class="col-xl-8 col-lg-7">
+
       {% if messages %}
         {% for message in messages %}
         <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
           {{ message }}
-          <button type="button" class="close" data-dismiss="alert">
-            <span>&times;</span>
-          </button>
+          <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
         </div>
         {% endfor %}
       {% endif %}
@@ -30,186 +29,120 @@
       <div class="card shadow mb-4">
         <div class="card-header py-3">
           <h6 class="m-0 font-weight-bold text-primary">
-            <i class="fas fa-question-circle mr-2"></i>Savol ma'lumotlari
+            <i class="fas fa-clipboard-list mr-2"></i>Test ma'lumotlari
           </h6>
         </div>
         <div class="card-body">
-          <form method="POST" action="#">
+          <form method="POST" action="#" id="quizForm">
             {% csrf_token %}
 
-            <!-- Question Text -->
+            <!-- Quiz Title -->
             <div class="form-group">
-              <label class="font-weight-bold">Savol matni <span class="text-danger">*</span></label>
-              <textarea class="form-control" name="question_text" rows="3"
-                placeholder="Savolni shu yerga yozing..." required></textarea>
+              <label class="font-weight-bold">Test nomi <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" name="title"
+                placeholder="Masalan: Anatomiya 1-bo'lim testi" required>
             </div>
 
-            <!-- Question Type -->
+            <!-- Quiz Type -->
             <div class="form-group">
-              <label class="font-weight-bold">Savol turi <span class="text-danger">*</span></label>
-              <select class="form-control" name="type" id="questionType" onchange="handleTypeChange(this.value)">
-                <option value="mc">Bir variantli ochiq test (MC)</option>
-                <option value="ms">Ko'p variantli ochiq test (MS)</option>
-                <option value="tf">To'g'ri va Noto'g'ri (TF)</option>
-                <option value="sha">Qisqa javobli</option>
-                <option value="es">Esse / Yozma ish</option>
+              <label class="font-weight-bold">Test turi <span class="text-danger">*</span></label>
+              <select class="form-control" name="type" id="quizType" onchange="handleQuizType(this.value)">
+                <option value="1">Mavzuga biriktirilgan topshiriq</option>
+                <option value="2">Umumiy topshiriqlar</option>
               </select>
             </div>
 
-            <!-- ── MC / MS Choices ── -->
-            <div id="choices-section">
-              <div class="d-flex justify-content-between align-items-center mb-2">
-                <label class="font-weight-bold mb-0">Variantlar <span class="text-danger">*</span></label>
-                <button type="button" class="btn btn-sm btn-outline-primary" onclick="addChoice()">
-                  <i class="fas fa-plus mr-1"></i> Variant qo'shish
-                </button>
-              </div>
-
-              <div id="choices-list">
-                <!-- choices injected here -->
-              </div>
-
-              <small class="text-muted" id="choices-hint">
-                To'g'ri javob yonidagi belgini belgilang.
-              </small>
+            <!-- Topic (only for type 1) -->
+            <div class="form-group" id="topicSection">
+              <label class="font-weight-bold">Mavzu <span class="text-danger">*</span></label>
+              <select class="form-control" name="topic">
+                <option value="">— Mavzuni tanlang —</option>
+                {% for topic in topics %}
+                <option value="{{ topic.id }}">{{ topic.title }}</option>
+                {% endfor %}
+              </select>
             </div>
 
-            <!-- ── TF Section ── -->
-            <div id="tf-section" style="display:none;">
-              <label class="font-weight-bold">To'g'ri javobni tanlang <span class="text-danger">*</span></label>
-              <div class="d-flex gap-3 mt-2">
-                <div class="form-check mr-4">
-                  <input class="form-check-input" type="radio" name="tf_answer" value="true" id="tfTrue">
-                  <label class="form-check-label font-weight-bold text-success" for="tfTrue">
-                    ✅ To'g'ri
-                  </label>
-                </div>
-                <div class="form-check">
-                  <input class="form-check-input" type="radio" name="tf_answer" value="false" id="tfFalse">
-                  <label class="form-check-label font-weight-bold text-danger" for="tfFalse">
-                    ❌ Noto'g'ri
-                  </label>
-                </div>
-              </div>
-            </div>
-
-            <!-- ── Text answer hint ── -->
-            <div id="text-section" style="display:none;">
-              <div class="alert alert-info">
-                <i class="fas fa-info-circle mr-2"></i>
-                Bu turdagi savollar uchun variantlar kerak emas. Talaba o'z javobini matn ko'rinishida yozadi.
-              </div>
+            <!-- Description -->
+            <div class="form-group">
+              <label class="font-weight-bold">Tavsif <span class="text-muted">(ixtiyoriy)</span></label>
+              <textarea class="form-control" name="description" rows="2"
+                placeholder="Test haqida qisqacha ma'lumot..."></textarea>
             </div>
 
             <hr>
 
-            <!-- Submit -->
+            <!-- ── Selected Questions ── -->
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <label class="font-weight-bold mb-0">
+                Tanlangan savollar
+                <span class="badge badge-primary ml-2" id="selectedCount">0</span>
+              </label>
+              <small class="text-muted">O'ng tarafdagi ro'yxatdan savollarni tanlang</small>
+            </div>
+
+            <div id="selectedQuestionsContainer">
+              <!-- Selected question rows appear here -->
+              <div id="emptyState" class="text-center py-4 text-muted border rounded mb-3">
+                <i class="fas fa-hand-point-right fa-2x d-block mb-2"></i>
+                Hali savollar tanlanmagan
+              </div>
+            </div>
+
+            <!-- Hidden input to store selected question IDs -->
+            <div id="hiddenInputs"></div>
+
+            <hr>
+
             <div class="d-flex justify-content-between">
-              <a href="{% url 'courses:admin_quiz' %}" class="btn btn-secondary">
+              <a href="{% url 'courses:add_quiz' %}" class="btn btn-secondary">
                 <i class="fas fa-times mr-1"></i> Bekor qilish
               </a>
-              <button type="submit" class="btn btn-success px-4">
-                <i class="fas fa-save mr-1"></i> Saqlash
+              <button type="submit" class="btn btn-success px-4" id="submitBtn" disabled>
+                <i class="fas fa-save mr-1"></i> Testni saqlash
               </button>
             </div>
 
           </form>
         </div>
       </div>
-
     </div>
-<!-- ── Recent Questions Sidebar ── -->
-      <div class="col-xl-4 col-lg-5">
-        <div class="card shadow mb-4" style="position:sticky; top:20px;">
-          <div class="card-header py-3 d-flex justify-content-between align-items-center">
-            <h6 class="m-0 font-weight-bold text-primary">
-              <i class="fas fa-list mr-2"></i>So'nggi savollar
-            </h6>
-            <span class="badge badge-primary badge-pill">10 ta</span>
-          </div>
-          <div class="card-body p-0">
-            <div style="max-height: 600px; overflow-y: auto;">
 
-              <!-- Question Item — repeat this block for each question -->
-              <div class="question-item">
-                <div class="question-item-body">
-                  <div class="d-flex justify-content-between align-items-start mb-1">
-                    <span class="question-type-badge mc">MC</span>
-                    <button class="edit-btn" title="Tahrirlash">
-                      <i class="fas fa-pen"></i>
-                    </button>
-                  </div>
-                  <p class="question-text">HTML ning to'liq nomi nima?</p>
-                  <div class="question-choices">
-                    <span class="choice correct">✓ Hyper Text Markup Language</span>
-                    <span class="choice">Hyper Tool Multi Language</span>
-                    <span class="choice">Hyper Text Multiple Language</span>
-                    <span class="choice">High Text Markup Language</span>
-                  </div>
-                </div>
-              </div>
-
-              <div class="question-item">
-                <div class="question-item-body">
-                  <div class="d-flex justify-content-between align-items-start mb-1">
-                    <span class="question-type-badge ms">MS</span>
-                    <button class="edit-btn" title="Tahrirlash">
-                      <i class="fas fa-pen"></i>
-                    </button>
-                  </div>
-                  <p class="question-text">Quyidagilardan qaysilari dasturlash tillari?</p>
-                  <div class="question-choices">
-                    <span class="choice correct">✓ Python</span>
-                    <span class="choice correct">✓ JavaScript</span>
-                    <span class="choice">Photoshop</span>
-                    <span class="choice">Excel</span>
-                  </div>
-                </div>
-              </div>
-
-              <div class="question-item">
-                <div class="question-item-body">
-                  <div class="d-flex justify-content-between align-items-start mb-1">
-                    <span class="question-type-badge tf">TF</span>
-                    <button class="edit-btn" title="Tahrirlash">
-                      <i class="fas fa-pen"></i>
-                    </button>
-                  </div>
-                  <p class="question-text">Python ob'ektga yo'naltirilgan til hisoblanadimi?</p>
-                  <div class="question-choices">
-                    <span class="choice correct">✓ To'g'ri</span>
-                    <span class="choice">Noto'g'ri</span>
-                  </div>
-                </div>
-              </div>
-
-              <div class="question-item">
-                <div class="question-item-body">
-                  <div class="d-flex justify-content-between align-items-start mb-1">
-                    <span class="question-type-badge sha">SHA</span>
-                    <button class="edit-btn" title="Tahrirlash">
-                      <i class="fas fa-pen"></i>
-                    </button>
-                  </div>
-                  <p class="question-text">CSS nimaning qisqartmasi?</p>
-                  <div class="question-choices">
-                    <span class="choice text-muted fst-italic">Qisqa javobli savol</span>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Empty state — show when no questions -->
-              <!-- 
-              <div class="text-center py-5 text-muted">
-                <i class="fas fa-inbox fa-2x mb-3 d-block"></i>
-                Hali savollar qo'shilmagan
-              </div>
-              -->
-
-            </div>
-          </div>
+    <!-- ── Right: Question Picker ── -->
+    <div class="col-xl-4 col-lg-5">
+      <div class="card shadow mb-4" style="position:sticky; top:20px;">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+          <h6 class="m-0 font-weight-bold text-primary">
+            <i class="fas fa-list mr-2"></i>Savollar ro'yxati
+          </h6>
+          <span class="badge badge-secondary badge-pill" id="totalCount">0 ta</span>
         </div>
-      </div>    
+
+        <!-- Search -->
+        <div class="card-header py-2" style="border-top:none;">
+          <input type="text" class="form-control form-control-sm"
+            id="questionSearch" placeholder="Savol qidirish...">
+        </div>
+
+        <!-- Type filter -->
+        <div class="card-header py-2" style="border-top:none;">
+          <select class="form-control form-control-sm" id="typeFilter" onchange="filterQuestions()">
+            <option value="">Barcha turlar</option>
+            <option value="mc">MC</option>
+            <option value="ms">MS</option>
+            <option value="tf">TF</option>
+            <option value="sha">Qisqa javobli</option>
+            <option value="es">Esse</option>
+          </select>
+        </div>
+
+        <div class="card-body p-0" style="max-height:520px; overflow-y:auto;" id="questionList">
+          <!-- Question picker items injected here -->
+        </div>
+
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -217,64 +150,10 @@
 
 {% block extra_js %}
 <style>
-  .choice-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    background: #f8f9fc;
-    border: 1px solid #e3e6f0;
-    border-radius: 8px;
-    padding: 10px 14px;
-    margin-bottom: 8px;
-    transition: border-color 0.2s;
-  }
-  .choice-row:has(.correct-radio:checked) {
-    border-color: #1cc88a;
-    background: #f0fff8;
-  }
-  .choice-row .correct-radio { accent-color: #1cc88a; width: 18px; height: 18px; cursor: pointer; }
-  .choice-row .choice-input {
-    flex: 1;
-    border: none;
-    background: transparent;
-    outline: none;
-    font-size: 0.95rem;
-    color: #2d3748;
-  }
-  .choice-row .remove-btn {
-    background: none;
-    border: none;
-    color: #e74a3b;
-    cursor: pointer;
-    font-size: 1rem;
-    opacity: 0.6;
-    transition: opacity 0.2s;
-  }
-  .choice-row .remove-btn:hover { opacity: 1; }
-  .correct-label {
-    font-size: 0.75rem;
-    color: #a0aec0;
-    white-space: nowrap;
-  }
-  /* ── Recent Questions Sidebar ── */
-  .question-item {
-    border-bottom: 1px solid #e3e6f0;
-    transition: background 0.15s;
-  }
-  .question-item:last-child { border-bottom: none; }
-  .question-item:hover { background: #f8f9ff; }
-
-  .question-item-body {
-    padding: 12px 16px;
-  }
-
   .question-type-badge {
-    font-size: 0.7rem;
-    font-weight: 700;
-    padding: 2px 8px;
-    border-radius: 20px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+    font-size: 0.7rem; font-weight: 700;
+    padding: 2px 8px; border-radius: 20px;
+    text-transform: uppercase; letter-spacing: 0.5px;
   }
   .question-type-badge.mc  { background:#ebf4ff; color:#2b4fa0; }
   .question-type-badge.ms  { background:#fef9e7; color:#8a6200; }
@@ -282,125 +161,180 @@
   .question-type-badge.sha { background:#fde8e6; color:#a02020; }
   .question-type-badge.es  { background:#f3e8ff; color:#6b21a8; }
 
-  .question-text {
-    font-size: 0.88rem;
-    font-weight: 600;
-    color: #2d3748;
-    margin: 6px 0 8px;
-    line-height: 1.4;
-    /* clamp to 2 lines */
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
-
-  .question-choices {
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-  }
-  .choice {
-    font-size: 0.78rem;
-    color: #a0aec0;
-    padding: 2px 0;
-  }
-  .choice.correct {
-    color: #1cc88a;
-    font-weight: 600;
-  }
-
-  .edit-btn {
-    background: none;
-    border: 1px solid #e3e6f0;
-    border-radius: 6px;
-    padding: 3px 8px;
-    font-size: 0.75rem;
-    color: #4e73df;
+  /* Picker items */
+  .picker-item {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 10px 14px;
+    border-bottom: 1px solid #e3e6f0;
     cursor: pointer;
-    transition: all 0.15s;
+    transition: background 0.15s;
+  }
+  .picker-item:hover { background: #f8f9ff; }
+  .picker-item.selected { background: #ebf4ff; }
+  .picker-item.selected .add-btn {
+    background: #1cc88a; border-color: #1cc88a; color: #fff;
+  }
+  .picker-item-text {
+    flex: 1; font-size: 0.85rem; color: #2d3748;
+    font-weight: 500; line-height: 1.4;
+    display: -webkit-box; -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .add-btn {
+    flex-shrink: 0;
+    background: none; border: 1px solid #4e73df;
+    border-radius: 6px; padding: 3px 8px;
+    font-size: 0.75rem; color: #4e73df;
+    cursor: pointer; transition: all 0.15s;
     white-space: nowrap;
   }
-  .edit-btn:hover {
-    background: #4e73df;
-    color: #fff;
-    border-color: #4e73df;
+  .add-btn:hover { background: #4e73df; color: #fff; }
+
+  /* Selected question rows */
+  .selected-row {
+    display: flex; align-items: center; gap: 10px;
+    background: #f8f9fc; border: 1px solid #e3e6f0;
+    border-radius: 8px; padding: 10px 14px;
+    margin-bottom: 8px;
   }
+  .selected-row .order-num {
+    width: 24px; height: 24px; border-radius: 50%;
+    background: #4e73df; color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.75rem; font-weight: 700; flex-shrink: 0;
+  }
+  .selected-row .q-label {
+    flex: 1; font-size: 0.88rem; color: #2d3748;
+    font-weight: 500;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .selected-row .remove-q-btn {
+    background: none; border: none;
+    color: #e74a3b; cursor: pointer;
+    font-size: 0.9rem; opacity: 0.6;
+    transition: opacity 0.2s; flex-shrink: 0;
+  }
+  .selected-row .remove-q-btn:hover { opacity: 1; }
 </style>
 
 <script>
-  let choiceCount = 0;
-  let currentType = 'mc';
+  // ── Data from Django ──────────────────────────────────
+  const ALL_QUESTIONS = [
+    {% for q in questions %}
+    {
+      id: {{ q.id }},
+      text: "{{ q.question_text|escapejs }}",
+      type: "{{ q.type }}",
+      typeDisplay: "{{ q.get_type_display }}",
+    },
+    {% endfor %}
+  ];
 
-  // Initialize with 4 default choices
+  let selectedIds = [];   // ordered list of selected question IDs
+
+  // ── Init ─────────────────────────────────────────────
   document.addEventListener('DOMContentLoaded', () => {
-    for (let i = 0; i < 4; i++) addChoice();
+    renderPicker(ALL_QUESTIONS);
+    document.getElementById('totalCount').textContent = ALL_QUESTIONS.length + ' ta';
+
+    document.getElementById('questionSearch').addEventListener('input', filterQuestions);
   });
 
-  function handleTypeChange(type) {
-    currentType = type;
-    const choicesSection = document.getElementById('choices-section');
-    const tfSection      = document.getElementById('tf-section');
-    const textSection    = document.getElementById('text-section');
-    const hint           = document.getElementById('choices-hint');
-
-    // Hide all first
-    choicesSection.style.display = 'none';
-    tfSection.style.display      = 'none';
-    textSection.style.display    = 'none';
-
-    if (type === 'mc' || type === 'ms') {
-      choicesSection.style.display = 'block';
-      hint.textContent = type === 'ms'
-        ? "Ko'p to'g'ri javob bo'lishi mumkin — barchasini belgilang."
-        : "Faqat bitta to'g'ri javobni belgilang.";
-
-      // Switch between radio and checkbox for correct answer
-      document.querySelectorAll('.correct-radio').forEach(el => {
-        el.type = type === 'ms' ? 'checkbox' : 'radio';
-      });
-
-    } else if (type === 'tf') {
-      tfSection.style.display = 'block';
-    } else {
-      textSection.style.display = 'block';
-    }
+  // ── Quiz type toggle ──────────────────────────────────
+  function handleQuizType(val) {
+    document.getElementById('topicSection').style.display = val === '1' ? 'block' : 'none';
   }
 
-  function addChoice() {
-    choiceCount++;
-    const list = document.getElementById('choices-list');
-    const inputType = currentType === 'ms' ? 'checkbox' : 'radio';
-
-    const div = document.createElement('div');
-    div.className = 'choice-row';
-    div.id = `choice-${choiceCount}`;
-    div.innerHTML = `
-      <input type="${inputType}"
-             class="correct-radio"
-             name="correct_choice"
-             value="${choiceCount}"
-             title="To'g'ri javob">
-      <span class="correct-label">To'g'ri</span>
-      <input type="text"
-             class="choice-input"
-             name="choice_text_${choiceCount}"
-             placeholder="Variant ${choiceCount} matni..."
-             required>
-      <button type="button" class="remove-btn" onclick="removeChoice(${choiceCount})" title="O'chirish">
-        <i class="fas fa-times"></i>
-      </button>
-    `;
-    list.appendChild(div);
+  // ── Filter / Search ───────────────────────────────────
+  function filterQuestions() {
+    const search = document.getElementById('questionSearch').value.toLowerCase();
+    const type   = document.getElementById('typeFilter').value;
+    const filtered = ALL_QUESTIONS.filter(q =>
+      q.text.toLowerCase().includes(search) &&
+      (type === '' || q.type === type)
+    );
+    renderPicker(filtered);
   }
 
-  function removeChoice(id) {
-    const el = document.getElementById(`choice-${id}`);
-    if (document.querySelectorAll('.choice-row').length <= 2) {
-      alert("Kamida 2 ta variant bo'lishi kerak!");
+  // ── Render picker list ────────────────────────────────
+  function renderPicker(questions) {
+    const list = document.getElementById('questionList');
+    if (questions.length === 0) {
+      list.innerHTML = `<div class="text-center py-4 text-muted">
+        <i class="fas fa-search fa-2x d-block mb-2"></i>Natija topilmadi</div>`;
       return;
     }
-    if (el) el.remove();
+    list.innerHTML = questions.map(q => `
+      <div class="picker-item ${selectedIds.includes(q.id) ? 'selected' : ''}" id="picker-${q.id}">
+        <div>
+          <span class="question-type-badge ${q.type}">${q.typeDisplay}</span>
+        </div>
+        <span class="picker-item-text">${q.text}</span>
+        <button type="button" class="add-btn" onclick="toggleQuestion(${q.id}, '${q.text.replace(/'/g, "\\'")}')">
+          ${selectedIds.includes(q.id) ? '<i class="fas fa-check"></i>' : '<i class="fas fa-plus"></i>'}
+        </button>
+      </div>
+    `).join('');
+  }
+
+  // ── Toggle question selection ─────────────────────────
+  function toggleQuestion(id, text) {
+    if (selectedIds.includes(id)) {
+      removeQuestion(id);
+    } else {
+      addQuestion(id, text);
+    }
+  }
+
+  function addQuestion(id, text) {
+    if (selectedIds.includes(id)) return;
+    selectedIds.push(id);
+    updateSelectedPanel();
+    filterQuestions();  // re-render picker to reflect selection
+  }
+
+  function removeQuestion(id) {
+    selectedIds = selectedIds.filter(x => x !== id);
+    updateSelectedPanel();
+    filterQuestions();
+  }
+
+  // ── Update selected panel ─────────────────────────────
+  function updateSelectedPanel() {
+    const container = document.getElementById('selectedQuestionsContainer');
+    const hiddenInputs = document.getElementById('hiddenInputs');
+    const emptyState = document.getElementById('emptyState');
+    const submitBtn = document.getElementById('submitBtn');
+    const counter = document.getElementById('selectedCount');
+
+    counter.textContent = selectedIds.length;
+    submitBtn.disabled = selectedIds.length === 0;
+
+    if (selectedIds.length === 0) {
+      container.innerHTML = `<div id="emptyState" class="text-center py-4 text-muted border rounded mb-3">
+        <i class="fas fa-hand-point-right fa-2x d-block mb-2"></i>Hali savollar tanlanmagan</div>`;
+      hiddenInputs.innerHTML = '';
+      return;
+    }
+
+    // Build selected rows
+    container.innerHTML = selectedIds.map((id, idx) => {
+      const q = ALL_QUESTIONS.find(x => x.id === id);
+      return `<div class="selected-row">
+        <div class="order-num">${idx + 1}</div>
+        <span class="q-label" title="${q.text}">${q.text}</span>
+        <span class="question-type-badge ${q.type} mr-2">${q.typeDisplay}</span>
+        <button type="button" class="remove-q-btn" onclick="removeQuestion(${id})">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>`;
+    }).join('');
+
+    // Build hidden inputs for form submission
+    hiddenInputs.innerHTML = selectedIds.map((id, idx) =>
+      `<input type="hidden" name="question_ids" value="${id}">
+       <input type="hidden" name="question_orders" value="${idx + 1}">`
+    ).join('');
   }
 </script>
 {% endblock extra_js %}

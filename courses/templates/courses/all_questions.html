@@ -7,7 +7,7 @@
   <!-- Page Heading -->
   <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800">Yangi savol yaratish</h1>
-    <a href="{% url 'courses:admin_quiz' %}" class="btn btn-sm btn-secondary shadow-sm">
+    <a href="{% url 'courses:index' %}" class="btn btn-sm btn-secondary shadow-sm">
       <i class="fas fa-arrow-left fa-sm mr-1"></i> Orqaga
     </a>
   </div>
@@ -96,6 +96,10 @@
 {% endblock main %}
 
 {% block extra_js %}
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap4.min.css">
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap4.min.js"></script>
+
 <style>
   .choice-row {
     display: flex;
@@ -214,73 +218,28 @@
 
   // Initialize with 4 default choices
   document.addEventListener('DOMContentLoaded', () => {
-    for (let i = 0; i < 4; i++) addChoice();
+    $('#examsTable').DataTable({
+      pageLength: 10,
+      lengthMenu: [10, 25, 50, 100],
+      order: [[4, 'desc']],  // sort by date descending
+      language: {
+        search: "Qidirish:",
+        lengthMenu: "_MENU_ ta ko'rsatish",
+        info: "_TOTAL_ tadan _START_ - _END_ ko'rsatilmoqda",
+        infoEmpty: "Savollar mavjud emas",
+        infoFiltered: "(jami _MAX_ tadan filtr qilindi)",
+        paginate: {
+          first: "Birinchi",
+          last: "Oxirgi",
+          next: "Keyingi",
+          previous: "Oldingi"
+        },
+        zeroRecords: "Natija topilmadi"
+      },
+      columnDefs: [
+        { orderable: false, targets: [5] }  // disable sort on actions column
+      ]
+    });
   });
-
-  function handleTypeChange(type) {
-    currentType = type;
-    const choicesSection = document.getElementById('choices-section');
-    const tfSection      = document.getElementById('tf-section');
-    const textSection    = document.getElementById('text-section');
-    const hint           = document.getElementById('choices-hint');
-
-    // Hide all first
-    choicesSection.style.display = 'none';
-    tfSection.style.display      = 'none';
-    textSection.style.display    = 'none';
-
-    if (type === 'mc' || type === 'ms') {
-      choicesSection.style.display = 'block';
-      hint.textContent = type === 'ms'
-        ? "Ko'p to'g'ri javob bo'lishi mumkin — barchasini belgilang."
-        : "Faqat bitta to'g'ri javobni belgilang.";
-
-      // Switch between radio and checkbox for correct answer
-      document.querySelectorAll('.correct-radio').forEach(el => {
-        el.type = type === 'ms' ? 'checkbox' : 'radio';
-      });
-
-    } else if (type === 'tf') {
-      tfSection.style.display = 'block';
-    } else {
-      textSection.style.display = 'block';
-    }
-  }
-
-  function addChoice() {
-    choiceCount++;
-    const list = document.getElementById('choices-list');
-    const inputType = currentType === 'ms' ? 'checkbox' : 'radio';
-
-    const div = document.createElement('div');
-    div.className = 'choice-row';
-    div.id = `choice-${choiceCount}`;
-    div.innerHTML = `
-      <input type="${inputType}"
-             class="correct-radio"
-             name="correct_choice"
-             value="${choiceCount}"
-             title="To'g'ri javob">
-      <span class="correct-label">To'g'ri</span>
-      <input type="text"
-             class="choice-input"
-             name="choice_text_${choiceCount}"
-             placeholder="Variant ${choiceCount} matni..."
-             required>
-      <button type="button" class="remove-btn" onclick="removeChoice(${choiceCount})" title="O'chirish">
-        <i class="fas fa-times"></i>
-      </button>
-    `;
-    list.appendChild(div);
-  }
-
-  function removeChoice(id) {
-    const el = document.getElementById(`choice-${id}`);
-    if (document.querySelectorAll('.choice-row').length <= 2) {
-      alert("Kamida 2 ta variant bo'lishi kerak!");
-      return;
-    }
-    if (el) el.remove();
-  }
 </script>
 {% endblock extra_js %}
