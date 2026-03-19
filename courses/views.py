@@ -5,7 +5,7 @@ from .models import TopicComment, Quiz, Question, QuizQuestion, Response, Respon
 from django.contrib.auth.models import User
 import json
 from django.http import JsonResponse
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_POST, require_http_methods
 
 # Create your views here.
 def index(request):
@@ -64,6 +64,18 @@ def like_comment(request, comment_id):
     return redirect(request.META.get('HTTP_REFERER', 'courses:index'))
 
 @login_required(login_url='user:login')
+def all_questions_view(request):
+    try:
+        user_profile = request.user.userprofile
+    except:
+        return redirect('courses:index')
+    questions = Question.objects.order_by('-created_at')
+
+    return render(request, "courses/all_questions.html", {
+        'questions': questions,
+    })
+
+@login_required(login_url='user:login')
 def create_question_view(request):
     try:
         user_profile = request.user.userprofile
@@ -108,10 +120,56 @@ def save_question_view(request):
         tf_answer = request.POST.get('tf_answer')  # 'true' or 'false'
         QuestionChoice.objects.create(question=question, choice_text="To'g'ri", is_correct=(tf_answer == 'true'))
         QuestionChoice.objects.create(question=question, choice_text="Noto'g'ri", is_correct=(tf_answer == 'false'))
-            
+    messages.success(request, "Savol qo'shildi")         
     return redirect('courses:add_question')
 
+@login_required(login_url='user:login')
+def edit_question_view(request, question_id):
+    try:
+        user_profile = request.user.userprofile
+    except:
+        return redirect('courses:index')
+    questions = Question.objects.order_by('-created_at')[:10]
+    
+    if question_id:
+        question = get_object_or_404(Question, id=question_id)
+        question_choices = QuestionChoice.objects.filter(question=question).all()
 
+    if request.method == 'POST':
+        question_text = request.POST.get('question_text')
+        type = request.POST.get('type')
+        # if there is then we  will create question object first then register its answers with loop
+        question.question_text = question_text
+        question.type = type
+        question.save()
+        # first clear all of the answers of previous
+        question.questionchoice_set.all().delete()
+
+        # determine the correct choice id
+        correct_choices = request.POST.getlist('correct_choice')
+        if type in ['mc', 'ms']:
+            i = 1
+            while True:
+                # take the choice text value and compare if it is correct answer
+                # we will break forever loop once we do not have next input
+                choice_text = request.POST.get(f'choice_text_{i}')
+                if not choice_text:
+                    break
+                is_correct = str(i) in correct_choices  # compare as strings
+                QuestionChoice.objects.create(question=question, choice_text=choice_text, is_correct=is_correct)
+                i += 1
+        elif type == 'tf':
+            tf_answer = request.POST.get('tf_answer')  # 'true' or 'false'
+            QuestionChoice.objects.create(question=question, choice_text="To'g'ri", is_correct=(tf_answer == 'true'))
+            QuestionChoice.objects.create(question=question, choice_text="Noto'g'ri", is_correct=(tf_answer == 'false'))
+        messages.success(request, "Savol o'zgartirildi") 
+        return redirect("courses:edit_question", question.pk)
+
+    return render(request, "courses/question.html", {
+        'current_question': question,
+        'question_choices': question_choices,
+        'questions':questions,
+    })
 
 @login_required(login_url='user:login')
 def create_quiz_view(request):

@@ -11,8 +11,10 @@ urlpatterns = [
     path("comment/<int:comment_id>/like/", views.like_comment, name="like_comment"),
     
     # admin panel
+    path("all-questions/", views.all_questions_view, name="all_questions"),
     path("create-question/", views.create_question_view, name="add_question"),
     path("save-question/", views.save_question_view, name="save_question"),
+    path("edit-question/<int:question_id>/", views.edit_question_view, name="edit_question"),
 
     path("create-quiz/", views.create_quiz_view, name="admin_quiz"),
     path('quiz/<int:quiz_id>/', views.quiz_attempt, name='quiz_attempt'),
