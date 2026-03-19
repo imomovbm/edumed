@@ -26,36 +26,17 @@ def index(request):
     if user_profile and user_profile.date_of_birth:
         age = calculate_age(user_profile.date_of_birth)
         
-    gender_display = user_profile.get_gender_display() if user_profile and user_profile.gender is not None else "Ma'lumot yo'q"
-    
     # If you have a 'Course' model, the real count might look like:
     # course_count = user_profile.enrolled_courses.count() 
     course_count = 4 # Placeholder for now
-    responses = Response.objects.filter(user=user).all()
+    responses = Response.objects.filter(user=user).order_by('-created_date_time')
 
     # 3. Prepare the context dictionary
     context = {
-        # Data from the built-in Django User model
-        'first_name': user.first_name,
-        'last_name': user.last_name,
-        'full_name': f"{user.first_name} {user.last_name}",
-        'email': user.email,
-        
-        # Data from the custom UserProfile model
-        'profile': user_profile, # Pass the whole profile object
-        'role': user_profile.get_role_display() if user_profile else "Noma'lum",
-        'phone': user_profile.phone if user_profile else "Ma'lumot yo'q",
-        'region': user_profile.region if user_profile else "Ma'lumot yo'q",
-        'otm': user_profile.otm if user_profile else "Ma'lumot yo'q",
-        
-        # Calculated/Formatted Data
-        'age': f"{age} yosh" if age is not None else "Ma'lumot yo'q",
-        'gender_display': gender_display,
-        'join_date': user.date_joined.strftime("%Y-%m-%d"), # Use the built-in User.date_joined
+        'age': f"{age} yosh",
         'responses': responses,
         'course_count': course_count,
     }
-
     return render(request, "user/profile.html", context)
 
 def register_view(request):

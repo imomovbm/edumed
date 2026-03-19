@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from .models import TopicComment, Quiz, QuizQuestion, Response, ResponseDetails, QuestionChoice
+from .models import TopicComment, Quiz, Question, QuizQuestion, Response, ResponseDetails, QuestionChoice
 from django.contrib.auth.models import User
 import json
 from django.http import JsonResponse
@@ -27,7 +27,6 @@ def modules_view(request):
     }
 
     return render(request, "courses/modules.html", {
-        "profile": user_profile,
         "progress": mock_progress,
     })
 
@@ -65,6 +64,44 @@ def like_comment(request, comment_id):
     return redirect(request.META.get('HTTP_REFERER', 'courses:index'))
 
 @login_required(login_url='user:login')
+def create_question_view(request):
+    try:
+        user_profile = request.user.userprofile
+    except:
+        return redirect('courses:index')
+    questions = Question.objects.order_by('-created_at')[:10]
+
+    return render(request, "courses/question.html", {
+        'questions': questions,
+    })
+
+@require_POST
+@login_required(login_url='user:login')
+def save_question_view(request):
+    try:
+        user_profile = request.user.userprofile
+    except:
+        return redirect('courses:index')
+
+    question_text = request.POST.get('question_text')
+    type = request.POST.get('type')
+    if question_text and type:
+        question = Question.objects.create(question_text=question_text, type=type)
+        i = 1
+        while True:
+            choice_text = request.POST.get(f'choice_text_{i}')
+            correct_choice = request.POST.get('correct_choice')
+            if not choice_text:
+                break
+            is_correct = (correct_choice == str(i))  # compare as strings
+            QuestionChoice.objects.create(question=question, choice_text=choice_text, is_correct=is_correct)
+            i += 1
+            
+    return redirect('courses:add_question')
+
+
+
+@login_required(login_url='user:login')
 def create_quiz_view(request):
     try:
         user_profile = request.user.userprofile
@@ -72,7 +109,6 @@ def create_quiz_view(request):
         return redirect('courses:index')
 
     return render(request, "courses/quiz.html", {
-        "profile": user_profile,
     })
 
 @login_required(login_url='user:login')
@@ -85,7 +121,6 @@ def quiz_attempt(request, quiz_id):
     quiz = get_object_or_404(Quiz, pk=quiz_id)
     questions = QuizQuestion.objects.filter(quiz=quiz).order_by('order').select_related('question')
     return render(request, 'courses/quiz_attempt.html', {
-        "profile": user_profile,
         'quiz': quiz,
         'questions': questions,
         'quiz_duration': 15,  # minutes
@@ -171,7 +206,6 @@ def score_view(request, response_id):
 
     # just display how many +/-/ answers and score of student. POST -> SAVE -> GET method for security
     return render(request, 'courses/quiz_result.html', {
-        'profile': user_profile,
         'quiz': quiz,
         'response_id': response.pk,
         'score': response.score,
@@ -198,7 +232,6 @@ def score_details_view(request, response_id):
         detail.correct_answer_text = correct.choice_text if correct else ''
 
     return render(request, 'courses/quiz_details.html', {
-        'profile': user_profile,
         'title': response.quiz.title,
         # sometimes we may not have topic
         'topic_id': response.quiz.topic.pk if response.quiz.topic else None,

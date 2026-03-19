@@ -106,19 +106,19 @@
           <div class="d-flex align-items-center mb-4">
             <div class="mr-4">
               <img class="img-profile rounded-circle"
-                src="{% if profile.profile_image %}{{ profile.profile_image.url }}{% else %}{% static 'img/avatar.png' %}{% endif %}"
+                src="{% if user_profile.profile_image %}{{ user_profile.profile_image.url }}{% else %}{% static 'img/avatar.png' %}{% endif %}"
                 alt="{{ full_name|default:'Profil rasmi' }}"
                 style="width:80px; height:80px; object-fit:cover;">
             </div>
             <div>
-              <p><strong>Ism Familiya:</strong> {{ full_name }}</p>
-              <p><strong>Tizimda roli:</strong> {{ role }}</p>
-              <p><strong>Email:</strong> {{ email }}</p>
+              <p><strong>Ism Familiya:</strong> {{ user.first_name }} {{ user.last_name }}</p>
+              <p><strong>Tizimda roli:</strong> {{ user_profile.get_role_display }}</p>
+              <p><strong>Email:</strong> {{ user_profile.user.email }}</p>
               <p><strong>Yoshi:</strong> {{ age }}</p>
-              <p><strong>Jinsi:</strong> {{ gender_display }}</p>
-              <p><strong>Yashash manzili:</strong> {{ region }}</p>
-              <p><strong>Ta'lim muassasasi:</strong> {{ otm }}</p>
-              <p><strong>Ro'yxatdan o'tgan sana:</strong> {{ join_date }}</p>
+              <p><strong>Jinsi:</strong> {{ user_profile.get_gender_display }}</p>
+              <p><strong>Yashash manzili:</strong> {{ user_profile.region }}</p>
+              <p><strong>Ta'lim muassasasi:</strong> {{ user_profile.otm }}</p>
+              <p><strong>Ro'yxatdan o'tgan sana:</strong> {{ user.date_joined|date:"j/m/Y" }}</p>
               <p><strong>Yozilgan kurslar soni:</strong> {{ course_count }} ta</p>
             </div>
           </div>
@@ -182,7 +182,7 @@
                 {% for response in responses %}
                 <tr>
                   <td class="px-4">{{ response.quiz.title }}</td>                  
-                    {% if response.quiz.topic.id %}
+                    {% if response.quiz.topic %}
                       <td>{{ response.quiz.topic.title }}</td>
                     {% else %}
                       <td>Topshiriqlar bo'limi</td>
@@ -210,8 +210,8 @@
                           <span class="badge" style="background:#fde8e6;color:#a02020;padding:4px 10px;border-radius:20px;font-weight:700;">0%</span>
                         </td>
                       {% endif %}
-                      <td style="color:#1cc88a;font-weight:600;"> {% if response.correct_count %} {{response.correct_count}} {% else %} 0 {% endif %} </td>
-                      <td style="color:#e74a3b;font-weight:600;"> {% if response.correct_count %} {{response.incorrect_count}} {% else %} 0 {% endif %} </td>
+                      <td style="color:#1cc88a;font-weight:600;"> {{response.correct_count}} </td>
+                      <td style="color:#e74a3b;font-weight:600;"> {{response.incorrect_count}} </td>
                       <td style="color:#a0aec0;">{{ response.created_date_time|date:"H:i, j/m/y" }}</td>
                       <td><a href="{% url "courses:score_details" response.id %}" class="btn btn-sm btn-outline-primary">Ko'rish</a></td>
                 </tr>
@@ -367,7 +367,7 @@ document.addEventListener("DOMContentLoaded", function () {
   $('#examsTable').DataTable({
     pageLength: 5,
     lengthMenu: [5, 10, 25, 50],
-    order: [[5, 'desc']],   // sort by date column descending by default
+    order: [[5, 'asc']],   // sort by date column descending by default
     language: {
       search: "Qidirish:",
       lengthMenu: "_MENU_ ta ko'rsatish",

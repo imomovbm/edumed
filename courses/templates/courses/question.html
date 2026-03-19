@@ -34,7 +34,7 @@
           </h6>
         </div>
         <div class="card-body">
-          <form method="POST" action="#">
+          <form method="POST" action="{% url "courses:save_question" %}">
             {% csrf_token %}
 
             <!-- Question Text -->
@@ -105,7 +105,7 @@
 
             <!-- Submit -->
             <div class="d-flex justify-content-between">
-              <a href="{% url 'courses:admin_quiz' %}" class="btn btn-secondary">
+              <a href="{% url 'courses:add_question' %}" class="btn btn-secondary">
                 <i class="fas fa-times mr-1"></i> Bekor qilish
               </a>
               <button type="submit" class="btn btn-success px-4">
@@ -125,12 +125,34 @@
             <h6 class="m-0 font-weight-bold text-primary">
               <i class="fas fa-list mr-2"></i>So'nggi savollar
             </h6>
-            <span class="badge badge-primary badge-pill">10 ta</span>
+            <span class="badge badge-primary badge-pill">{{ questions|length }} ta</span>
           </div>
           <div class="card-body p-0">
             <div style="max-height: 600px; overflow-y: auto;">
 
               <!-- Question Item — repeat this block for each question -->
+               {% for question in questions %}
+                  <div class="question-item">
+                    <div class="question-item-body">
+                      <div class="d-flex justify-content-between align-items-start mb-1">
+                        <span class="question-type-badge {{ question.type }}">{{ question.get_type_display }} </span>
+                        <button class="edit-btn" title="Tahrirlash">
+                          <i class="fas fa-pen"></i>
+                        </button>
+                      </div>
+                      <p class="question-text"> {{ question.question_text }} </p>
+                      <div class="question-choices">
+                        {% for choice in question.questionchoice_set.all %}
+                          <span class="choice {% if choice.is_correct %}correct{% endif %}">
+                              {% if choice.is_correct %}✓{% endif %}  
+                            {{ choice.choice_text }}
+                          </span>
+                        {% endfor %}                          
+                      </div>
+                    </div>
+                  </div>
+               {% endfor %}
+
               <div class="question-item">
                 <div class="question-item-body">
                   <div class="d-flex justify-content-between align-items-start mb-1">
@@ -381,7 +403,7 @@
              name="correct_choice"
              value="${choiceCount}"
              title="To'g'ri javob">
-      <span class="correct-label">To'g'ri</span>
+      <span class="correct-label"></span>
       <input type="text"
              class="choice-input"
              name="choice_text_${choiceCount}"
