@@ -82,20 +82,32 @@ def save_question_view(request):
         user_profile = request.user.userprofile
     except:
         return redirect('courses:index')
-
+    # get the question text and type, it is an input for any type of question
     question_text = request.POST.get('question_text')
     type = request.POST.get('type')
-    if question_text and type:
-        question = Question.objects.create(question_text=question_text, type=type)
+    # if we do not have any question text and type, we do not proceed
+    if not (question_text and type):
+        return redirect('courses:index')
+    # if there is then we  will create question object first then register its answers with loop
+    question = Question.objects.create(question_text=question_text, type=type)
+    # determine the correct choice id
+    correct_choices = request.POST.getlist('correct_choice')
+    # for multiple choice or multiple select questions we can do iteration until it breaks
+    if type in ['mc', 'ms']:    
         i = 1
         while True:
+            # take the choice text value and compare if it is correct answer
+            # we will break forever loop once we do not have next input
             choice_text = request.POST.get(f'choice_text_{i}')
-            correct_choice = request.POST.get('correct_choice')
             if not choice_text:
                 break
-            is_correct = (correct_choice == str(i))  # compare as strings
+            is_correct = str(i) in correct_choices  # compare as strings
             QuestionChoice.objects.create(question=question, choice_text=choice_text, is_correct=is_correct)
             i += 1
+    elif type == 'tf':
+        tf_answer = request.POST.get('tf_answer')  # 'true' or 'false'
+        QuestionChoice.objects.create(question=question, choice_text="To'g'ri", is_correct=(tf_answer == '1'))
+        QuestionChoice.objects.create(question=question, choice_text="Noto'g'ri", is_correct=(tf_answer == '0'))
             
     return redirect('courses:add_question')
 

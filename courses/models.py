@@ -45,7 +45,7 @@ class Question(models.Model):
 
 class QuestionChoice(models.Model):
     question = models.ForeignKey(Question, on_delete=models.CASCADE)
-    choice_text = models.TextField()
+    choice_text = models.TextField(blank=True, null=True)
     is_correct = models.BooleanField()
 
 class Quiz(models.Model):
