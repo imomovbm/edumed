@@ -1,10 +1,10 @@
 from django.shortcuts import render, redirect
-from django.http import HttpResponse
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from .models import UserProfile, PasswordResetRequest
+from courses.models import Response
 from datetime import datetime,date
 
 def calculate_age(dob):
@@ -12,18 +12,13 @@ def calculate_age(dob):
     today = date.today()
     return today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
 
+@login_required(login_url='user:login')
 def index(request):
-    if not request.user.is_authenticated:
-        return redirect('courses:index')
-    
-    # 1. Get the currently logged-in user and their profile
     user = request.user
-    
     try:
         # Assuming the UserProfile object is guaranteed to exist due to the registration process
         user_profile = user.userprofile 
-    except UserProfile.DoesNotExist:
-        # Handle the edge case if a profile is missing (e.g., user created via shell)
+    except:
         return redirect('user:login')
     
     # 2. Calculate Age and format date/gender
@@ -32,12 +27,12 @@ def index(request):
         age = calculate_age(user_profile.date_of_birth)
         
     gender_display = user_profile.get_gender_display() if user_profile and user_profile.gender is not None else "Ma'lumot yo'q"
-
-    # NOTE: You'll need a mechanism to count courses. For now, we'll use a placeholder.
+    
     # If you have a 'Course' model, the real count might look like:
     # course_count = user_profile.enrolled_courses.count() 
     course_count = 4 # Placeholder for now
-    
+    responses = Response.objects.filter(user=user).all()
+
     # 3. Prepare the context dictionary
     context = {
         # Data from the built-in Django User model
@@ -57,6 +52,7 @@ def index(request):
         'age': f"{age} yosh" if age is not None else "Ma'lumot yo'q",
         'gender_display': gender_display,
         'join_date': user.date_joined.strftime("%Y-%m-%d"), # Use the built-in User.date_joined
+        'responses': responses,
         'course_count': course_count,
     }
 
@@ -191,7 +187,6 @@ def login_view(request):
     else: # GET request
         return render(request, "user/login.html")
     
-# ... (inside your existing views.py file)
 
 def logout_view(request):
     # 1. Log the user out

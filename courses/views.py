@@ -13,15 +13,12 @@ def index(request):
         "profile": "profile",
     })
 
-
+@login_required(login_url='user:login')
 def modules_view(request):
-    user_profile = None
-    # Get the user profile
-    if request.user.is_authenticated:
-        try:
-            user_profile = request.user.userprofile
-        except:
-            return redirect('courses:index')
+    try:
+        user_profile = request.user.userprofile
+    except:
+        return redirect('courses:index')
     # Later you can create a 'Progress' model to track this accurately.
     mock_progress = {
         1: 100, # 100% complete
@@ -34,7 +31,7 @@ def modules_view(request):
         "progress": mock_progress,
     })
 
-@login_required
+@login_required(login_url='user:login')
 def topic_detail(request, topic_id):
     if request.method == 'POST':
         comment_text = request.POST.get('comment_text')
@@ -56,7 +53,7 @@ def topic_detail(request, topic_id):
         'title': "1-MA'RUZA: Hamshiralik ishi tarixi",
     })
 
-@login_required
+@login_required(login_url='user:login')
 def like_comment(request, comment_id):
     comment = get_object_or_404(TopicComment, id=comment_id)
     if comment.likes.filter(id=request.user.id).exists():
@@ -67,26 +64,23 @@ def like_comment(request, comment_id):
     # Redirect back to the same page
     return redirect(request.META.get('HTTP_REFERER', 'courses:index'))
 
-
+@login_required(login_url='user:login')
 def create_quiz_view(request):
-    user_profile = None
-    if request.user.is_authenticated:
-        try:
-            user_profile = request.user.userprofile
-        except:
-            return redirect('courses:index')
+    try:
+        user_profile = request.user.userprofile
+    except:
+        return redirect('courses:index')
 
     return render(request, "courses/quiz.html", {
         "profile": user_profile,
     })
 
+@login_required(login_url='user:login')
 def quiz_attempt(request, quiz_id):
-    user_profile = None
-    if request.user.is_authenticated:
-        try:
-            user_profile = request.user.userprofile
-        except:
-            return redirect('courses:index')
+    try:
+        user_profile = request.user.userprofile
+    except:
+        return redirect('courses:index')
         
     quiz = get_object_or_404(Quiz, pk=quiz_id)
     questions = QuizQuestion.objects.filter(quiz=quiz).order_by('order').select_related('question')
@@ -97,6 +91,7 @@ def quiz_attempt(request, quiz_id):
         'quiz_duration': 15,  # minutes
     })
 
+@login_required(login_url='user:login')
 @require_POST
 def log_violation(request):
     # Save to session or a Violation model if you want to track it
@@ -104,12 +99,12 @@ def log_violation(request):
     # e.g. ViolationLog.objects.create(user=request.user, quiz_id=data['quiz_id'], reason=data['reason'])
     return JsonResponse({'ok': True})
 
+@login_required(login_url='user:login')
 @require_POST
 def submit_quiz(request, quiz_id):
     # check if there is a actual user, if not redirect to index
     try:
-        if request.user.is_authenticated:
-            user_profile = request.user.userprofile
+        user_profile = request.user.userprofile
     except:
         return redirect('courses:index')
     
@@ -163,11 +158,11 @@ def submit_quiz(request, quiz_id):
     return redirect('courses:score_view', response_id=response.pk)
 
 # it gets response_id from redirect above submit_quiz view
+@login_required(login_url='user:login')
 def score_view(request, response_id):
     # as always check if user exists
     try:
-        if request.user.is_authenticated:
-            user_profile = request.user.userprofile
+        user_profile = request.user.userprofile
     except:
         return redirect('courses:index')
     # take response and quiz objects
@@ -186,11 +181,11 @@ def score_view(request, response_id):
     })
 
 # add view for watching score details
+@login_required(login_url='user:login')
 def score_details_view(request, response_id):
     # as always check if user exists
     try:
-        if request.user.is_authenticated:
-            user_profile = request.user.userprofile
+        user_profile = request.user.userprofile
     except:
         return redirect('courses:index')
     # take response and quiz objects.

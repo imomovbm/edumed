@@ -104,6 +104,7 @@
     }
     .btn:hover { opacity: 0.85; }
     .btn-primary { background: #4e73df; color: #fff; }
+    .btn-success { background: #4edf81; color: #fff; }
     .btn-outline  { background: #fff; color: #4e73df; border: 2px solid #4e73df; }
   </style>
 </head>
@@ -180,6 +181,9 @@
 
   <!-- Buttons -->
   <div class="btn-group">
+    <a href="{% url 'user:index' %}" class="btn btn-success">
+      <i class="fas fa-home"></i> Profilga qaytish
+    </a>    
     {% if topic_id %}
     <a href="{% url 'courses:topic' topic_id %}" class="btn btn-primary">
       <i class="fas fa-book-open"></i> Mavzuga qaytish

@@ -1,6 +1,7 @@
 {% extends "courses/layout.html" %}
 {% load static %}
 {% block main %}
+
 <!-- ── Django Messages ── -->
 {% if messages %}
 <div id="messages-container" style="position:fixed; top:20px; right:20px; z-index:9999; display:flex; flex-direction:column; gap:8px; max-width:360px;">
@@ -31,257 +32,409 @@
 </div>
 {% endif %}
 
-        <!-- Begin Page Content -->
+<!-- Begin Page Content -->
 <div class="container-fluid">
-          <h1 class="h3 mb-4 text-gray-800">Talaba Statistikasi — Edumed.uz</h1>
+  <h1 class="h3 mb-4 text-gray-800">Talaba Statistikasi — Edumed.uz</h1>
 
-          <!-- Student Info & AI Evaluation Row -->
-          <div class="row">
-            <div class="col-lg-6">
-                <div class="card shadow mb-4">
-                    <div class="card-header py-3">
-                        <h6 class="m-0 font-weight-bold text-primary">Talaba Ma'lumotlari</h6>
-                    </div>
-                    
-                    <div class="card-body">
-                        <div class="d-flex align-items-center mb-4">
-                            <div class="mr-4">
-                                <img class="img-profile rounded-circle" 
-                                    src="{% if profile.profile_image %}{{ profile.profile_image.url }}{% else %}{% static 'img/avatar.png' %}{% endif %}" 
-                                    alt="{{ full_name|default:'Profil rasmi' }}" 
-                                    style="width: 80px; height: 80px; object-fit: cover;">
-                            </div>
-                            <div>                          
-                                <p><strong>Ism Familiya:</strong> {{ full_name }}</p>
-                                <p><strong>Tizimda roli:</strong> {{ role }}</p>
-                                <p><strong>Email:</strong> {{ email }}</p>
-                                <p><strong>Yoshi:</strong> {{ age }}</p>
-                                <p><strong>Jinsi:</strong> {{ gender_display }}</p>
-                                <p><strong>Yashash manzili:</strong> {{ region }}</p>
-                                <p><strong>Ta'lim muassasasi:</strong> {{ otm }}</p>
-                                <p><strong>Ro'yxatdan o'tgan sana:</strong> {{ join_date }}</p>
-                                <p><strong>Yozilgan kurslar soni:</strong> {{ course_count }} ta</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+  <!-- Statistics Cards Row -->
+  <div class="row">
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-primary shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">O'rtacha baho</div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">87%</div>
             </div>
-
-            <div class="col-lg-6">
-              <div class="card shadow mb-4 border-left-success">
-                <div class="card-header py-3 d-flex justify-content-between align-items-center">
-                  <h6 class="m-0 font-weight-bold text-success">AI orqali baholash</h6>
-                  <img src="https://upload.wikimedia.org/wikipedia/commons/0/04/ChatGPT_logo.svg" width="40">
-                </div>
-                <div class="card-body">
-                  <p>Talaba faoliyati bo‘yicha sun'iy intellekt asosida baho oling.</p>
-                  <button class="btn btn-success btn-block" data-toggle="modal" data-target="#aiModal">🤖 Talabani AI orqali baholash</button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Statistics Cards Row -->
-          <div class="row">
-            <div class="col-xl-3 col-md-6 mb-4">
-              <div class="card border-left-primary shadow h-100 py-2">
-                <div class="card-body">
-                  <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                      <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">O‘rtacha baho</div>
-                      <div class="h5 mb-0 font-weight-bold text-gray-800">87%</div>
-                    </div>
-                    <div class="col-auto"><i class="fas fa-star fa-2x text-gray-300"></i></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="col-xl-3 col-md-6 mb-4">
-              <div class="card border-left-success shadow h-100 py-2">
-                <div class="card-body">
-                  <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                      <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Qatnashayotgan kurslar</div>
-                      <div class="h5 mb-0 font-weight-bold text-gray-800">12 ta</div>
-                    </div>
-                    <div class="col-auto"><i class="fas fa-book fa-2x text-gray-300"></i></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="col-xl-3 col-md-6 mb-4">
-              <div class="card border-left-info shadow h-100 py-2">
-                <div class="card-body">
-                  <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                      <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Tugatgan kurslar</div>
-                      <div class="h5 mb-0 font-weight-bold text-gray-800">8 ta</div>
-                    </div>
-                    <div class="col-auto"><i class="fas fa-check-circle fa-2x text-gray-300"></i></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Charts Row -->
-          <div class="row">
-            <div class="col-xl-8 col-lg-7">
-              <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                  <h6 class="m-0 font-weight-bold text-primary">Oylar kesimida faollik</h6>
-                </div>
-                <div class="card-body">
-                  <canvas id="studentActivityChart"></canvas>
-                </div>
-              </div>
-
-              <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                  <h6 class="m-0 font-weight-bold text-primary">Modullar bo‘yicha o‘zlashtirish</h6>
-                </div>
-                <div class="card-body">
-                  <h4 class="small font-weight-bold">Matematika <span class="float-right">80%</span></h4>
-                  <div class="progress mb-4"><div class="progress-bar bg-info" style="width: 80%"></div></div>
-                  <h4 class="small font-weight-bold">Fizika <span class="float-right">70%</span></h4>
-                  <div class="progress mb-4"><div class="progress-bar bg-success" style="width: 70%"></div></div>
-                  <h4 class="small font-weight-bold">Kimyo <span class="float-right">60%</span></h4>
-                  <div class="progress mb-4"><div class="progress-bar bg-warning" style="width: 60%"></div></div>
-                </div>
-              </div>
-            </div>
-
-            <div class="col-xl-4 col-lg-5">
-              <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                  <h6 class="m-0 font-weight-bold text-primary">Topshiriq turlari bo‘yicha o‘zlashtirish</h6>
-                </div>
-                <div class="card-body">
-                  <canvas id="taskTypeChart"></canvas>
-                </div>
-              </div>
-            </div>
+            <div class="col-auto"><i class="fas fa-star fa-2x text-gray-300"></i></div>
           </div>
         </div>
-
-
-        <!-- /.container-fluid -->
-         <!-- Recent Exams -->
-<div class="row">
-  <div class="col-12">
-    <div class="card shadow mb-4">
-      <div class="card-header py-3 d-flex justify-content-between align-items-center">
-        <h6 class="m-0 font-weight-bold text-primary">
-          <i class="fas fa-history mr-1"></i> So'nggi topshirilgan testlar
-        </h6>
       </div>
-      <div class="card-body p-0">
-        <div class="table-responsive">
-          <table class="table table-hover mb-0" style="font-size:0.9rem;">
-            <thead style="background:#f8f9fc;">
-              <tr>
-                <th class="px-4 py-3">Test nomi</th>
-                <th class="py-3">Mavzu</th>
-                <th class="py-3">Ball</th>
-                <th class="py-3">To'g'ri</th>
-                <th class="py-3">Noto'g'ri</th>
-                <th class="py-3">Sana</th>
-                <th class="py-3">Tafsilot</th>
-              </tr>
-            </thead>
-            <tbody>
-              <!-- placeholder rows -->
-              <tr>
-                <td class="px-4">Anatomiya asoslari — 1-test</td>
-                <td>Anatomiya</td>
-                <td><span class="badge" style="background:#d4f5e9;color:#1a7a56;padding:4px 10px;border-radius:20px;font-weight:700;">92%</span></td>
-                <td style="color:#1cc88a;font-weight:600;">18</td>
-                <td style="color:#e74a3b;font-weight:600;">2</td>
-                <td style="color:#a0aec0;">2025-03-10</td>
-                <td><a href="#" class="btn btn-sm btn-outline-primary">Ko'rish</a></td>
-              </tr>
-              <tr>
-                <td class="px-4">Fiziologiya — Yakuniy test</td>
-                <td>Fiziologiya</td>
-                <td><span class="badge" style="background:#ebf4ff;color:#2b4fa0;padding:4px 10px;border-radius:20px;font-weight:700;">75%</span></td>
-                <td style="color:#1cc88a;font-weight:600;">15</td>
-                <td style="color:#e74a3b;font-weight:600;">5</td>
-                <td style="color:#a0aec0;">2025-03-08</td>
-                <td><a href="#" class="btn btn-sm btn-outline-primary">Ko'rish</a></td>
-              </tr>
-              <tr>
-                <td class="px-4">Kimyo — Oraliq nazorat</td>
-                <td>Kimyo</td>
-                <td><span class="badge" style="background:#fde8e6;color:#a02020;padding:4px 10px;border-radius:20px;font-weight:700;">48%</span></td>
-                <td style="color:#1cc88a;font-weight:600;">9</td>
-                <td style="color:#e74a3b;font-weight:600;">11</td>
-                <td style="color:#a0aec0;">2025-03-05</td>
-                <td><a href="#" class="btn btn-sm btn-outline-primary">Ko'rish</a></td>
-              </tr>
-            </tbody>
-          </table>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-warning shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Qatnashayotgan kurslar</div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">12 ta</div>
+            </div>
+            <div class="col-auto"><i class="fas fa-book fa-2x text-gray-300"></i></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-success shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Tugatgan kurslar</div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">8 ta</div>
+            </div>
+            <div class="col-auto"><i class="fas fa-check-circle fa-2x text-gray-300"></i></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-danger shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Topshiriqlar</div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">8 ta</div>
+            </div>
+            <div class="col-auto"><i class="fas fa-desktop fa-2x text-gray-300"></i></div>
+          </div>
         </div>
       </div>
     </div>
   </div>
+
+  <!-- Student Info & AI Evaluation Row -->
+  <div class="row">
+    <div class="col-lg-6">
+      <div class="card shadow mb-4">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">Talaba Ma'lumotlari</h6>
+        </div>
+        <div class="card-body">
+          <div class="d-flex align-items-center mb-4">
+            <div class="mr-4">
+              <img class="img-profile rounded-circle"
+                src="{% if profile.profile_image %}{{ profile.profile_image.url }}{% else %}{% static 'img/avatar.png' %}{% endif %}"
+                alt="{{ full_name|default:'Profil rasmi' }}"
+                style="width:80px; height:80px; object-fit:cover;">
+            </div>
+            <div>
+              <p><strong>Ism Familiya:</strong> {{ full_name }}</p>
+              <p><strong>Tizimda roli:</strong> {{ role }}</p>
+              <p><strong>Email:</strong> {{ email }}</p>
+              <p><strong>Yoshi:</strong> {{ age }}</p>
+              <p><strong>Jinsi:</strong> {{ gender_display }}</p>
+              <p><strong>Yashash manzili:</strong> {{ region }}</p>
+              <p><strong>Ta'lim muassasasi:</strong> {{ otm }}</p>
+              <p><strong>Ro'yxatdan o'tgan sana:</strong> {{ join_date }}</p>
+              <p><strong>Yozilgan kurslar soni:</strong> {{ course_count }} ta</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-6">
+      <div class="card shadow mb-4 border-left-success">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+          <h6 class="m-0 font-weight-bold text-success">AI orqali baholash</h6>
+          <img src="https://upload.wikimedia.org/wikipedia/commons/0/04/ChatGPT_logo.svg" width="40">
+        </div>
+        <div class="card-body">
+          <p>Talaba faoliyati bo'yicha sun'iy intellekt asosida baho oling.</p>
+          <button class="btn btn-success btn-block" data-toggle="modal" data-target="#aiModal">
+            🤖 Talabani AI orqali baholash
+          </button>
+        </div>
+      </div>
+
+      <!-- Radar Chart -->
+      <div class="card shadow mb-4">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">Kuchli va zaif tomonlar</h6>
+        </div>
+        <div class="card-body">
+          <div style="height:200px;">
+            <canvas id="radarChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Exams -->
+  <div class="row">
+    <div class="col-12">
+      <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+          <h6 class="m-0 font-weight-bold text-primary">
+            <i class="fas fa-history mr-1"></i> So'nggi topshirilgan topshiriqlar
+          </h6>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-hover mb-0" id="examsTable" style="font-size:0.9rem;">
+              <thead style="background:#f8f9fc;">
+                <tr>
+                  <th class="px-4 py-3">Test nomi</th>
+                  <th class="py-3">Mavzu</th>
+                  <th class="py-3">Ball</th>
+                  <th class="py-3">To'g'ri</th>
+                  <th class="py-3">Noto'g'ri</th>
+                  <th class="py-3">Sana</th>
+                  <th class="py-3">Tafsilot</th>
+                </tr>
+              </thead>
+              <tbody>
+                <!-- placeholder rows — replace with  response in responses  later -->
+                {% for response in responses %}
+                <tr>
+                  <td class="px-4">{{ response.quiz.title }}</td>                  
+                    {% if response.quiz.topic.id %}
+                      <td>{{ response.quiz.topic.title }}</td>
+                    {% else %}
+                      <td>Topshiriqlar bo'limi</td>
+                    {% endif %}
+                      {% if response.score >= 90 %}
+                        <td>
+                          <span class="badge" style="background:#d4f5e9;color:#1a7a56;padding:4px 10px;border-radius:20px;font-weight:700;">
+                            {{ response.score|floatformat:0 }} %
+                          </span>
+                        </td>
+                      {% elif response.score >= 70 %}
+                        <td>
+                          <span class="badge" style="background:#ebf4ff;color:#2b4fa0;padding:4px 10px;border-radius:20px;font-weight:700;">
+                            {{ response.score|floatformat:0 }} %
+                          </span>
+                        </td>
+                      {% elif response.score >= 50 %}  
+                        <td>
+                          <span class="badge" style="background:#fde8e6;color:#a02020;padding:4px 10px;border-radius:20px;font-weight:700;">
+                            {{ response.score|floatformat:0 }} %
+                          </span>
+                        </td>                        
+                      {% else %}
+                        <td>
+                          <span class="badge" style="background:#fde8e6;color:#a02020;padding:4px 10px;border-radius:20px;font-weight:700;">0%</span>
+                        </td>
+                      {% endif %}
+                      <td style="color:#1cc88a;font-weight:600;"> {% if response.correct_count %} {{response.correct_count}} {% else %} 0 {% endif %} </td>
+                      <td style="color:#e74a3b;font-weight:600;"> {% if response.correct_count %} {{response.incorrect_count}} {% else %} 0 {% endif %} </td>
+                      <td style="color:#a0aec0;">{{ response.created_date_time|date:"H:i, j/m/y" }}</td>
+                      <td><a href="{% url "courses:score_details" response.id %}" class="btn btn-sm btn-outline-primary">Ko'rish</a></td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabbed Charts Section -->
+  <div class="row">
+    <div class="col-12">
+      <div class="card shadow mb-4">
+
+        <!-- Tab Headers -->
+        <div class="card-header py-0 px-0" style="border-bottom:1px solid #e3e6f0; overflow-x:auto;">
+          <div class="d-flex" id="chart-tabs" style="white-space:nowrap;">
+            <button class="chart-tab active" onclick="switchTab('modullar', this)">
+              <i class="fas fa-layer-group mr-2"></i>Modullar bo'yicha o'zlashtirish
+            </button>
+            <button class="chart-tab" onclick="switchTab('topshiriq', this)">
+              <i class="fas fa-tasks mr-2"></i>Topshiriq turlari
+            </button>
+            <button class="chart-tab" onclick="switchTab('radar', this)">
+              <i class="fas fa-calendar mr-2"></i>Oylar kesimida faollik
+            </button>
+          </div>
+        </div>
+
+        <div class="card-body">
+
+          <!-- Tab 1: Modullar -->
+          <div id="tab-modullar" class="chart-panel">
+            <h4 class="small font-weight-bold">Anatomiya <span class="float-right">80%</span></h4>
+            <div class="progress mb-3"><div class="progress-bar bg-info" style="width:80%"></div></div>
+            <h4 class="small font-weight-bold">Fiziologiya <span class="float-right">70%</span></h4>
+            <div class="progress mb-3"><div class="progress-bar bg-success" style="width:70%"></div></div>
+            <h4 class="small font-weight-bold">Kimyo <span class="float-right">60%</span></h4>
+            <div class="progress mb-3"><div class="progress-bar bg-warning" style="width:60%"></div></div>
+            <h4 class="small font-weight-bold">Fizika <span class="float-right">45%</span></h4>
+            <div class="progress mb-3"><div class="progress-bar bg-danger" style="width:45%"></div></div>
+            <h4 class="small font-weight-bold">Biologiya <span class="float-right">90%</span></h4>
+            <div class="progress mb-3"><div class="progress-bar bg-primary" style="width:90%"></div></div>
+          </div>
+
+          <!-- Tab 2: Topshiriq turlari -->
+          <div id="tab-topshiriq" class="chart-panel" style="display:none;">
+            <div style="height:300px;">
+              <canvas id="taskTypeChart"></canvas>
+            </div>
+          </div>
+
+          <!-- Tab 3: Faollik -->
+          <div id="tab-radar" class="chart-panel" style="display:none;">
+            <div style="height:300px;">
+              <canvas id="studentActivityChart"></canvas>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
 </div>
+<!-- /.container-fluid -->
+
 {% endblock main %}
 
 {% block extra_js %}
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap4.min.css">
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap4.min.js"></script>
+<style>
+  @keyframes slideIn {
+    from { opacity:0; transform:translateX(40px); }
+    to   { opacity:1; transform:translateX(0); }
+  }
+  .chart-tab {
+    padding: 14px 20px;
+    border: none;
+    background: transparent;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #a0aec0;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .chart-tab:hover { color: #4e73df; }
+  .chart-tab.active {
+    color: #4e73df;
+    border-bottom: 3px solid #4e73df;
+    background: #f8f9ff;
+  }
+</style>
 
 <script>
-document.addEventListener("DOMContentLoaded", function() {
-    // Student Activity Chart
-    var ctx1 = document.getElementById("studentActivityChart").getContext('2d');
-    new Chart(ctx1, {
-        type: 'line',
-        data: {
-            labels: ["Yanvar","Fevral","Mart","Aprel","May","Iyun","Iyul"],
-            datasets: [{
-                label: "Faol vaqt (soat)",
-                data: [15, 18, 20, 25, 22, 28, 30],
-                borderColor: "rgba(78, 115, 223, 1)",
-                backgroundColor: "rgba(78, 115, 223, 0.05)",
-                tension: 0.3,
-                fill: true
-            }]
-        },
-        options: { maintainAspectRatio: false }
-    });
+document.addEventListener("DOMContentLoaded", function () {
 
-    // Task Type Chart
-    var ctx2 = document.getElementById("taskTypeChart").getContext('2d');
-    new Chart(ctx2, {
-        type: 'doughnut',
-        data: {
-            labels: ["Test", "Savol-javob", "Yozma topshiriq"],
-            datasets: [{
-                data: [75, 60, 50],
-                backgroundColor: ['#4e73df', '#1cc88a', '#f6c23e'],
-                hoverBackgroundColor: ['#2e59d9', '#17a673', '#d4a72b']
-            }]
+  // ── Radar Chart (visible on load, init immediately) ──
+  new Chart(document.getElementById('radarChart'), {
+    type: 'radar',
+    data: {
+      labels: ['Anatomiya', 'Fiziologiya', 'Kimyo', 'Fizika', 'Biologiya', 'Patologiya'],
+      datasets: [
+        {
+          label: "Sizning natijangiz",
+          data: [80, 70, 60, 45, 90, 65],
+          backgroundColor: 'rgba(78, 115, 223, 0.15)',
+          borderColor: 'rgba(78, 115, 223, 1)',
+          pointBackgroundColor: 'rgba(78, 115, 223, 1)',
+          pointRadius: 4,
         },
-        options: { maintainAspectRatio: false, cutout: '70%' }
-    });
-});
-</script>
-  <style>
-    @keyframes slideIn {
-      from { opacity:0; transform:translateX(40px); }
-      to   { opacity:1; transform:translateX(0); }
+        {
+          label: "O'rtacha daraja",
+          data: [70, 70, 70, 70, 70, 70],
+          backgroundColor: 'rgba(28, 200, 138, 0.05)',
+          borderColor: 'rgba(28, 200, 138, 0.6)',
+          borderDash: [5, 5],
+          pointRadius: 0,
+        }
+      ]
+    },
+    options: {
+      maintainAspectRatio: false,
+      scales: {
+        r: {
+          min: 0, max: 100,
+          ticks: { stepSize: 20, font: { size: 10 } },
+          pointLabels: { font: { size: 12 } },
+          grid: { color: 'rgba(0,0,0,0.05)' }
+        }
+      },
+      plugins: { legend: { position: 'bottom' } }
     }
-  </style>
+  });
 
-  <script>
-    // Auto-dismiss messages after 5 seconds
-    document.querySelectorAll('.alert-toast').forEach(el => {
-      setTimeout(() => {
-        el.style.transition = 'opacity 0.4s';
-        el.style.opacity = '0';
-        setTimeout(() => el.remove(), 400);
-      }, 5000);
+  // ── Auto-dismiss messages after 5s ───────────────────
+  document.querySelectorAll('.alert-toast').forEach(el => {
+    setTimeout(() => {
+      el.style.transition = 'opacity 0.4s';
+      el.style.opacity = '0';
+      setTimeout(() => el.remove(), 400);
+    }, 5000);
+  });
+
+    // ── Exams DataTable ───────────────────────────────────
+  $('#examsTable').DataTable({
+    pageLength: 5,
+    lengthMenu: [5, 10, 25, 50],
+    order: [[5, 'desc']],   // sort by date column descending by default
+    language: {
+      search: "Qidirish:",
+      lengthMenu: "_MENU_ ta ko'rsatish",
+      info: "_TOTAL_ tadan _START_ - _END_ ko'rsatilmoqda",
+      infoEmpty: "Testlar mavjud emas",
+      infoFiltered: "(jami _MAX_ tadan filtr qilindi)",
+      paginate: {
+        first: "Birinchi",
+        last: "Oxirgi",
+        next: "Keyingi",
+        previous: "Oldingi"
+      },
+      zeroRecords: "Natija topilmadi"
+    },
+    columnDefs: [
+      { orderable: false, targets: [6] }  // disable sort on "Ko'rish" column
+    ]
+  });
+});
+
+// ── Tab Switcher ─────────────────────────────────────────
+function switchTab(tab, btn) {
+  document.querySelectorAll('.chart-panel').forEach(p => p.style.display = 'none');
+  document.querySelectorAll('.chart-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + tab).style.display = 'block';
+  btn.classList.add('active');
+
+  // Lazy init: Doughnut chart
+  if (tab === 'topshiriq' && !window.taskChartInit) {
+    window.taskChartInit = true;
+    new Chart(document.getElementById('taskTypeChart'), {
+      type: 'doughnut',
+      data: {
+        labels: ["Test", "Savol-javob", "Yozma topshiriq"],
+        datasets: [{
+          data: [75, 60, 50],
+          backgroundColor: ['#4e73df', '#1cc88a', '#f6c23e'],
+          hoverBackgroundColor: ['#2e59d9', '#17a673', '#d4a72b']
+        }]
+      },
+      options: {
+        maintainAspectRatio: false,
+        cutout: '70%',
+        plugins: { legend: { position: 'bottom' } }
+      }
     });
-  </script>
+  }
+
+  // Lazy init: Activity chart  ← different flag name now
+  if (tab === 'radar' && !window.activityChartInit) {
+    window.activityChartInit = true;
+    new Chart(document.getElementById('studentActivityChart'), {
+      type: 'line',
+      data: {
+        labels: ["Yanvar", "Fevral", "Mart", "Aprel", "May", "Iyun", "Iyul"],
+        datasets: [{
+          label: "Faol vaqt (soat)",
+          data: [15, 18, 20, 25, 22, 28, 30],
+          borderColor: "rgba(78, 115, 223, 1)",
+          backgroundColor: "rgba(78, 115, 223, 0.05)",
+          tension: 0.3,
+          fill: true
+        }]
+      },
+      options: { maintainAspectRatio: false }
+    });
+  }
+}
+</script>
 {% endblock extra_js %}
