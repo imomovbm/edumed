@@ -19,12 +19,12 @@
           <span>Bosh sahifa</span></a>
       </li>
       
-            <!-- Heading -->
+      {% if user_profile.role == 'superadmin' %}
+                  <!-- Heading -->
       <div class="sidebar-heading">
         ADMIN PANEL
       </div>
-
-      {% if user_profile.role == 'superadmin' %}
+      
         <li class="nav-item">
           <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#admin_test" aria-expanded="true" aria-controls="collapseUtilities">
             <i class="fas fa-fw fa-desktop"></i>
@@ -47,7 +47,7 @@
           <div id="admin_quiz" class="collapse" aria-labelledby="headingUtilities" data-parent="#accordionSidebar">
             <div class="bg-white py-2 collapse-inner rounded">
               <h6 class="collapse-header">Topshiriq:</h6>
-              <a class="collapse-item" href="{% url 'courses:all_questions' %}">Barcha topshiriqlar</a>
+              <a class="collapse-item" href="{% url 'courses:all_quizzes' %}">Barcha topshiriqlar</a>
               <a class="collapse-item" href="{% url 'courses:add_quiz' %}">Topshiriq yaratish</a>
             </div>
           </div>

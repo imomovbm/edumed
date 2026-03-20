@@ -5,7 +5,18 @@ from .models import TopicComment, Quiz, Question, QuizQuestion, Response, Respon
 from django.contrib.auth.models import User
 import json
 from django.http import JsonResponse
-from django.views.decorators.http import require_POST, require_http_methods
+from django.views.decorators.http import require_POST
+
+from functools import wraps
+
+def require_profile(view_func):
+    @wraps(view_func)
+    def wrapper(request, *args, **kwargs):
+        user_profile = getattr(request.user, 'userprofile', None)
+        if not user_profile:
+            return redirect('courses:index')
+        return view_func(request, *args, **kwargs)
+    return wrapper
 
 # Create your views here.
 def index(request):
@@ -14,11 +25,8 @@ def index(request):
     })
 
 @login_required(login_url='user:login')
+@require_profile
 def modules_view(request):
-    try:
-        user_profile = request.user.userprofile
-    except:
-        return redirect('courses:index')
     # Later you can create a 'Progress' model to track this accurately.
     mock_progress = {
         1: 100, # 100% complete
@@ -53,6 +61,7 @@ def topic_detail(request, topic_id):
     })
 
 @login_required(login_url='user:login')
+@require_profile
 def like_comment(request, comment_id):
     comment = get_object_or_404(TopicComment, id=comment_id)
     if comment.likes.filter(id=request.user.id).exists():
@@ -64,11 +73,8 @@ def like_comment(request, comment_id):
     return redirect(request.META.get('HTTP_REFERER', 'courses:index'))
 
 @login_required(login_url='user:login')
+@require_profile
 def all_questions_view(request):
-    try:
-        user_profile = request.user.userprofile
-    except:
-        return redirect('courses:index')
     questions = Question.objects.order_by('-created_at')
 
     return render(request, "courses/all_questions.html", {
@@ -76,11 +82,8 @@ def all_questions_view(request):
     })
 
 @login_required(login_url='user:login')
+@require_profile
 def create_question_view(request):
-    try:
-        user_profile = request.user.userprofile
-    except:
-        return redirect('courses:index')
     questions = Question.objects.order_by('-created_at')[:10]
 
     return render(request, "courses/question.html", {
@@ -89,11 +92,8 @@ def create_question_view(request):
 
 @require_POST
 @login_required(login_url='user:login')
+@require_profile
 def save_question_view(request):
-    try:
-        user_profile = request.user.userprofile
-    except:
-        return redirect('courses:index')
     # get the question text and type, it is an input for any type of question
     question_text = request.POST.get('question_text')
     type = request.POST.get('type')
@@ -124,11 +124,8 @@ def save_question_view(request):
     return redirect('courses:add_question')
 
 @login_required(login_url='user:login')
+@require_profile
 def edit_question_view(request, question_id):
-    try:
-        user_profile = request.user.userprofile
-    except:
-        return redirect('courses:index')
     questions = Question.objects.order_by('-created_at')[:10]
     
     if question_id:
@@ -172,11 +169,14 @@ def edit_question_view(request, question_id):
     })
 
 @login_required(login_url='user:login')
+@require_profile
+def all_quizzes_view(request):
+    quizzes = Quiz.objects.order_by('-id')
+    return render(request, 'courses/all_quizzes.html', {'quizzes': quizzes})
+
+@login_required(login_url='user:login')
+@require_profile
 def create_quiz_view(request):
-    try:
-        user_profile = request.user.userprofile
-    except:
-        return redirect('courses:index')
     questions = Question.objects.order_by('-created_at')
     topics = Topic.objects.all()
     return render(request, "courses/quiz.html", {
@@ -185,11 +185,93 @@ def create_quiz_view(request):
     })
 
 @login_required(login_url='user:login')
+@require_profile
+@require_POST
+def save_quiz_view(request):
+    title = request.POST.get('title')
+    type = request.POST.get('type')
+    description = request.POST.get('description')
+    if not (title and type):
+        messages.error(request, "To'ldirilmagan maydonlar mavjud") 
+        return redirect("courses:add_quiz")
+    if topic_id := request.POST.get('topic'):
+        topic = get_object_or_404(Topic, pk = topic_id)
+    else:
+        topic = None
+
+    question_ids = request.POST.getlist('question_ids')
+    question_orders = request.POST.getlist('question_orders')
+    if not (question_ids and question_orders):
+        messages.error(request, "Savollar tanlanmagan") 
+        return redirect("courses:add_quiz")
+
+    quiz = Quiz.objects.create(
+        title = title,
+        type = type,
+        topic = topic, 
+        description = description,
+    )
+
+    for question_id, order in zip(question_ids, question_orders):
+        question = get_object_or_404(Question, pk = question_id)
+        QuizQuestion.objects.create(
+            quiz = quiz,
+            question = question,
+            order = int(order)
+        )
+    messages.success(request, "Topshiriq muvaffaqiyatli yaratildi") 
+    return redirect("courses:add_quiz")
+
+@login_required(login_url='user:login')
+@require_profile
+def edit_quiz_view(request, quiz_id):
+    quiz = get_object_or_404(Quiz, pk = quiz_id)
+    
+    if request.method == 'POST':
+        title = request.POST.get('title')
+        type = request.POST.get('type')
+        description = request.POST.get('description')
+        if not (title and type):
+            messages.error(request, "To'ldirilmagan maydonlar mavjud") 
+            return redirect("courses:add_quiz")
+        if topic_id := request.POST.get('topic'):
+            topic = get_object_or_404(Topic, pk = topic_id)
+        else:
+            topic = None
+
+        question_ids = request.POST.getlist('question_ids')
+        question_orders = request.POST.getlist('question_orders')
+        if not (question_ids and question_orders):
+            messages.error(request, "Savollar tanlanmagan") 
+            return redirect("courses:add_quiz")
+
+        quiz.title = title
+        quiz.type = type
+        quiz.topic = topic
+        quiz.description = description
+        quiz.save()
+        quiz.quizquestion_set.all().delete()
+        for question_id, order in zip(question_ids, question_orders):
+            question = get_object_or_404(Question, pk = question_id)
+            QuizQuestion.objects.create(
+                quiz = quiz,
+                question = question,
+                order = int(order)
+            )
+        messages.success(request, "Topshiriq muvaffaqiyatli o'zgartirildi") 
+        return redirect("courses:edit_quiz", quiz_id)
+    
+    questions = Question.objects.order_by('-created_at')
+    topics = Topic.objects.all()
+    return render(request, "courses/quiz.html", {
+        'current_quiz': quiz,
+        'questions':questions,
+        'topics':topics
+    })
+
+@login_required(login_url='user:login')
+@require_profile
 def quiz_attempt(request, quiz_id):
-    try:
-        user_profile = request.user.userprofile
-    except:
-        return redirect('courses:index')
         
     quiz = get_object_or_404(Quiz, pk=quiz_id)
     questions = QuizQuestion.objects.filter(quiz=quiz).order_by('order').select_related('question')
@@ -208,18 +290,13 @@ def log_violation(request):
     return JsonResponse({'ok': True})
 
 @login_required(login_url='user:login')
+@require_profile
 @require_POST
 def submit_quiz(request, quiz_id):
-    # check if there is a actual user, if not redirect to index
-    try:
-        user_profile = request.user.userprofile
-    except:
-        return redirect('courses:index')
-    
     # take the quiz_id and its object from db
     quiz = get_object_or_404(Quiz, pk=quiz_id)
     response = Response.objects.create(
-        user=user_profile.user,
+        user=request.user,
         quiz=quiz,
         score = 0,
     )
@@ -267,12 +344,8 @@ def submit_quiz(request, quiz_id):
 
 # it gets response_id from redirect above submit_quiz view
 @login_required(login_url='user:login')
+@require_profile
 def score_view(request, response_id):
-    # as always check if user exists
-    try:
-        user_profile = request.user.userprofile
-    except:
-        return redirect('courses:index')
     # take response and quiz objects
     response = get_object_or_404(Response, pk=response_id, user=request.user)
     quiz = response.quiz
@@ -289,13 +362,8 @@ def score_view(request, response_id):
 
 # add view for watching score details
 @login_required(login_url='user:login')
+@require_profile
 def score_details_view(request, response_id):
-    # as always check if user exists
-    try:
-        user_profile = request.user.userprofile
-    except:
-        return redirect('courses:index')
-    # take response and quiz objects.
     response = get_object_or_404(Response, pk=response_id, user=request.user)
     details = ResponseDetails.objects.filter(response=response).all()
     # for each detail, which is what user selected. First take correct answer of the exact question and assign it to new value

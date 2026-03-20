@@ -6,8 +6,10 @@
 
   <!-- Page Heading -->
   <div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h3 mb-0 text-gray-800">Yangi test yaratish</h1>
-    <a href="{% url 'courses:index' %}" class="btn btn-sm btn-secondary shadow-sm">
+    <h1 class="h3 mb-0 text-gray-800">
+      {% if current_quiz %}Testni tahrirlash{% else %}Yangi test yaratish{% endif %}
+    </h1>
+    <a href="{% url 'courses:add_quiz' %}" class="btn btn-sm btn-secondary shadow-sm">
       <i class="fas fa-arrow-left fa-sm mr-1"></i> Orqaga
     </a>
   </div>
@@ -17,13 +19,34 @@
     <!-- ── Left: Quiz Form ── -->
     <div class="col-xl-8 col-lg-7">
 
+        <!-- ── Django Messages ── -->
       {% if messages %}
+      <div id="messages-container" style="position:fixed; top:20px; right:20px; z-index:9999; display:flex; flex-direction:column; gap:8px; max-width:360px;">
         {% for message in messages %}
-        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-          {{ message }}
-          <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
+        <div class="alert-toast alert-{{ message.tags }}" style="
+          display:flex; align-items:flex-start; justify-content:space-between; gap:12px;
+          padding:14px 16px; border-radius:10px; box-shadow:0 4px 16px rgba(0,0,0,0.12);
+          font-size:0.9rem; font-weight:500; animation: slideIn 0.3s ease;
+          {% if message.tags == 'success' %}background:#d4f5e9; color:#1a7a56; border-left:4px solid #1cc88a;
+          {% elif message.tags == 'error' %}background:#fde8e6; color:#a02020; border-left:4px solid #e74a3b;
+          {% elif message.tags == 'warning' %}background:#fef9e7; color:#8a6200; border-left:4px solid #f6c23e;
+          {% else %}background:#ebf4ff; color:#2b4fa0; border-left:4px solid #4e73df;{% endif %}
+        ">
+          <div style="display:flex; align-items:center; gap:8px;">
+            {% if message.tags == 'success' %}<i class="fas fa-check-circle"></i>
+            {% elif message.tags == 'error' %}<i class="fas fa-times-circle"></i>
+            {% elif message.tags == 'warning' %}<i class="fas fa-exclamation-triangle"></i>
+            {% else %}<i class="fas fa-info-circle"></i>{% endif %}
+            <span>{{ message }}</span>
+          </div>
+          <button onclick="this.parentElement.remove()" style="
+            background:none; border:none; cursor:pointer; font-size:1rem;
+            opacity:0.6; padding:0; line-height:1; color:inherit;">
+            <i class="fas fa-times"></i>
+          </button>
         </div>
         {% endfor %}
+      </div>
       {% endif %}
 
       <div class="card shadow mb-4">
@@ -33,13 +56,13 @@
           </h6>
         </div>
         <div class="card-body">
-          <form method="POST" action="#" id="quizForm">
+          <form method="POST" action="{% if current_quiz %}{% url 'courses:edit_quiz' current_quiz.id %}{% else %}{% url 'courses:save_quiz' %}{% endif %}" id="quizForm">
             {% csrf_token %}
 
             <!-- Quiz Title -->
             <div class="form-group">
               <label class="font-weight-bold">Test nomi <span class="text-danger">*</span></label>
-              <input type="text" class="form-control" name="title"
+              <input type="text" class="form-control" name="title" value="{{ current_quiz.title|default:'' }}"
                 placeholder="Masalan: Anatomiya 1-bo'lim testi" required>
             </div>
 
@@ -47,8 +70,8 @@
             <div class="form-group">
               <label class="font-weight-bold">Test turi <span class="text-danger">*</span></label>
               <select class="form-control" name="type" id="quizType" onchange="handleQuizType(this.value)">
-                <option value="1">Mavzuga biriktirilgan topshiriq</option>
-                <option value="2">Umumiy topshiriqlar</option>
+                <option value="1" {% if current_quiz.type == '1' %}selected{% endif %}>Mavzuga biriktirilgan topshiriq</option>
+                <option value="2" {% if current_quiz.type == '2' %}selected{% endif %}>Umumiy topshiriqlar</option>
               </select>
             </div>
 
@@ -58,7 +81,10 @@
               <select class="form-control" name="topic">
                 <option value="">— Mavzuni tanlang —</option>
                 {% for topic in topics %}
-                <option value="{{ topic.id }}">{{ topic.title }}</option>
+                <option value="{{ topic.id }}" 
+                  {% if current_quiz.topic and current_quiz.topic.id == topic.id %}selected{% endif %}>
+                  {{ topic.title }}
+                </option>
                 {% endfor %}
               </select>
             </div>
@@ -67,7 +93,7 @@
             <div class="form-group">
               <label class="font-weight-bold">Tavsif <span class="text-muted">(ixtiyoriy)</span></label>
               <textarea class="form-control" name="description" rows="2"
-                placeholder="Test haqida qisqacha ma'lumot..."></textarea>
+                placeholder="Test haqida qisqacha ma'lumot...">{{ current_quiz.description|default:'' }}</textarea>
             </div>
 
             <hr>
@@ -230,14 +256,26 @@
     {% endfor %}
   ];
 
-  let selectedIds = [];   // ordered list of selected question IDs
+  // Pre-populate selected questions when editing
+  let selectedIds = [
+    {% if current_quiz %}
+      {% for qq in current_quiz.quizquestion_set.all|dictsort:"order" %}
+        {{ qq.question.id }},
+      {% endfor %}
+    {% endif %}
+  ];
 
   // ── Init ─────────────────────────────────────────────
   document.addEventListener('DOMContentLoaded', () => {
     renderPicker(ALL_QUESTIONS);
     document.getElementById('totalCount').textContent = ALL_QUESTIONS.length + ' ta';
-
     document.getElementById('questionSearch').addEventListener('input', filterQuestions);
+
+    // ← add these two lines for edit mode
+    {% if current_quiz %}
+    handleQuizType('{{ current_quiz.type }}');
+    updateSelectedPanel();
+    {% endif %}
   });
 
   // ── Quiz type toggle ──────────────────────────────────

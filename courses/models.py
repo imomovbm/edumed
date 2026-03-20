@@ -50,17 +50,18 @@ class QuestionChoice(models.Model):
 
 class Quiz(models.Model):
     title = models.TextField()
-    topic = models.ForeignKey(Topic, on_delete=models.SET_NULL, null=True, blank=True)
     TYPE_CHOICES = [
         ('1', 'Mavzuga biriktirilgan topshiriq'),
         ('2', 'Umumiy topshiriqlar'),
     ]
     type = models.CharField(max_length=50, choices=TYPE_CHOICES)     
+    topic = models.ForeignKey(Topic, on_delete=models.SET_NULL, null=True, blank=True)
     description = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
 
 class QuizQuestion(models.Model):
-    question = models.ForeignKey(Question, on_delete=models.CASCADE)
     quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE)
+    question = models.ForeignKey(Question, on_delete=models.CASCADE)
     order = models.IntegerField()
 
 class Response(models.Model):
