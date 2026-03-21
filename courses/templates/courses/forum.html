@@ -1,0 +1,420 @@
+{% extends "courses/layout.html" %}
+{% load static %}
+
+{% block main %}
+<div class="container-fluid">
+
+  <!-- Page Heading -->
+  <div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">
+      <i class="fas fa-comments mr-2 text-primary"></i>Forum
+    </h1>
+  </div>
+
+  <div class="row">
+
+    <!-- ── Main Forum ── -->
+    <div class="col-lg-8">
+
+      <!-- New Post -->
+      <div class="card shadow mb-4">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">
+            <i class="fas fa-pen mr-2"></i>Yangi post yozish
+          </h6>
+        </div>
+        <div class="card-body">
+          <form id="newPostForm">
+            <div class="form-group mb-2">
+              <input type="text" class="form-control" placeholder="Mavzu nomi..." required>
+            </div>
+            <div class="form-group mb-2">
+              <textarea class="form-control" rows="3" placeholder="Fikr yoki savolingizni yozing..." required></textarea>
+            </div>
+            <div class="text-right">
+              <button type="submit" class="btn btn-primary px-4">
+                <i class="fas fa-paper-plane mr-1"></i> Yuborish
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Posts -->
+      <div id="postsList">
+
+        <!-- ── Post 1 ── -->
+        <div class="card shadow mb-4 post-card">
+          <div class="card-body">
+
+            <!-- Post Header -->
+            <div class="d-flex align-items-start mb-3">
+              <img src="{% static 'img/avatar.png' %}" class="rounded-circle mr-3 border"
+                style="width:46px;height:46px;object-fit:cover;">
+              <div class="flex-grow-1">
+                <div class="d-flex justify-content-between align-items-start">
+                  <div>
+                    <h6 class="mb-0 font-weight-bold">Bekzod Yusupov</h6>
+                    <small class="text-muted">2 soat oldin</small>
+                  </div>
+                  <span class="badge badge-pill" style="background:#ebf4ff;color:#2b4fa0;font-size:0.75rem;">
+                    Anatomiya
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Post Title & Body -->
+            <h6 class="font-weight-bold text-gray-800 mb-2">Hamshiralik fanining asosiy vazifalari qaysilar?</h6>
+            <p class="text-gray-700 small mb-3">
+              Hamshiralik ishi tarixi mavzusini o'qib chiqib, bir savol tug'ildi. Florence Nightingale aytgan 
+              "bemor markazida bo'lishi kerak" deganda nimani nazarda tutgan? Buni tushuntirib bera olasizlarmi?
+            </p>
+
+            <!-- Post Actions -->
+            <div class="d-flex align-items-center gap-3" style="gap:12px;">
+              <button class="vote-btn like-btn active" data-id="post-1" data-type="like">
+                <i class="fas fa-thumbs-up"></i>
+                <span class="vote-count">12</span>
+              </button>
+              <button class="vote-btn dislike-btn" data-id="post-1" data-type="dislike">
+                <i class="fas fa-thumbs-down"></i>
+                <span class="vote-count">2</span>
+              </button>
+              <button class="reply-toggle-btn" onclick="toggleReplyBox('reply-box-1')">
+                <i class="fas fa-reply mr-1"></i> Javob berish
+              </button>
+              <span class="text-muted small ml-auto">
+                <i class="fas fa-comment mr-1"></i> 3 ta javob
+              </span>
+            </div>
+
+            <!-- Reply Input -->
+            <div id="reply-box-1" class="reply-box mt-3" style="display:none;">
+              <div class="d-flex align-items-start">
+                <img src="{% static 'img/avatar.png' %}" class="rounded-circle mr-2 border"
+                  style="width:32px;height:32px;object-fit:cover;">
+                <div class="flex-grow-1">
+                  <textarea class="form-control form-control-sm" rows="2"
+                    placeholder="Javobingizni yozing..."></textarea>
+                  <div class="text-right mt-2">
+                    <button class="btn btn-sm btn-outline-secondary mr-1"
+                      onclick="toggleReplyBox('reply-box-1')">Bekor</button>
+                    <button class="btn btn-sm btn-primary">Yuborish</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Replies -->
+            <div class="replies-section mt-3">
+              <div class="reply-item">
+                <div class="d-flex align-items-start">
+                  <img src="{% static 'img/avatar.png' %}" class="rounded-circle mr-2 border"
+                    style="width:34px;height:34px;object-fit:cover;">
+                  <div class="reply-bubble flex-grow-1">
+                    <div class="d-flex justify-content-between">
+                      <h6 class="mb-0 font-weight-bold small">Malika Rahimova</h6>
+                      <small class="text-muted">1 soat oldin</small>
+                    </div>
+                    <p class="small text-gray-700 mb-2">
+                      Bu degani bemor ehtiyojlari doimo birinchi o'ringa qo'yilishi kerak. Hamshira har doim 
+                      bemorning xohish va holatini inobatga olishi lozim.
+                    </p>
+                    <div class="d-flex align-items-center" style="gap:10px;">
+                      <button class="vote-btn like-btn" data-id="reply-1" data-type="like">
+                        <i class="fas fa-thumbs-up"></i>
+                        <span class="vote-count">4</span>
+                      </button>
+                      <button class="vote-btn dislike-btn" data-id="reply-1" data-type="dislike">
+                        <i class="fas fa-thumbs-down"></i>
+                        <span class="vote-count">0</span>
+                      </button>
+                      <button class="reply-toggle-btn" onclick="toggleReplyBox('reply-box-1')">
+                        <i class="fas fa-reply mr-1"></i> Javob
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="reply-item">
+                <div class="d-flex align-items-start">
+                  <img src="{% static 'img/avatar.png' %}" class="rounded-circle mr-2 border"
+                    style="width:34px;height:34px;object-fit:cover;">
+                  <div class="reply-bubble flex-grow-1">
+                    <div class="d-flex justify-content-between">
+                      <h6 class="mb-0 font-weight-bold small">Jasur Toshmatov</h6>
+                      <small class="text-muted">45 daqiqa oldin</small>
+                    </div>
+                    <p class="small text-gray-700 mb-2">
+                      Qo'shimcha qilsam: bu konseptsiya hozirgi "patient-centered care" tushunchasi bilan 
+                      to'liq mos keladi. Zamonaviy tibbiyotning asosi!
+                    </p>
+                    <div class="d-flex align-items-center" style="gap:10px;">
+                      <button class="vote-btn like-btn" data-id="reply-2" data-type="like">
+                        <i class="fas fa-thumbs-up"></i>
+                        <span class="vote-count">2</span>
+                      </button>
+                      <button class="vote-btn dislike-btn" data-id="reply-2" data-type="dislike">
+                        <i class="fas fa-thumbs-down"></i>
+                        <span class="vote-count">0</span>
+                      </button>
+                      <button class="reply-toggle-btn" onclick="toggleReplyBox('reply-box-1')">
+                        <i class="fas fa-reply mr-1"></i> Javob
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ── Post 2 ── -->
+        <div class="card shadow mb-4 post-card">
+          <div class="card-body">
+            <div class="d-flex align-items-start mb-3">
+              <img src="{% static 'img/avatar.png' %}" class="rounded-circle mr-3 border"
+                style="width:46px;height:46px;object-fit:cover;">
+              <div class="flex-grow-1">
+                <div class="d-flex justify-content-between align-items-start">
+                  <div>
+                    <h6 class="mb-0 font-weight-bold">Nodira Xasanova</h6>
+                    <small class="text-muted">5 soat oldin</small>
+                  </div>
+                  <span class="badge badge-pill" style="background:#d4f5e9;color:#1a7a56;font-size:0.75rem;">
+                    Umumiy
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <h6 class="font-weight-bold text-gray-800 mb-2">Virginia Henderson nazariyasini qanday tushunamiz?</h6>
+            <p class="text-gray-700 small mb-3">
+              Virginia Hendersonning "14 asosiy ehtiyoj" nazariyasini amaliyotda qanday qo'llash mumkin? 
+              Kimda bu mavzu bo'yicha tavsiyalar bor?
+            </p>
+
+            <div class="d-flex align-items-center" style="gap:12px;">
+              <button class="vote-btn like-btn" data-id="post-2" data-type="like">
+                <i class="fas fa-thumbs-up"></i>
+                <span class="vote-count">7</span>
+              </button>
+              <button class="vote-btn dislike-btn" data-id="post-2" data-type="dislike">
+                <i class="fas fa-thumbs-down"></i>
+                <span class="vote-count">1</span>
+              </button>
+              <button class="reply-toggle-btn" onclick="toggleReplyBox('reply-box-2')">
+                <i class="fas fa-reply mr-1"></i> Javob berish
+              </button>
+              <span class="text-muted small ml-auto">
+                <i class="fas fa-comment mr-1"></i> 0 ta javob
+              </span>
+            </div>
+
+            <div id="reply-box-2" class="reply-box mt-3" style="display:none;">
+              <div class="d-flex align-items-start">
+                <img src="{% static 'img/avatar.png' %}" class="rounded-circle mr-2 border"
+                  style="width:32px;height:32px;object-fit:cover;">
+                <div class="flex-grow-1">
+                  <textarea class="form-control form-control-sm" rows="2"
+                    placeholder="Javobingizni yozing..."></textarea>
+                  <div class="text-right mt-2">
+                    <button class="btn btn-sm btn-outline-secondary mr-1"
+                      onclick="toggleReplyBox('reply-box-2')">Bekor</button>
+                    <button class="btn btn-sm btn-primary">Yuborish</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── Sidebar ── -->
+    <div class="col-lg-4">
+
+      <!-- Search -->
+      <div class="card shadow mb-4">
+        <div class="card-body">
+          <div class="input-group">
+            <input type="text" class="form-control" placeholder="Forumda qidirish...">
+            <div class="input-group-append">
+              <button class="btn btn-primary"><i class="fas fa-search"></i></button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="card shadow mb-4">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">Forum statistikasi</h6>
+        </div>
+        <div class="card-body p-0">
+          <div class="d-flex align-items-center justify-content-between px-3 py-2 border-bottom">
+            <span class="small text-gray-700"><i class="fas fa-file-alt mr-2 text-primary"></i>Jami postlar</span>
+            <span class="font-weight-bold">124</span>
+          </div>
+          <div class="d-flex align-items-center justify-content-between px-3 py-2 border-bottom">
+            <span class="small text-gray-700"><i class="fas fa-comments mr-2 text-success"></i>Jami javoblar</span>
+            <span class="font-weight-bold">489</span>
+          </div>
+          <div class="d-flex align-items-center justify-content-between px-3 py-2">
+            <span class="small text-gray-700"><i class="fas fa-users mr-2 text-info"></i>Faol a'zolar</span>
+            <span class="font-weight-bold">38</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Top Contributors -->
+      <div class="card shadow mb-4">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">
+            <i class="fas fa-trophy mr-2 text-warning"></i>Eng faol a'zolar
+          </h6>
+        </div>
+        <div class="card-body p-0">
+          {% for i in "123" %}
+          <div class="d-flex align-items-center px-3 py-2 border-bottom">
+            <span class="font-weight-bold text-muted mr-3" style="width:20px;">{{ forloop.counter }}</span>
+            <img src="{% static 'img/avatar.png' %}" class="rounded-circle mr-2 border"
+              style="width:34px;height:34px;object-fit:cover;">
+            <div class="flex-grow-1">
+              <div class="font-weight-bold small">Foydalanuvchi {{ forloop.counter }}</div>
+              <div class="text-muted" style="font-size:0.75rem;">{{ forloop.counter }}2 ta post</div>
+            </div>
+            <span class="badge badge-warning badge-pill">{{ forloop.counter }}4 <i class="fas fa-thumbs-up"></i></span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Categories -->
+      <div class="card shadow mb-4">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">Mavzular bo'yicha</h6>
+        </div>
+        <div class="card-body p-0">
+          {% for topic in topics %}
+          <a href="{% url "courses:topic" topic.id %}" class="d-flex align-items-center justify-content-between px-3 py-2 border-bottom text-decoration-none category-link">
+            <span class="small text-gray-700">{{ topic.title }}</span>
+            <span class="badge badge-primary badge-pill">24</span>
+          </a>          
+          {% endfor %}            
+          <a href="#" class="d-flex align-items-center justify-content-between px-3 py-2 border-bottom text-decoration-none category-link">
+            <span class="small text-gray-700">Anatomiya</span>
+            <span class="badge badge-primary badge-pill">24</span>
+          </a>
+          <a href="#" class="d-flex align-items-center justify-content-between px-3 py-2 border-bottom text-decoration-none category-link">
+            <span class="small text-gray-700">Fiziologiya</span>
+            <span class="badge badge-primary badge-pill">18</span>
+          </a>
+          <a href="#" class="d-flex align-items-center justify-content-between px-3 py-2 border-bottom text-decoration-none category-link">
+            <span class="small text-gray-700">Kimyo</span>
+            <span class="badge badge-primary badge-pill">12</span>
+          </a>
+          <a href="#" class="d-flex align-items-center justify-content-between px-3 py-2 text-decoration-none category-link">
+            <span class="small text-gray-700">Umumiy savollar</span>
+            <span class="badge badge-primary badge-pill">70</span>
+          </a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock main %}
+
+{% block extra_js %}
+<style>
+  .post-card { border-radius: 12px; transition: box-shadow 0.2s; }
+  .post-card:hover { box-shadow: 0 6px 20px rgba(78,115,223,0.12) !important; }
+
+  /* Vote buttons */
+  .vote-btn {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: none; border: 1px solid #e3e6f0;
+    border-radius: 20px; padding: 4px 12px;
+    font-size: 0.8rem; color: #a0aec0;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .vote-btn:hover { border-color: #4e73df; color: #4e73df; }
+  .vote-btn.like-btn.active  { background:#ebf4ff; border-color:#4e73df; color:#4e73df; }
+  .vote-btn.dislike-btn.active { background:#fde8e6; border-color:#e74a3b; color:#e74a3b; }
+
+  /* Reply button */
+  .reply-toggle-btn {
+    background: none; border: none;
+    color: #a0aec0; font-size: 0.8rem;
+    cursor: pointer; padding: 4px 8px;
+    border-radius: 6px; transition: all 0.15s;
+  }
+  .reply-toggle-btn:hover { background: #f8f9ff; color: #4e73df; }
+
+  /* Reply items */
+  .replies-section { border-top: 1px solid #e3e6f0; padding-top: 16px; margin-top: 4px; }
+  .reply-item { margin-bottom: 16px; padding-left: 12px; border-left: 2px solid #e3e6f0; }
+  .reply-bubble {
+    background: #f8f9fc; border-radius: 10px;
+    padding: 10px 14px; border: 1px solid #e3e6f0;
+  }
+
+  /* Category links */
+  .category-link:hover { background: #f8f9ff; }
+
+  /* Reply box animation */
+  .reply-box { animation: fadeIn 0.2s ease; }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(-4px); } to { opacity:1; transform:translateY(0); } }
+</style>
+
+<script>
+  // ── Toggle reply box ──────────────────────────────────
+  function toggleReplyBox(id) {
+    const box = document.getElementById(id);
+    if (!box) return;
+    const isVisible = box.style.display !== 'none';
+    box.style.display = isVisible ? 'none' : 'block';
+    if (!isVisible) box.querySelector('textarea').focus();
+  }
+
+  // ── Like / Dislike ────────────────────────────────────
+  document.addEventListener('click', function (e) {
+    const btn = e.target.closest('.vote-btn');
+    if (!btn) return;
+
+    const id   = btn.dataset.id;
+    const type = btn.dataset.type;
+    const countEl = btn.querySelector('.vote-count');
+
+    // Find sibling vote buttons for this id
+    const siblings = document.querySelectorAll(`.vote-btn[data-id="${id}"]`);
+    const isActive = btn.classList.contains('active');
+
+    siblings.forEach(b => {
+      if (b === btn) return;
+      if (b.classList.contains('active')) {
+        b.classList.remove('active');
+        const c = b.querySelector('.vote-count');
+        c.textContent = Math.max(0, parseInt(c.textContent) - 1);
+      }
+    });
+
+    if (isActive) {
+      btn.classList.remove('active');
+      countEl.textContent = Math.max(0, parseInt(countEl.textContent) - 1);
+    } else {
+      btn.classList.add('active');
+      countEl.textContent = parseInt(countEl.textContent) + 1;
+    }
+
+    // TODO: send to server via fetch when Django view is ready
+    // fetch('/forum/vote/', { method: 'POST', ... })
+  });
+</script>
+{% endblock extra_js %}

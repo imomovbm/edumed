@@ -3,6 +3,7 @@ from django.contrib.auth.models import User
 
 class Topic(models.Model):
     title = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
 
 class TopicProgress(models.Model):
     STATUS_CHOICES = [
@@ -20,7 +21,7 @@ class TopicComment(models.Model):
     topic = models.ForeignKey(Topic, on_delete=models.CASCADE)
     text = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
-    likes = models.ManyToManyField(User, related_name='comment_likes', blank=True)
+    likes = models.ManyToManyField(User, related_name='topic_comment_likes', blank=True)
 
     def total_likes(self):
         return self.likes.count()
@@ -79,3 +80,30 @@ class ResponseDetails(models.Model):
     question_choice = models.ForeignKey(QuestionChoice, on_delete=models.CASCADE, null=True, blank=True)
     is_correct = models.BooleanField(default=None, null=True)
     user_text_answer = models.TextField(blank=True, null=True)
+
+class Forum(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    title = models.TextField()
+    forum_question = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+class ForumComment(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    forum = models.ForeignKey(Forum, on_delete=models.CASCADE)
+    text =  models.TextField()
+    likes = models.ManyToManyField(User, related_name='forum_comment_likes', blank=True)
+    dislikes = models.ManyToManyField(User, related_name='forum_comment_dislikes', blank=True)
+    parent = models.ForeignKey(
+        'self',
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name='replies'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def total_likes(self):
+        return self.likes.count()
+    
+    def total_dislikes(self):
+        return self.dislikes.count()

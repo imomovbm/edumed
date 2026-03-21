@@ -379,3 +379,11 @@ def score_details_view(request, response_id):
         'score': response.score,
         'details':details,
     })
+
+
+# add view for forum
+def forum_view(request):
+    topics = Topic.objects.order_by('-created_at')
+    return render(request, 'courses/forum.html', {
+        'topics': topics,
+    })
