@@ -83,9 +83,18 @@ class ResponseDetails(models.Model):
 
 class Forum(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
+    topic = models.ForeignKey(Topic, on_delete=models.CASCADE, null=True, blank=True)
     title = models.TextField()
     forum_question = models.TextField()
+    likes = models.ManyToManyField(User, related_name='forum_likes', blank=True)
+    dislikes = models.ManyToManyField(User, related_name='forum_dislikes', blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    
+    def total_likes(self):
+        return self.likes.count()
+    
+    def total_dislikes(self):
+        return self.dislikes.count()
 
 class ForumComment(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)

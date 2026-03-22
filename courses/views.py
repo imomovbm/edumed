@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from .models import TopicComment, Quiz, Question, QuizQuestion, Response, ResponseDetails, QuestionChoice, Topic
+from .models import TopicComment, Quiz, Question, QuizQuestion, Response, ResponseDetails, QuestionChoice, Topic, Forum, ForumComment
 from django.contrib.auth.models import User
 import json
 from django.http import JsonResponse
@@ -383,7 +383,25 @@ def score_details_view(request, response_id):
 
 # add view for forum
 def forum_view(request):
+    
+    if request.method == "POST" and request.user.is_authenticated:
+        title = request.POST.get('title')
+        forum_question = request.POST.get('forum_question')
+        if not (title and forum_question):
+            messages.error(request,"Xatolik!")
+            return redirect('courses:forums')
+        forum = Forum.objects.create(
+            user = request.user,
+            title= title,
+            forum_question = forum_question,
+        )
+        messages.success(request, f"Forum #{forum.pk} muvaffaqiyatli yaratildi!")
+        return redirect('courses:forums')
+    
     topics = Topic.objects.order_by('-created_at')
+    forums = Forum.objects.order_by('-created_at')
+   
     return render(request, 'courses/forum.html', {
         'topics': topics,
+        'forums': forums,
     })
