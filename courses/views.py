@@ -429,3 +429,36 @@ def post_comment_view(request):
         parent=parent,
     )        
     return redirect('courses:forums')
+
+
+@login_required(login_url='user:login')
+@require_POST
+def toggle_vote_view(request):
+    data = json.loads(request.body)
+    obj_type = data.get('type')   # 'forum' or 'comment'
+    obj_id   = data.get('id')
+    action   = data.get('action') # 'like' or 'dislike'
+    
+    if obj_type == 'forum':
+        obj = get_object_or_404(Forum, pk=obj_id)
+    else:
+        obj = get_object_or_404(ForumComment, pk=obj_id)
+    
+    # toggle like
+    if action == 'like':
+        if request.user in obj.likes.all():
+            obj.likes.remove(request.user)  # unlike
+        else:
+            obj.likes.add(request.user)
+            obj.dislikes.remove(request.user)
+    elif action == 'dislike':
+        if request.user in obj.dislikes.all():
+            obj.dislikes.remove(request.user)  # un-dislike
+        else:
+            obj.dislikes.add(request.user)
+            obj.likes.remove(request.user)
+
+    return JsonResponse({
+        'likes': obj.likes.count(),
+        'dislikes': obj.dislikes.count(),
+    })

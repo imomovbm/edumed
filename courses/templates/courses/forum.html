@@ -84,11 +84,11 @@
 
             <!-- Post Actions -->
             <div class="d-flex align-items-center gap-3" style="gap:12px;">
-              <button class="vote-btn like-btn active" data-id="forum-{{ forum.pk }}" data-type="like">
+              <button class="vote-btn like-btn {% if request.user in forum.likes.all %}active{% endif %}" data-id="forum-{{ forum.pk }}" data-type="like">
                 <i class="fas fa-thumbs-up"></i>
                 <span class="vote-count"> {{ forum.total_likes|default:"0" }} </span>
               </button>
-              <button class="vote-btn dislike-btn" data-id="forum-{{ forum.pk }}" data-type="dislike">
+              <button class="vote-btn dislike-btn {% if request.user in forum.dislikes.all %}active{% endif %}" data-id="forum-{{ forum.pk }}" data-type="dislike">
                 <i class="fas fa-thumbs-down"></i>
                 <span class="vote-count"> {{ forum.total_dislikes|default:"0" }} </span>
               </button>
@@ -139,11 +139,11 @@
                         {{ comment.text}}
                         </p>
                         <div class="d-flex align-items-center" style="gap:10px;">
-                        <button class="vote-btn like-btn" data-id="comment-{{ comment.pk }}" data-type="like">
+                        <button class="vote-btn like-btn {% if request.user in comment.likes.all %}active{% endif %}" data-id="comment-{{ comment.pk }}" data-type="like">
                             <i class="fas fa-thumbs-up"></i>
                             <span class="vote-count"> {{ comment.total_likes|default:"0" }} </span>
                         </button>
-                        <button class="vote-btn dislike-btn" data-id="comment-{{ comment.pk }}" data-type="dislike">
+                        <button class="vote-btn dislike-btn {% if request.user in comment.dislikes.all %}active{% endif %}" data-id="comment-{{ comment.pk }}" data-type="dislike">
                             <i class="fas fa-thumbs-down"></i>
                             <span class="vote-count"> {{ comment.total_dislikes|default:"0" }} </span>
                         </button>
@@ -168,11 +168,11 @@
                             {{ reply.text}}
                             </p>
                             <div class="d-flex align-items-center" style="gap:10px;">
-                            <button class="vote-btn like-btn" data-id="reply-{{ reply.pk }}" data-type="like">
+                            <button class="vote-btn like-btn {% if request.user in reply.likes.all %}active{% endif %}" data-id="reply-{{ reply.pk }}" data-type="like">
                                 <i class="fas fa-thumbs-up"></i>
                                 <span class="vote-count"> {{ reply.total_likes|default:"0" }} </span>
                             </button>
-                            <button class="vote-btn dislike-btn" data-id="reply-{{ reply.pk }}" data-type="dislike">
+                            <button class="vote-btn dislike-btn {% if request.user in reply.dislikes.all %}active{% endif %}" data-id="reply-{{ reply.pk }}" data-type="dislike">
                                 <i class="fas fa-thumbs-down"></i>
                                 <span class="vote-count"> {{ reply.total_dislikes|default:"0" }} </span>
                             </button>
@@ -373,6 +373,26 @@
 
     // TODO: send to server via fetch when Django view is ready
     // fetch('/forum/vote/', { method: 'POST', ... })
+    fetch("{% url 'courses:toggle_vote' %}", {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({
+            type: id.startsWith('forum') ? 'forum' : 'comment',
+            id: parseInt(id.split('-')[1]),
+            action: type
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        // update both counts from server response
+        const likeBtn    = document.querySelector(`.like-btn[data-id="${id}"]`);
+        const dislikeBtn = document.querySelector(`.dislike-btn[data-id="${id}"]`);
+        likeBtn.querySelector('.vote-count').textContent    = data.likes;
+        dislikeBtn.querySelector('.vote-count').textContent = data.dislikes;
+    });
   });
 </script>
 {% endblock extra_js %}
