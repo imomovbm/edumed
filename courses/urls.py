@@ -29,4 +29,5 @@ urlpatterns = [
 
 
     path('forum/', views.forum_view, name='forums'),
+    path('post-comment/', views.post_comment_view, name='post_comment'),
 ]

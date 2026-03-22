@@ -66,8 +66,8 @@
               <div class="flex-grow-1">
                 <div class="d-flex justify-content-between align-items-start">
                   <div>
-                    <h6 class="mb-0 font-weight-bold"> {{ user_profile.user.first_name}} {{ user_profile.user.last_name}} </h6>
-                    <small class="text-muted">2 soat oldin</small>
+                    <h6 class="mb-0 font-weight-bold"> {{ forum.user.first_name }} {{ forum.user.last_name }} </h6>
+                    <small class="text-muted">{{ forum.created_at|timesince }} oldin</small>
                   </div>
                   <span class="badge badge-pill" style="background:#ebf4ff;color:#2b4fa0;font-size:0.75rem;">
                     {{ forum.topic.title }}
@@ -84,15 +84,15 @@
 
             <!-- Post Actions -->
             <div class="d-flex align-items-center gap-3" style="gap:12px;">
-              <button class="vote-btn like-btn active" data-id="post-1" data-type="like">
+              <button class="vote-btn like-btn active" data-id="forum-{{ forum.pk }}" data-type="like">
                 <i class="fas fa-thumbs-up"></i>
                 <span class="vote-count"> {{ forum.total_likes|default:"0" }} </span>
               </button>
-              <button class="vote-btn dislike-btn" data-id="post-1" data-type="dislike">
+              <button class="vote-btn dislike-btn" data-id="forum-{{ forum.pk }}" data-type="dislike">
                 <i class="fas fa-thumbs-down"></i>
                 <span class="vote-count"> {{ forum.total_dislikes|default:"0" }} </span>
               </button>
-              <button class="reply-toggle-btn" onclick="toggleReplyBox('reply-box-1')">
+              <button class="reply-toggle-btn" onclick="toggleReplyBox('reply-box-{{ forum.pk }}')">
                 <i class="fas fa-reply mr-1"></i> Javob berish
               </button>
               <span class="text-muted small ml-auto">
@@ -101,24 +101,31 @@
             </div>
 
             <!-- Reply Input -->
-            <div id="reply-box-1" class="reply-box mt-3" style="display:none;">
-              <div class="d-flex align-items-start">
-                <img src="{% static 'img/avatar.png' %}" class="rounded-circle mr-2 border"
-                  style="width:32px;height:32px;object-fit:cover;">
-                <div class="flex-grow-1">
-                  <textarea class="form-control form-control-sm" rows="2"
-                    placeholder="Javobingizni yozing..."></textarea>
-                  <div class="text-right mt-2">
-                    <button class="btn btn-sm btn-outline-secondary mr-1"
-                      onclick="toggleReplyBox('reply-box-1')">Bekor</button>
-                    <button class="btn btn-sm btn-primary">Yuborish</button>
-                  </div>
+            <form method="POST" action="{% url 'courses:post_comment' %}">
+                {% csrf_token %}
+                <div id="reply-box-{{ forum.pk }}" class="reply-box mt-3" style="display:none;">
+                    <div class="d-flex align-items-start">
+                        <img src="{% static 'img/avatar.png' %}" class="rounded-circle mr-2 border"
+                        style="width:32px;height:32px;object-fit:cover;">
+                        <div class="flex-grow-1">
+                            <textarea class="form-control form-control-sm" rows="2"
+                                placeholder="Javobingizni yozing..." name="forumcomment_text"></textarea>
+                                <input type="hidden" name="forum_id" value="{{ forum.pk }}">         
+                                <input type="hidden" name="comment_id" value="{{ comment.pk }}">            
+                                <div class="text-right mt-2">
+                                    <button class="btn btn-sm btn-outline-secondary mr-1"
+                                    onclick="toggleReplyBox('reply-box-{{ forum.pk }}')">Bekor</button>
+                                    <button class="btn btn-sm btn-primary" type="submit">Yuborish</button>
+                                </div>
+                        </div>
+                    </div>
                 </div>
-              </div>
-            </div>
+            </form>
+
             <!-- Replies -->
             <div class="replies-section mt-3">
             {% for comment in forum.forumcomment_set.all %}
+                {% if comment.parent is None %}
                 <div class="reply-item">
                     <div class="d-flex align-items-start">
                     <img src="{% static 'img/avatar.png' %}" class="rounded-circle mr-2 border"
@@ -126,27 +133,58 @@
                     <div class="reply-bubble flex-grow-1">
                         <div class="d-flex justify-content-between">
                         <h6 class="mb-0 font-weight-bold small"> {{ comment.user.first_name}} {{ comment.user.last_name}} </h6>
-                        <small class="text-muted">1 soat oldin</small>
+                        <small class="text-muted">{{ forum.created_at|timesince }} oldin</small>
                         </div>
                         <p class="small text-gray-700 mb-2">
                         {{ comment.text}}
                         </p>
                         <div class="d-flex align-items-center" style="gap:10px;">
-                        <button class="vote-btn like-btn" data-id="reply-1" data-type="like">
+                        <button class="vote-btn like-btn" data-id="comment-{{ comment.pk }}" data-type="like">
                             <i class="fas fa-thumbs-up"></i>
                             <span class="vote-count"> {{ comment.total_likes|default:"0" }} </span>
                         </button>
-                        <button class="vote-btn dislike-btn" data-id="reply-1" data-type="dislike">
+                        <button class="vote-btn dislike-btn" data-id="comment-{{ comment.pk }}" data-type="dislike">
                             <i class="fas fa-thumbs-down"></i>
                             <span class="vote-count"> {{ comment.total_dislikes|default:"0" }} </span>
                         </button>
-                        <button class="reply-toggle-btn" onclick="toggleReplyBox('reply-box-1')">
+                        <button class="reply-toggle-btn" onclick="toggleReplyBox('reply-box-{{ forum.pk }}')">
                             <i class="fas fa-reply mr-1"></i> Javob
                         </button>
                         </div>
                     </div>
                     </div>
                 </div>
+                {% for reply in comment.replies.all %}
+                    <div class="reply-item">
+                        <div class="d-flex align-items-start">
+                        <img src="{% static 'img/avatar.png' %}" class="rounded-circle mr-2 border"
+                            style="width:34px;height:34px;object-fit:cover;">
+                        <div class="reply-bubble flex-grow-1">
+                            <div class="d-flex justify-content-between">
+                            <h6 class="mb-0 font-weight-bold small"> {{ reply.user.first_name}} {{ reply.user.last_name}} </h6>
+                            <small class="text-muted">{{ forum.created_at|timesince }} oldin</small>
+                            </div>
+                            <p class="small text-gray-700 mb-2">
+                            {{ reply.text}}
+                            </p>
+                            <div class="d-flex align-items-center" style="gap:10px;">
+                            <button class="vote-btn like-btn" data-id="reply-{{ reply.pk }}" data-type="like">
+                                <i class="fas fa-thumbs-up"></i>
+                                <span class="vote-count"> {{ reply.total_likes|default:"0" }} </span>
+                            </button>
+                            <button class="vote-btn dislike-btn" data-id="reply-{{ reply.pk }}" data-type="dislike">
+                                <i class="fas fa-thumbs-down"></i>
+                                <span class="vote-count"> {{ reply.total_dislikes|default:"0" }} </span>
+                            </button>
+                            <button class="reply-toggle-btn" onclick="toggleReplyBox('reply-box-{{ forum.pk }}')">
+                                <i class="fas fa-reply mr-1"></i> Javob
+                            </button>
+                            </div>
+                        </div>
+                        </div>
+                    </div>
+                {% endfor %}
+                {% endif %}
             {% endfor %}
 
             </div>

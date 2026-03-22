@@ -383,7 +383,7 @@ def score_details_view(request, response_id):
 
 # add view for forum
 def forum_view(request):
-    
+
     if request.method == "POST" and request.user.is_authenticated:
         title = request.POST.get('title')
         forum_question = request.POST.get('forum_question')
@@ -405,3 +405,27 @@ def forum_view(request):
         'topics': topics,
         'forums': forums,
     })
+
+
+@login_required(login_url='user:login')
+@require_profile
+@require_POST
+def post_comment_view(request):
+
+    forum_id = request.POST.get('forum_id')
+    forumcomment_text = request.POST.get('forumcomment_text').strip()
+    if not (forum_id and forumcomment_text):
+        messages.error(request,"Xatolik!")
+        return redirect('courses:forums')
+    forum= get_object_or_404(Forum, pk=forum_id)
+
+    parent_id = request.POST.get('comment_id')
+    parent = ForumComment.objects.filter(pk=parent_id).first() if parent_id else None
+    
+    forum_comment = ForumComment.objects.create(
+        user = request.user,
+        forum= forum,
+        text = forumcomment_text,
+        parent=parent,
+    )        
+    return redirect('courses:forums')
