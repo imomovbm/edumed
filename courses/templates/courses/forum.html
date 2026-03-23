@@ -47,10 +47,14 @@
               <small class="text-muted">{{ forum.created_at|timesince }} oldin</small>
             </div>
             {% if forum.topic %}
-            <span class="ml-auto badge badge-pill"
-              style="background:#ebf4ff;color:#2b4fa0;font-size:0.75rem;padding:5px 12px;">
-              {{ forum.topic.title }}
-            </span>
+              <span class="ml-auto badge badge-pill"
+                style="background:#ebf4ff;color:#2b4fa0;font-size:0.75rem;padding:5px 12px;">
+                {{ forum.topic.title }}
+              </span>                 
+            {% else %}
+              <span class="ml-auto badge badge-pill" style="background:#00bb00;color:#ffffff;font-size:0.72rem;">
+                Umumiy
+              </span>       
             {% endif %}
           </div>
 
@@ -253,7 +257,7 @@
       <div class="card shadow mb-4">
         <div class="card-header py-3">
           <h6 class="m-0 font-weight-bold text-primary">
-            <i class="fas fa-trophy mr-2 text-warning"></i>Forumning eng faol a'zolari
+            <i class="fas fa-trophy mr-2 text-warning"></i>Ushbu forumning eng faol a'zolari
           </h6>
         </div>
         <div class="card-body p-0">

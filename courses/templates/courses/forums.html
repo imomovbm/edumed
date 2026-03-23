@@ -100,7 +100,7 @@
                 {{ forum.topic.title }}
               </span>
               {% else %}
-              <span class="ml-auto badge badge-pill" style="background:#eebb00;color:#ffffff;font-size:0.72rem;">
+              <span class="ml-auto badge badge-pill" style="background:#00bb00;color:#ffffff;font-size:0.72rem;">
                 Umumiy
               </span>
               {% endif %}
@@ -217,6 +217,10 @@
           <h6 class="m-0 font-weight-bold text-primary">Mavzular bo'yicha</h6>
         </div>
         <div class="card-body p-0">
+          <a href="{% url 'courses:forums' %}?topic=all" class="d-flex align-items-center justify-content-between px-3 py-2 border-bottom text-decoration-none category-link">
+            <span class="small text-gray-700">Umumiy</span>
+            <span class="badge badge-success badge-pill"> {{ general_forum_count }} </span>
+          </a>                  
         {% for topic in topics %}
           <a href="{% url 'courses:forums' %}?topic={{ topic.id }}" class="d-flex align-items-center justify-content-between px-3 py-2 border-bottom text-decoration-none category-link">
             <span class="small text-gray-700">{{ topic.title }}</span>

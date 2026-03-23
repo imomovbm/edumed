@@ -400,11 +400,14 @@ def all_forum_view(request):
         return redirect('courses:forums')
     
     topic_filter = request.GET.get('topic')
-    if topic_filter:
+    if topic_filter and topic_filter.isdecimal():
         forums = Forum.objects.filter(topic__id=topic_filter).order_by('-created_at')
+    elif topic_filter == 'all':
+        forums = Forum.objects.filter(topic__isnull=True).order_by('-created_at')
     else:
         forums = Forum.objects.order_by('-created_at')
-    
+
+    general_forum_count = Forum.objects.filter(topic__isnull=True).count()
     total_comments = ForumComment.objects.count()
     total_users = User.objects.filter(forumcomment__isnull=False).distinct().count()
 
@@ -422,6 +425,7 @@ def all_forum_view(request):
         'top_contributors': top_contributors,
         'total_comments': total_comments,
         'total_users': total_users,
+        'general_forum_count': general_forum_count
     })
 
 def forum_view(request, forum_id):
