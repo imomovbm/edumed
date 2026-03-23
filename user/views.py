@@ -4,11 +4,12 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from .models import UserProfile, PasswordResetRequest
-from courses.models import Response
+from courses.models import Response, Topic, TopicProgress
 from datetime import datetime,date
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 from functools import wraps
+from django.db.models import Avg
 
 def require_profile(view_func):
     @wraps(view_func)
@@ -30,32 +31,109 @@ def calculate_age(dob):
     today = date.today()
     return today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
 
-@login_required(login_url='user:login')
-def index(request):
-    user = request.user
-    try:
-        # Assuming the UserProfile object is guaranteed to exist due to the registration process
-        user_profile = user.userprofile 
-    except:
-        return redirect('user:login')
-    
-    # 2. Calculate Age and format date/gender
-    age = None
-    if user_profile and user_profile.date_of_birth:
-        age = calculate_age(user_profile.date_of_birth)
-        
-    # If you have a 'Course' model, the real count might look like:
-    # course_count = user_profile.enrolled_courses.count() 
-    course_count = 4 # Placeholder for now
-    responses = Response.objects.filter(user=user).order_by('-created_date_time')
+def _build_profile_context(viewed_user, request_user):
+    """Shared context builder for both own profile and admin user_detail."""
+    viewed_profile = getattr(viewed_user, 'userprofile', None)
 
-    # 3. Prepare the context dictionary
-    context = {
-        'age': f"{age} yosh",
-        'responses': responses,
-        'course_count': course_count,
+    # ── Age ───────────────────────────────────────────────────────────
+    age = None
+    if viewed_profile and viewed_profile.date_of_birth:
+        from datetime import date
+        today = date.today()
+        dob = viewed_profile.date_of_birth
+        age = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
+
+    # ── Quiz stats ────────────────────────────────────────────────────
+    responses = Response.objects.filter(user=viewed_user).order_by('-created_date_time')
+    total_responses = responses.count()
+    avg_result = responses.aggregate(avg=Avg('score'))
+    avg_score  = round(avg_result['avg'] or 0)
+
+    # Score distribution buckets
+    score_a = responses.filter(score__gte=90).count()
+    score_b = responses.filter(score__gte=70, score__lt=90).count()
+    score_c = responses.filter(score__gte=50, score__lt=70).count()
+    score_d = responses.filter(score__lt=50).count()
+
+    # ── Topic progress ────────────────────────────────────────────────
+    all_topics     = Topic.objects.order_by('created_at')
+    total_topics   = all_topics.count()
+    user_progresses = TopicProgress.objects.filter(user=viewed_user)
+    progress_map   = {p.topic_id: p for p in user_progresses}
+
+    completed_topics   = user_progresses.filter(status='completed').count()
+    in_progress_topics = user_progresses.filter(status='in_progress').count()
+
+    overall_progress = 0
+    if total_topics > 0:
+        overall_progress = round(
+            (completed_topics * 100 + in_progress_topics * 50) / total_topics
+        )
+
+    # Build per-topic progress list for the chart tab
+    topic_scores = []
+    topic_progress_data = []
+    for topic in all_topics:
+        prog = progress_map.get(topic.id)
+        status = prog.status if prog else 'not_started'
+        pct = 100 if status == 'completed' else (50 if status == 'in_progress' else 0)
+        topic_progress_data.append({
+            'title':  topic.title,
+            'status': status,
+            'pct':    pct,
+        })
+        topic_responses = Response.objects.filter(
+        user=viewed_user,
+        quiz__topic=topic
+        ).aggregate(avg=Avg('score'))
+        score = round(topic_responses['avg'] or 0)
+        topic_scores.append(score)
+
+    # ── Forum activity ────────────────────────────────────────────────
+    from courses.models import ForumComment
+    forum_comments = ForumComment.objects.filter(user=viewed_user).count()
+
+    return {
+        'viewed_user':          viewed_user,
+        'viewed_profile':       viewed_profile,
+        'age':                  age,
+        'responses':            responses[:20],   # last 20 in table
+        'total_responses':      total_responses,
+        'avg_score':            avg_score,
+        'score_a':              score_a,
+        'score_b':              score_b,
+        'score_c':              score_c,
+        'score_d':              score_d,
+        'total_topics':         total_topics,
+        'completed_topics':     completed_topics,
+        'overall_progress':     overall_progress,
+        'topic_progress_data':  topic_progress_data,
+        'forum_comments':       forum_comments,
+        'topic_scores':         topic_scores
     }
-    return render(request, "user/profile.html", context)
+
+
+# ── Own profile ───────────────────────────────────────────────────────
+@login_required(login_url='user:login')
+@require_profile
+def index(request):
+    ctx = _build_profile_context(request.user, request.user)
+    ctx['is_own_profile'] = True
+    return render(request, 'user/profile.html', ctx)
+
+
+# ── Admin: view any user ──────────────────────────────────────────────
+@login_required(login_url='user:login')
+@require_profile
+def user_detail_view(request, user_id):
+    # Only superadmin can view other profiles
+    if request.user.userprofile.role != 'superadmin':
+        return redirect('user:index')
+
+    viewed_user = get_object_or_404(User, pk=user_id)
+    ctx = _build_profile_context(viewed_user, request.user)
+    ctx['is_own_profile'] = False
+    return render(request, 'user/profile.html', ctx)
 
 def register_view(request):
     # ------------------------------------------------------------------

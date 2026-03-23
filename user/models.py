@@ -21,6 +21,7 @@ class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='student') 
     phone = models.CharField(max_length=30, blank=True, null=True)
+    avatar = models.CharField(max_length=255, blank=True, null=True)
 
     # New Fields from Registration Form
     gender = models.IntegerField(choices=GENDER_CHOICES, null=True, blank=True)

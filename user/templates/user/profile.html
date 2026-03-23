@@ -2,29 +2,24 @@
 {% load static %}
 {% block main %}
 
-<!-- ── Django Messages ── -->
+<!-- Toast Messages -->
 {% if messages %}
 <div id="messages-container" style="position:fixed; top:20px; right:20px; z-index:9999; display:flex; flex-direction:column; gap:8px; max-width:360px;">
   {% for message in messages %}
-  <div class="alert-toast alert-{{ message.tags }}" style="
+  <div class="alert-toast" style="
     display:flex; align-items:flex-start; justify-content:space-between; gap:12px;
     padding:14px 16px; border-radius:10px; box-shadow:0 4px 16px rgba(0,0,0,0.12);
     font-size:0.9rem; font-weight:500; animation: slideIn 0.3s ease;
     {% if message.tags == 'success' %}background:#d4f5e9; color:#1a7a56; border-left:4px solid #1cc88a;
     {% elif message.tags == 'error' %}background:#fde8e6; color:#a02020; border-left:4px solid #e74a3b;
-    {% elif message.tags == 'warning' %}background:#fef9e7; color:#8a6200; border-left:4px solid #f6c23e;
-    {% else %}background:#ebf4ff; color:#2b4fa0; border-left:4px solid #4e73df;{% endif %}
-  ">
+    {% else %}background:#ebf4ff; color:#2b4fa0; border-left:4px solid #4e73df;{% endif %}">
     <div style="display:flex; align-items:center; gap:8px;">
       {% if message.tags == 'success' %}<i class="fas fa-check-circle"></i>
       {% elif message.tags == 'error' %}<i class="fas fa-times-circle"></i>
-      {% elif message.tags == 'warning' %}<i class="fas fa-exclamation-triangle"></i>
       {% else %}<i class="fas fa-info-circle"></i>{% endif %}
       <span>{{ message }}</span>
     </div>
-    <button onclick="this.parentElement.remove()" style="
-      background:none; border:none; cursor:pointer; font-size:1rem;
-      opacity:0.6; padding:0; line-height:1; color:inherit;">
+    <button onclick="this.parentElement.remove()" style="background:none;border:none;cursor:pointer;font-size:1rem;opacity:0.6;padding:0;color:inherit;">
       <i class="fas fa-times"></i>
     </button>
   </div>
@@ -32,35 +27,37 @@
 </div>
 {% endif %}
 
-<!-- Begin Page Content -->
 <div class="container-fluid">
-  <h1 class="h3 mb-4 text-gray-800">Talaba Statistikasi — Edumed.uz</h1>
 
-  <!-- Statistics Cards Row -->
+  <!-- Page heading -->
+  <div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">
+      {% if is_own_profile %}
+        <i class="fas fa-user-circle mr-2 text-primary"></i>Mening profilim
+      {% else %}
+        <i class="fas fa-user mr-2 text-primary"></i>
+        {{ viewed_user.first_name }} {{ viewed_user.last_name }} — Profil
+      {% endif %}
+    </h1>
+    {% if not is_own_profile and user_profile.role == 'superadmin' %}
+    <button class="btn btn-outline-danger btn-sm"
+      onclick="confirmDelete({{ viewed_user.id }}, '{{ viewed_user.first_name|escapejs }} {{ viewed_user.last_name|escapejs }}')">
+      <i class="fas fa-trash mr-1"></i>Foydalanuvchini o'chirish
+    </button>
+    {% endif %}
+  </div>
+
+  <!-- ── Stat Cards ── -->
   <div class="row">
     <div class="col-xl-3 col-md-6 mb-4">
       <div class="card border-left-primary shadow h-100 py-2">
         <div class="card-body">
           <div class="row no-gutters align-items-center">
             <div class="col mr-2">
-              <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">O'rtacha baho</div>
-              <div class="h5 mb-0 font-weight-bold text-gray-800">87%</div>
+              <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">O'rtacha test bali</div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">{{ avg_score }}%</div>
             </div>
             <div class="col-auto"><i class="fas fa-star fa-2x text-gray-300"></i></div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="col-xl-3 col-md-6 mb-4">
-      <div class="card border-left-warning shadow h-100 py-2">
-        <div class="card-body">
-          <div class="row no-gutters align-items-center">
-            <div class="col mr-2">
-              <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Qatnashayotgan kurslar</div>
-              <div class="h5 mb-0 font-weight-bold text-gray-800">12 ta</div>
-            </div>
-            <div class="col-auto"><i class="fas fa-book fa-2x text-gray-300"></i></div>
           </div>
         </div>
       </div>
@@ -71,8 +68,8 @@
         <div class="card-body">
           <div class="row no-gutters align-items-center">
             <div class="col mr-2">
-              <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Tugatgan kurslar</div>
-              <div class="h5 mb-0 font-weight-bold text-gray-800">8 ta</div>
+              <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Tugatgan mavzular</div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">{{ completed_topics }} / {{ total_topics }} ta</div>
             </div>
             <div class="col-auto"><i class="fas fa-check-circle fa-2x text-gray-300"></i></div>
           </div>
@@ -81,89 +78,156 @@
     </div>
 
     <div class="col-xl-3 col-md-6 mb-4">
-      <div class="card border-left-danger shadow h-100 py-2">
+      <div class="card border-left-info shadow h-100 py-2">
         <div class="card-body">
           <div class="row no-gutters align-items-center">
             <div class="col mr-2">
-              <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Topshiriqlar</div>
-              <div class="h5 mb-0 font-weight-bold text-gray-800">8 ta</div>
+              <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Topshirilgan testlar</div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_responses }} ta</div>
             </div>
-            <div class="col-auto"><i class="fas fa-desktop fa-2x text-gray-300"></i></div>
+            <div class="col-auto"><i class="fas fa-clipboard-check fa-2x text-gray-300"></i></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-warning shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Forum faolligi</div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">{{ forum_comments }} ta izoh</div>
+            </div>
+            <div class="col-auto"><i class="fas fa-comments fa-2x text-gray-300"></i></div>
           </div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Student Info & AI Evaluation Row -->
+  <!-- ── Student Info & AI Row ── -->
   <div class="row">
-    <div class="col-lg-6">
-      <div class="card shadow mb-4">
+
+    <!-- Student Info -->
+    <div class="col-lg-5">
+      <div class="card shadow mb-4" style="border-radius:14px;">
         <div class="card-header py-3">
-          <h6 class="m-0 font-weight-bold text-primary">Talaba Ma'lumotlari</h6>
+          <h6 class="m-0 font-weight-bold text-primary">
+            <i class="fas fa-id-card mr-2"></i>Talaba ma'lumotlari
+          </h6>
         </div>
         <div class="card-body">
-          <div class="d-flex align-items-center mb-4">
-            <div class="mr-4">
-              <img class="img-profile rounded-circle"
-                src="{% if user_profile.profile_image %}{{ user_profile.profile_image.url }}{% else %}{% static 'img/avatar.png' %}{% endif %}"
-                alt="{{ full_name|default:'Profil rasmi' }}"
-                style="width:80px; height:80px; object-fit:cover;">
-            </div>
+
+          <!-- Avatar + name -->
+          <div class="d-flex align-items-center mb-4 pb-3" style="border-bottom:1px solid #f0f0f4;">
+            <img class="rounded-circle border shadow-sm mr-3"
+              src="{% if viewed_profile.profile_image %}{{ viewed_profile.profile_image.url }}{% else %}{% static 'img/avatar.png' %}{% endif %}"
+              style="width:72px; height:72px; object-fit:cover;">
             <div>
-              <p><strong>Ism Familiya:</strong> {{ user.first_name }} {{ user.last_name }}</p>
-              <p><strong>Tizimda roli:</strong> {{ user_profile.get_role_display }}</p>
-              <p><strong>Email:</strong> {{ user_profile.user.email }}</p>
-              <p><strong>Yoshi:</strong> {{ age }}</p>
-              <p><strong>Jinsi:</strong> {{ user_profile.get_gender_display }}</p>
-              <p><strong>Yashash manzili:</strong> {{ user_profile.region }}</p>
-              <p><strong>Ta'lim muassasasi:</strong> {{ user_profile.otm }}</p>
-              <p><strong>Ro'yxatdan o'tgan sana:</strong> {{ user.date_joined|date:"j/m/Y" }}</p>
-              <p><strong>Yozilgan kurslar soni:</strong> {{ course_count }} ta</p>
+              <h5 class="mb-0 font-weight-bold">
+                {{ viewed_user.first_name }} {{ viewed_user.last_name }}
+              </h5>
+              <span class="badge badge-pill mt-1"
+                style="background:#ebf4ff;color:#2b4fa0;font-size:0.75rem;">
+                {{ viewed_profile.get_role_display }}
+              </span>
             </div>
           </div>
+
+          <!-- Info rows -->
+          <div class="info-row"><i class="fas fa-envelope text-primary"></i><span>{{ viewed_user.email }}</span></div>
+          {% if viewed_profile.date_of_birth %}
+          <div class="info-row"><i class="fas fa-birthday-cake text-warning"></i><span>{{ age }} yosh</span></div>
+          {% endif %}
+          {% if viewed_profile.gender %}
+          <div class="info-row"><i class="fas fa-venus-mars text-info"></i><span>{{ viewed_profile.get_gender_display }}</span></div>
+          {% endif %}
+          {% if viewed_profile.region %}
+          <div class="info-row"><i class="fas fa-map-marker-alt text-danger"></i><span>{{ viewed_profile.region }}</span></div>
+          {% endif %}
+          {% if viewed_profile.otm %}
+          <div class="info-row"><i class="fas fa-university text-success"></i><span>{{ viewed_profile.otm }}</span></div>
+          {% endif %}
+          <div class="info-row"><i class="fas fa-calendar-alt text-secondary"></i>
+            <span>Ro'yxatdan o'tgan: {{ viewed_user.date_joined|date:"j/m/Y" }}</span>
+          </div>
+
+          <!-- Overall progress bar -->
+          {% if total_topics > 0 %}
+          <div class="mt-3 pt-3" style="border-top:1px solid #f0f0f4;">
+            <div class="d-flex justify-content-between mb-1">
+              <small class="text-muted">Umumiy o'zlashtirish</small>
+              <small class="font-weight-bold text-primary">{{ overall_progress }}%</small>
+            </div>
+            <div class="progress" style="height:8px;border-radius:10px;">
+              <div class="progress-bar bg-primary" style="width:{{ overall_progress }}%;border-radius:10px;transition:width 1.2s ease;"></div>
+            </div>
+          </div>
+          {% endif %}
+
         </div>
       </div>
     </div>
 
-    <div class="col-lg-6">
-      <div class="card shadow mb-4 border-left-success">
+    <!-- AI Evaluation + Radar -->
+    <div class="col-lg-7">
+
+      <!-- AI Card -->
+      <div class="card shadow mb-4" style="border-radius:14px; border-left:4px solid #1cc88a;">
         <div class="card-header py-3 d-flex justify-content-between align-items-center">
-          <h6 class="m-0 font-weight-bold text-success">AI orqali baholash</h6>
-          <img src="https://upload.wikimedia.org/wikipedia/commons/0/04/ChatGPT_logo.svg" width="40">
+          <h6 class="m-0 font-weight-bold text-success">
+            <i class="fas fa-robot mr-2"></i>AI orqali baholash
+          </h6>
+          <!-- Claude AI logo as SVG icon -->
+          <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="36" height="36" rx="10" fill="#CC9B7A"/>
+            <path d="M22.5 10.5C20.8 10.5 19.3 11.4 18.5 12.8C17.7 11.4 16.2 10.5 14.5 10.5C11.7 10.5 9.5 12.7 9.5 15.5C9.5 19.5 14 23.5 18.5 26.5C23 23.5 27.5 19.5 27.5 15.5C27.5 12.7 25.3 10.5 22.5 10.5Z" fill="white" opacity="0.9"/>
+          </svg>
         </div>
         <div class="card-body">
-          <p>Talaba faoliyati bo'yicha sun'iy intellekt asosida baho oling.</p>
-          <button class="btn btn-success btn-block" data-toggle="modal" data-target="#aiModal">
-            🤖 Talabani AI orqali baholash
+          <p class="text-muted small mb-3">
+            Talaba faoliyati (test natijalari, mavzu o'zlashtirish, forum faolligi) asosida
+            Claude AI yordamida kuchli va zaif tomonlarni aniqlang.
+          </p>
+          <button class="btn btn-success btn-block" style="border-radius:8px;" disabled>
+            <i class="fas fa-robot mr-2"></i>AI tahlilini boshlash
+            <span class="badge badge-light ml-2" style="font-size:0.7rem;">Tez kunda</span>
           </button>
         </div>
       </div>
 
-      <!-- Radar Chart -->
-      <div class="card shadow mb-4">
+      <!-- Radar Chart - Strong/Weak areas -->
+      <div class="card shadow mb-4" style="border-radius:14px;">
         <div class="card-header py-3">
-          <h6 class="m-0 font-weight-bold text-primary">Kuchli va zaif tomonlar</h6>
-        </div>
-        <div class="card-body">
-          <div style="height:200px;">
-            <canvas id="radarChart"></canvas>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Recent Exams -->
-  <div class="row">
-    <div class="col-12">
-      <div class="card shadow mb-4">
-        <div class="card-header py-3 d-flex justify-content-between align-items-center">
           <h6 class="m-0 font-weight-bold text-primary">
-            <i class="fas fa-history mr-1"></i> So'nggi topshirilgan topshiriqlar
+            <i class="fas fa-chart-area mr-2"></i>Kuchli va zaif tomonlar
           </h6>
         </div>
         <div class="card-body">
+          <div style="height:220px;">
+            <canvas id="radarChart"></canvas>
+          </div>
+          <p class="small text-muted text-center mt-2 mb-0">
+            <i class="fas fa-info-circle mr-1"></i>
+            AI tahlilidan so'ng to'liq ma'lumot ko'rsatiladi
+          </p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── Recent Quiz Results ── -->
+  <div class="row">
+    <div class="col-12">
+      <div class="card shadow mb-4" style="border-radius:14px;">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+          <h6 class="m-0 font-weight-bold text-primary">
+            <i class="fas fa-history mr-1"></i>So'nggi topshirilgan testlar
+          </h6>
+        </div>
+        <div class="card-body p-0">
           <div class="table-responsive">
             <table class="table table-hover mb-0" id="examsTable" style="font-size:0.9rem;">
               <thead style="background:#f8f9fc;">
@@ -178,42 +242,39 @@
                 </tr>
               </thead>
               <tbody>
-                <!-- placeholder rows — replace with  response in responses  later -->
                 {% for response in responses %}
                 <tr>
-                  <td class="px-4">{{ response.quiz.title }}</td>                  
-                    {% if response.quiz.topic %}
-                      <td>{{ response.quiz.topic.title }}</td>
+                  <td class="px-4 align-middle">{{ response.quiz.title }}</td>
+                  <td class="align-middle">
+                    {% if response.quiz.topic %}{{ response.quiz.topic.title }}
+                    {% else %}<span class="text-muted">Umumiy</span>{% endif %}
+                  </td>
+                  <td class="align-middle">
+                    {% if response.score >= 90 %}
+                    <span class="score-badge success">{{ response.score|floatformat:0 }}%</span>
+                    {% elif response.score >= 70 %}
+                    <span class="score-badge info">{{ response.score|floatformat:0 }}%</span>
+                    {% elif response.score >= 50 %}
+                    <span class="score-badge warning">{{ response.score|floatformat:0 }}%</span>
                     {% else %}
-                      <td>Topshiriqlar bo'limi</td>
+                    <span class="score-badge danger">{{ response.score|floatformat:0 }}%</span>
                     {% endif %}
-                      {% if response.score >= 90 %}
-                        <td>
-                          <span class="badge" style="background:#d4f5e9;color:#1a7a56;padding:4px 10px;border-radius:20px;font-weight:700;">
-                            {{ response.score|floatformat:0 }} %
-                          </span>
-                        </td>
-                      {% elif response.score >= 70 %}
-                        <td>
-                          <span class="badge" style="background:#ebf4ff;color:#2b4fa0;padding:4px 10px;border-radius:20px;font-weight:700;">
-                            {{ response.score|floatformat:0 }} %
-                          </span>
-                        </td>
-                      {% elif response.score >= 50 %}  
-                        <td>
-                          <span class="badge" style="background:#fde8e6;color:#a02020;padding:4px 10px;border-radius:20px;font-weight:700;">
-                            {{ response.score|floatformat:0 }} %
-                          </span>
-                        </td>                        
-                      {% else %}
-                        <td>
-                          <span class="badge" style="background:#fde8e6;color:#a02020;padding:4px 10px;border-radius:20px;font-weight:700;">0%</span>
-                        </td>
-                      {% endif %}
-                      <td style="color:#1cc88a;font-weight:600;"> {{response.correct_count}} </td>
-                      <td style="color:#e74a3b;font-weight:600;"> {{response.incorrect_count}} </td>
-                      <td style="color:#a0aec0;">{{ response.created_date_time|date:"H:i, j/m/y" }}</td>
-                      <td><a href="{% url "courses:score_details" response.id %}" class="btn btn-sm btn-outline-primary">Ko'rish</a></td>
+                  </td>
+                  <td class="align-middle" style="color:#1cc88a;font-weight:600;">{{ response.correct_count }}</td>
+                  <td class="align-middle" style="color:#e74a3b;font-weight:600;">{{ response.incorrect_count }}</td>
+                  <td class="align-middle" style="color:#a0aec0;font-size:0.82rem;">{{ response.created_date_time|date:"j/m/y, H:i" }}</td>
+                  <td class="align-middle">
+                    <a href="{% url 'courses:score_details' response.id %}" class="btn btn-sm btn-outline-primary" style="border-radius:20px;">
+                      Ko'rish
+                    </a>
+                  </td>
+                </tr>
+                {% empty %}
+                <tr>
+                  <td colspan="7" class="text-center py-4 text-muted">
+                    <i class="fas fa-clipboard fa-2x d-block mb-2 text-gray-300"></i>
+                    Hali testlar topshirilmagan
+                  </td>
                 </tr>
                 {% endfor %}
               </tbody>
@@ -224,54 +285,119 @@
     </div>
   </div>
 
-  <!-- Tabbed Charts Section -->
+  <!-- ── Charts: Topic Progress + Quiz Stats ── -->
   <div class="row">
     <div class="col-12">
-      <div class="card shadow mb-4">
+      <div class="card shadow mb-4" style="border-radius:14px;">
 
-        <!-- Tab Headers -->
-        <div class="card-header py-0 px-0" style="border-bottom:1px solid #e3e6f0; overflow-x:auto;">
-          <div class="d-flex" id="chart-tabs" style="white-space:nowrap;">
-            <button class="chart-tab active" onclick="switchTab('modullar', this)">
-              <i class="fas fa-layer-group mr-2"></i>Modullar bo'yicha o'zlashtirish
+        <!-- Tab headers -->
+        <div class="card-header py-0 px-0" style="border-bottom:1px solid #e3e6f0; overflow-x:auto; border-radius:14px 14px 0 0;">
+          <div class="d-flex" style="white-space:nowrap;">
+            <button class="chart-tab active" onclick="switchTab('mavzular', this)">
+              <i class="fas fa-layer-group mr-2"></i>Mavzular bo'yicha o'zlashtirish
             </button>
-            <button class="chart-tab" onclick="switchTab('topshiriq', this)">
-              <i class="fas fa-tasks mr-2"></i>Topshiriq turlari
-            </button>
-            <button class="chart-tab" onclick="switchTab('radar', this)">
-              <i class="fas fa-calendar mr-2"></i>Oylar kesimida faollik
+            <button class="chart-tab" onclick="switchTab('quizstats', this)">
+              <i class="fas fa-chart-pie mr-2"></i>Test statistikasi
             </button>
           </div>
         </div>
 
         <div class="card-body">
 
-          <!-- Tab 1: Modullar -->
-          <div id="tab-modullar" class="chart-panel">
-            <h4 class="small font-weight-bold">Anatomiya <span class="float-right">80%</span></h4>
-            <div class="progress mb-3"><div class="progress-bar bg-info" style="width:80%"></div></div>
-            <h4 class="small font-weight-bold">Fiziologiya <span class="float-right">70%</span></h4>
-            <div class="progress mb-3"><div class="progress-bar bg-success" style="width:70%"></div></div>
-            <h4 class="small font-weight-bold">Kimyo <span class="float-right">60%</span></h4>
-            <div class="progress mb-3"><div class="progress-bar bg-warning" style="width:60%"></div></div>
-            <h4 class="small font-weight-bold">Fizika <span class="float-right">45%</span></h4>
-            <div class="progress mb-3"><div class="progress-bar bg-danger" style="width:45%"></div></div>
-            <h4 class="small font-weight-bold">Biologiya <span class="float-right">90%</span></h4>
-            <div class="progress mb-3"><div class="progress-bar bg-primary" style="width:90%"></div></div>
+          <!-- Tab 1: Topic progress bars -->
+          <div id="tab-mavzular" class="chart-panel">
+            {% if topic_progress_data %}
+              {% for item in topic_progress_data %}
+              <div class="mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <span class="small font-weight-bold text-gray-700" style="max-width:70%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                    {{ forloop.counter }}. {{ item.title }}
+                  </span>
+                  <span class="small font-weight-bold
+                    {% if item.pct == 100 %}text-success
+                    {% elif item.pct >= 50 %}text-warning
+                    {% else %}text-muted{% endif %}">
+                    {% if item.status == 'completed' %}Tugatilgan
+                    {% elif item.status == 'in_progress' %}Jarayonda
+                    {% else %}Boshlanmagan{% endif %}
+                  </span>
+                </div>
+                <div class="progress" style="height:10px; border-radius:10px;">
+                  <div class="progress-bar
+                    {% if item.pct == 100 %}bg-success
+                    {% elif item.pct >= 50 %}bg-warning
+                    {% else %}bg-secondary{% endif %}"
+                    style="width:{{ item.pct }}%; border-radius:10px; transition:width 1.2s ease;">
+                  </div>
+                </div>
+              </div>
+              {% endfor %}
+            {% else %}
+              <div class="text-center py-4 text-muted">
+                <i class="fas fa-book-open fa-2x d-block mb-2 text-gray-300"></i>
+                <p class="small mb-0">Hali mavzular boshlanmagan</p>
+              </div>
+            {% endif %}
           </div>
 
-          <!-- Tab 2: Topshiriq turlari -->
-          <div id="tab-topshiriq" class="chart-panel" style="display:none;">
-            <div style="height:300px;">
-              <canvas id="taskTypeChart"></canvas>
+          <!-- Tab 2: Quiz statistics doughnut -->
+          <div id="tab-quizstats" class="chart-panel" style="display:none;">
+            {% if total_responses > 0 %}
+            <div class="row align-items-center">
+              <div class="col-md-5">
+                <div style="height:260px;">
+                  <canvas id="quizDonutChart"></canvas>
+                </div>
+              </div>
+              <div class="col-md-7">
+                <div class="mb-3">
+                  <div class="d-flex justify-content-between mb-1">
+                    <span class="small font-weight-bold"><span class="status-dot bg-success"></span>A'lo (90–100%)</span>
+                    <span class="small font-weight-bold text-success">{{ score_a }} ta</span>
+                  </div>
+                  <div class="progress mb-2" style="height:8px;border-radius:10px;">
+                    <div class="progress-bar bg-success" style="width:{% if total_responses %}{% widthratio score_a total_responses 100 %}{% else %}0{% endif %}%;border-radius:10px;"></div>
+                  </div>
+                  <div class="d-flex justify-content-between mb-1">
+                    <span class="small font-weight-bold"><span class="status-dot bg-primary"></span>Yaxshi (70–89%)</span>
+                    <span class="small font-weight-bold text-primary">{{ score_b }} ta</span>
+                  </div>
+                  <div class="progress mb-2" style="height:8px;border-radius:10px;">
+                    <div class="progress-bar bg-primary" style="width:{% if total_responses %}{% widthratio score_b total_responses 100 %}{% else %}0{% endif %}%;border-radius:10px;"></div>
+                  </div>
+                  <div class="d-flex justify-content-between mb-1">
+                    <span class="small font-weight-bold"><span class="status-dot bg-warning"></span>Qoniqarli (50–69%)</span>
+                    <span class="small font-weight-bold text-warning">{{ score_c }} ta</span>
+                  </div>
+                  <div class="progress mb-2" style="height:8px;border-radius:10px;">
+                    <div class="progress-bar bg-warning" style="width:{% if total_responses %}{% widthratio score_c total_responses 100 %}{% else %}0{% endif %}%;border-radius:10px;"></div>
+                  </div>
+                  <div class="d-flex justify-content-between mb-1">
+                    <span class="small font-weight-bold"><span class="status-dot bg-danger"></span>Qoniqarsiz (0–49%)</span>
+                    <span class="small font-weight-bold text-danger">{{ score_d }} ta</span>
+                  </div>
+                  <div class="progress" style="height:8px;border-radius:10px;">
+                    <div class="progress-bar bg-danger" style="width:{% if total_responses %}{% widthratio score_d total_responses 100 %}{% else %}0{% endif %}%;border-radius:10px;"></div>
+                  </div>
+                </div>
+                <div class="text-center mt-3 p-3 rounded" style="background:#f8f9fc;">
+                  <div class="small text-muted mb-1">Umumiy o'rtacha ball</div>
+                  <div class="h4 font-weight-bold
+                    {% if avg_score >= 90 %}text-success
+                    {% elif avg_score >= 70 %}text-primary
+                    {% elif avg_score >= 50 %}text-warning
+                    {% else %}text-danger{% endif %}">
+                    {{ avg_score }}%
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
-
-          <!-- Tab 3: Faollik -->
-          <div id="tab-radar" class="chart-panel" style="display:none;">
-            <div style="height:300px;">
-              <canvas id="studentActivityChart"></canvas>
+            {% else %}
+            <div class="text-center py-4 text-muted">
+              <i class="fas fa-chart-pie fa-2x d-block mb-2 text-gray-300"></i>
+              <p class="small mb-0">Hali testlar topshirilmagan</p>
             </div>
+            {% endif %}
           </div>
 
         </div>
@@ -280,7 +406,37 @@
   </div>
 
 </div>
-<!-- /.container-fluid -->
+
+<!-- Delete User Modal (admin only) -->
+{% if not is_own_profile and user_profile.role == 'superadmin' %}
+<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="border-radius:12px; border:none;">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title font-weight-bold text-danger">
+          <i class="fas fa-exclamation-triangle mr-2"></i>Foydalanuvchini o'chirish
+        </h5>
+        <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+      </div>
+      <div class="modal-body pt-2">
+        <p class="text-gray-700 mb-1">Quyidagi foydalanuvchini o'chirishni tasdiqlaysizmi?</p>
+        <div class="p-3 rounded mt-2" style="background:#fde8e6; border-left:3px solid #e74a3b;">
+          <span class="font-weight-bold text-danger" id="deleteUserName"></span>
+        </div>
+      </div>
+      <div class="modal-footer border-0 pt-0">
+        <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">Bekor qilish</button>
+        <form id="deleteForm" method="POST" action="" style="display:inline;">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger">
+            <i class="fas fa-trash mr-1"></i>O'chirish
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
 
 {% endblock main %}
 
@@ -288,73 +444,109 @@
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap4.min.css">
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap4.min.js"></script>
+
 <style>
   @keyframes slideIn {
     from { opacity:0; transform:translateX(40px); }
     to   { opacity:1; transform:translateX(0); }
   }
   .chart-tab {
-    padding: 14px 20px;
-    border: none;
-    background: transparent;
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: #a0aec0;
-    cursor: pointer;
-    border-bottom: 3px solid transparent;
-    transition: all 0.2s;
-    white-space: nowrap;
+    padding: 14px 20px; border: none; background: transparent;
+    font-size: 0.85rem; font-weight: 600; color: #a0aec0;
+    cursor: pointer; border-bottom: 3px solid transparent;
+    transition: all 0.2s; white-space: nowrap;
   }
   .chart-tab:hover { color: #4e73df; }
   .chart-tab.active {
-    color: #4e73df;
-    border-bottom: 3px solid #4e73df;
-    background: #f8f9ff;
+    color: #4e73df; border-bottom: 3px solid #4e73df; background: #f8f9ff;
+  }
+  .info-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 7px 0; border-bottom: 1px solid #f7f8fc;
+    font-size: 0.875rem; color: #4a5568;
+  }
+  .info-row:last-child { border-bottom: none; }
+  .info-row i { width: 18px; text-align: center; flex-shrink: 0; }
+  .score-badge {
+    padding: 3px 10px; border-radius: 20px;
+    font-weight: 700; font-size: 0.8rem;
+  }
+  .score-badge.success { background:#d4f5e9; color:#1a7a56; }
+  .score-badge.info    { background:#ebf4ff; color:#2b4fa0; }
+  .score-badge.warning { background:#fef9e7; color:#8a6200; }
+  .score-badge.danger  { background:#fde8e6; color:#a02020; }
+  .status-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    display: inline-block; margin-right: 5px;
   }
 </style>
 
 <script>
-document.addEventListener("DOMContentLoaded", function () {
-
-  // ── Radar Chart (visible on load, init immediately) ──
-  new Chart(document.getElementById('radarChart'), {
-    type: 'radar',
-    data: {
-      labels: ['Anatomiya', 'Fiziologiya', 'Kimyo', 'Fizika', 'Biologiya', 'Patologiya'],
-      datasets: [
-        {
-          label: "Sizning natijangiz",
-          data: [80, 70, 60, 45, 90, 65],
-          backgroundColor: 'rgba(78, 115, 223, 0.15)',
-          borderColor: 'rgba(78, 115, 223, 1)',
-          pointBackgroundColor: 'rgba(78, 115, 223, 1)',
-          pointRadius: 4,
-        },
-        {
-          label: "O'rtacha daraja",
-          data: [70, 70, 70, 70, 70, 70],
-          backgroundColor: 'rgba(28, 200, 138, 0.05)',
-          borderColor: 'rgba(28, 200, 138, 0.6)',
-          borderDash: [5, 5],
-          pointRadius: 0,
-        }
-      ]
-    },
-    options: {
-      maintainAspectRatio: false,
-      scales: {
-        r: {
-          min: 0, max: 100,
-          ticks: { stepSize: 20, font: { size: 10 } },
-          pointLabels: { font: { size: 12 } },
-          grid: { color: 'rgba(0,0,0,0.05)' }
-        }
+document.addEventListener('DOMContentLoaded', function () {
+  // Radar chart
+  const radarCtx = document.getElementById('radarChart');
+  if (radarCtx) {
+    new Chart(radarCtx, {
+      type: 'radar',
+      data: {
+        labels: [
+          'Hamshiralik tarixi', 'Bioetika', 'LEMON dasturi',
+          'Salomatlik', 'Profilaktika', 'Tibbiy himoya'
+        ],
+        datasets: [
+          {
+            label: "Sizning natijangiz",
+            data: [
+              {{ topic_scores.0 }}, {{ topic_scores.1 }}, {{ topic_scores.2 }},
+              {{ topic_scores.3 }}, {{ topic_scores.4 }}, {{ topic_scores.5 }}
+            ],
+            backgroundColor: 'rgba(78, 115, 223, 0.15)',
+            borderColor: 'rgba(78, 115, 223, 1)',
+            pointBackgroundColor: 'rgba(78, 115, 223, 1)',
+            pointRadius: 4,
+          },
+          {
+            label: "O'rtacha daraja",
+            data: [70, 70, 70, 70, 70, 70],
+            backgroundColor: 'rgba(28, 200, 138, 0.05)',
+            borderColor: 'rgba(28, 200, 138, 0.6)',
+            borderDash: [5, 5],
+            pointRadius: 0,
+          }
+        ]
       },
-      plugins: { legend: { position: 'bottom' } }
-    }
+      options: {
+        maintainAspectRatio: false,
+        scales: {
+          r: {
+            min: 0, max: 100,
+            ticks: { stepSize: 25, font: { size: 10 } },
+            pointLabels: { font: { size: 11 } },
+            grid: { color: 'rgba(0,0,0,0.05)' }
+          }
+        },
+        plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } }
+      }
+    });
+  }
+  // DataTable
+  $('#examsTable').DataTable({
+    pageLength: 5,
+    lengthMenu: [5, 10, 25],
+    order: [[5, 'desc']],
+    language: {
+      search: "Qidirish:",
+      lengthMenu: "_MENU_ ta ko'rsatish",
+      info: "_TOTAL_ tadan _START_ – _END_ ko'rsatilmoqda",
+      infoEmpty: "Testlar mavjud emas",
+      infoFiltered: "(jami _MAX_ tadan filtr qilindi)",
+      paginate: { first: "Birinchi", last: "Oxirgi", next: "Keyingi", previous: "Oldingi" },
+      zeroRecords: "Natija topilmadi"
+    },
+    columnDefs: [{ orderable: false, targets: [6] }]
   });
 
-  // ── Auto-dismiss messages after 5s ───────────────────
+  // Auto-dismiss toasts
   document.querySelectorAll('.alert-toast').forEach(el => {
     setTimeout(() => {
       el.style.transition = 'opacity 0.4s';
@@ -362,79 +554,47 @@ document.addEventListener("DOMContentLoaded", function () {
       setTimeout(() => el.remove(), 400);
     }, 5000);
   });
-
-    // ── Exams DataTable ───────────────────────────────────
-  $('#examsTable').DataTable({
-    pageLength: 5,
-    lengthMenu: [5, 10, 25, 50],
-    order: [[5, 'asc']],   // sort by date column descending by default
-    language: {
-      search: "Qidirish:",
-      lengthMenu: "_MENU_ ta ko'rsatish",
-      info: "_TOTAL_ tadan _START_ - _END_ ko'rsatilmoqda",
-      infoEmpty: "Testlar mavjud emas",
-      infoFiltered: "(jami _MAX_ tadan filtr qilindi)",
-      paginate: {
-        first: "Birinchi",
-        last: "Oxirgi",
-        next: "Keyingi",
-        previous: "Oldingi"
-      },
-      zeroRecords: "Natija topilmadi"
-    },
-    columnDefs: [
-      { orderable: false, targets: [6] }  // disable sort on "Ko'rish" column
-    ]
-  });
 });
 
-// ── Tab Switcher ─────────────────────────────────────────
+// Tab switcher
+let donutInit = false;
 function switchTab(tab, btn) {
   document.querySelectorAll('.chart-panel').forEach(p => p.style.display = 'none');
   document.querySelectorAll('.chart-tab').forEach(t => t.classList.remove('active'));
   document.getElementById('tab-' + tab).style.display = 'block';
   btn.classList.add('active');
 
-  // Lazy init: Doughnut chart
-  if (tab === 'topshiriq' && !window.taskChartInit) {
-    window.taskChartInit = true;
-    new Chart(document.getElementById('taskTypeChart'), {
-      type: 'doughnut',
-      data: {
-        labels: ["Test", "Savol-javob", "Yozma topshiriq"],
-        datasets: [{
-          data: [75, 60, 50],
-          backgroundColor: ['#4e73df', '#1cc88a', '#f6c23e'],
-          hoverBackgroundColor: ['#2e59d9', '#17a673', '#d4a72b']
-        }]
-      },
-      options: {
-        maintainAspectRatio: false,
-        cutout: '70%',
-        plugins: { legend: { position: 'bottom' } }
-      }
-    });
+  if (tab === 'quizstats' && !donutInit) {
+    donutInit = true;
+    const ctx = document.getElementById('quizDonutChart');
+    if (ctx) {
+      new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: ["A'lo", "Yaxshi", "Qoniqarli", "Qoniqarsiz"],
+          datasets: [{
+            data: [{{ score_a }}, {{ score_b }}, {{ score_c }}, {{ score_d }}],
+            backgroundColor: ['#1cc88a', '#4e73df', '#f6c23e', '#e74a3b'],
+            hoverOffset: 6,
+          }]
+        },
+        options: {
+          maintainAspectRatio: false,
+          cutout: '65%',
+          plugins: {
+            legend: { position: 'bottom', labels: { font: { size: 11 }, padding: 12 } }
+          }
+        }
+      });
+    }
   }
+}
 
-  // Lazy init: Activity chart  ← different flag name now
-  if (tab === 'radar' && !window.activityChartInit) {
-    window.activityChartInit = true;
-    new Chart(document.getElementById('studentActivityChart'), {
-      type: 'line',
-      data: {
-        labels: ["Yanvar", "Fevral", "Mart", "Aprel", "May", "Iyun", "Iyul"],
-        datasets: [{
-          label: "Faol vaqt (soat)",
-          data: [15, 18, 20, 25, 22, 28, 30],
-          borderColor: "rgba(78, 115, 223, 1)",
-          backgroundColor: "rgba(78, 115, 223, 0.05)",
-          tension: 0.3,
-          fill: true
-        }]
-      },
-      options: { maintainAspectRatio: false }
-    });
-  }
+// Delete modal
+function confirmDelete(userId, userName) {
+  document.getElementById('deleteUserName').textContent = userName;
+  document.getElementById('deleteForm').action = `/user/delete/${userId}/`;
+  $('#deleteModal').modal('show');
 }
 </script>
 {% endblock extra_js %}
