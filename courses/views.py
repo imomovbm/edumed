@@ -526,21 +526,56 @@ def submit_quiz(request, quiz_id):
        # we need question of that instance 
         q = qq.question
         # take users input from POST (q = one question, we take id of that question)
-        user_choice = request.POST.get(f'q_{q.pk}')
-        # if user is not selected anything
-        if not user_choice:
-            skipped_count +=1
-            ResponseDetails.objects.create(response=response, question=q, is_correct=None)
-        else:
-            # take this questions correct choice
-            correct_choice = QuestionChoice.objects.filter(pk = user_choice, question=q).first()    
-            # check if there is actually users choice and is his choice correct. If there is not actual user choice mark it as incorrect
-            if correct_choice and correct_choice.is_correct:
-                correct_count +=1
-                ResponseDetails.objects.create(response=response, question=q, question_choice = correct_choice, is_correct= True)
+        if q.type == 'mc':
+            user_choice = request.POST.get(f'q_{q.pk}')
+            # if user is not selected anything
+            if not user_choice:
+                skipped_count +=1
+                ResponseDetails.objects.create(response=response, question=q, is_correct=None)
             else:
-                incorrect_count +=1
-                ResponseDetails.objects.create(response=response, question=q, question_choice = correct_choice, is_correct= False)
+                # take this questions correct choice
+                correct_choice = QuestionChoice.objects.filter(pk = user_choice, question=q).first()    
+                # check if there is actually users choice and is his choice correct. If there is not actual user choice mark it as incorrect
+                if correct_choice and correct_choice.is_correct:
+                    correct_count +=1
+                    ResponseDetails.objects.create(response=response, question=q, question_choice = correct_choice, is_correct= True)
+                else:
+                    incorrect_count +=1
+                    ResponseDetails.objects.create(response=response, question=q, question_choice = correct_choice, is_correct= False)
+        elif q.type == 'ms':
+            selected_ids = request.POST.getlist(f'q_{q.pk}')
+            if not selected_ids:
+                skipped_count += 1
+            else:
+                correct_ids  = set(QuestionChoice.objects.filter(question=q, is_correct=True).values_list('id', flat=True))
+                selected_ids = set(int(i) for i in selected_ids)
+                for cid in selected_ids:
+                    choice = QuestionChoice.objects.filter(id=cid, question=q).first()
+                    ResponseDetails.objects.create(response=response, question=q, question_choice=choice)
+                if selected_ids == correct_ids:
+                    correct_count += 1
+                else:
+                    incorrect_count += 1
+        elif q.type == 'tf':
+            answer = request.POST.get(f'q_{q.pk}')
+            if not answer:
+                skipped_count += 1
+            else:
+                correct_choice = QuestionChoice.objects.filter(question=q, is_correct=True).first()
+                is_correct = correct_choice and correct_choice.choice_text.lower() == answer.lower()
+                ResponseDetails.objects.create(response=response, question=q, user_text_answer=answer)
+                if is_correct:
+                    correct_count += 1
+                else:
+                    incorrect_count += 1
+        elif q.type in ('sha', 'es'):
+            text = request.POST.get(f'q_{q.pk}', '').strip()
+            if not text:
+                skipped_count += 1
+            else:
+                ResponseDetails.objects.create(response=response, question=q, user_text_answer=text)
+                # Text answers need manual grading — count as skipped for now
+                skipped_count += 1 
 
     # calculate score in percentage
     number_of_questions = len(questions)
@@ -571,25 +606,46 @@ def score_view(request, response_id):
         'skipped_count': response.skipped_count,
     })
 
-# add view for watching score details
 @login_required(login_url='user:login')
 @require_profile
 def score_details_view(request, response_id):
     response = get_object_or_404(Response, pk=response_id, user=request.user)
-    details = ResponseDetails.objects.filter(response=response).all()
-    # for each detail, which is what user selected. First take correct answer of the exact question and assign it to new value
-    # with this new value we will show it to student
-    for detail in details:
-        correct = QuestionChoice.objects.filter(question=detail.question, is_correct=True).first()
-        detail.correct_answer_text = correct.choice_text if correct else ''
+    
+    # 1. Fetch all details and prefetch questions/choices to avoid N+1 queries
+    details = ResponseDetails.objects.filter(response=response).select_related('question', 'question_choice')
+    
+    # 2. Group details by question
+    # We use a dict to group multiple ResponseDetails (for 'ms' type) together
+    grouped_results = {}
+    
+    for d in details:
+        q = d.question
+        if q.id not in grouped_results:
+            # Find the correct answer(s) for this question
+            correct_choices = QuestionChoice.objects.filter(question=q, is_correct=True)
+            
+            grouped_results[q.id] = {
+                'question': q,
+                'is_correct': d.is_correct, # Logic depends on type
+                'user_choices': [],
+                'user_text': d.user_text_answer,
+                'correct_answers': [c.choice_text for c in correct_choices],
+                'type': q.type
+            }
+        
+        if d.question_choice:
+            grouped_results[q.id]['user_choices'].append(d.question_choice.choice_text)
+
+    # 3. Final polish for the template
+    results_list = list(grouped_results.values())
 
     return render(request, 'courses/quiz_details.html', {
         'title': response.quiz.title,
-        # sometimes we may not have topic
         'topic_id': response.quiz.topic.pk if response.quiz.topic else None,
         'score': response.score,
-        'details':details,
+        'results': results_list,
     })
+
 from django.core.paginator import Paginator
 
 def all_forum_view(request):

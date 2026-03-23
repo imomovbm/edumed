@@ -122,62 +122,65 @@
     <div class="score-badge">{{ score }}%</div>
   </div>
 
-  <!-- Question detail cards -->
-  {% for detail in details %}
-  {% with q=detail.question %}
+    {% for res in results %}
+      <div class="detail-card 
+        {% if res.is_correct == True %}correct
+        {% elif res.is_correct == False %}incorrect
+        {% else %}skipped{% endif %}">
+        
+        <div class="status-icon">
+          {% if res.is_correct == True %}<i class="fas fa-check"></i>
+          {% elif res.is_correct == False %}<i class="fas fa-times"></i>
+          {% else %}<i class="fas fa-minus"></i>{% endif %}
+        </div>
 
-    {% if detail.is_correct is None %}
-      {# Skipped #}
-      <div class="detail-card skipped">
-        <div class="status-icon"><i class="fas fa-minus"></i></div>
         <div class="detail-body">
           <div class="q-number-label">Savol {{ forloop.counter }}</div>
-          <div class="q-text">{{ q.question_text }}</div>
+          <div class="q-text">{{ res.question.question_text }}</div>
+
           <div class="answer-row">
-            <span class="skipped-text"><i class="fas fa-forward mr-1"></i>O'tkazib yuborildi</span>
+            {% if res.type == 'mc' or res.type == 'ms' %}
+              {# Multiple Choice or Multi-Select #}
+              {% if not res.user_choices %}
+                <span class="skipped-text"><i class="fas fa-forward mr-1"></i>O'tkazib yuborildi</span>
+              {% else %}
+                <span class="{% if res.is_correct %}correct-answer{% else %}your-answer{% endif %}">
+                  <i class="fas {% if res.is_correct %}fa-check-circle{% else %}fa-times-circle{% endif %} mr-1"></i>
+                  Sizning javobingiz: {{ res.user_choices|join:", " }}
+                </span>
+                {% if not res.is_correct %}
+                  <span class="correct-answer">
+                    <i class="fas fa-check-circle mr-1"></i>
+                    To'g'ri javob: {{ res.correct_answers|join:", " }}
+                  </span>
+                {% endif %}
+              {% endif %}
+
+            {% elif res.type == 'tf' %}
+              {# True/False #}
+              {% if not res.user_text %}
+                <span class="skipped-text">O'tkazib yuborildi</span>
+              {% else %}
+                <span class="{% if res.is_correct %}correct-answer{% else %}your-answer{% endif %}">
+                  Sizning javobingiz: {{ res.user_text }}
+                </span>
+                {% if not res.is_correct %}
+                  <span class="correct-answer">To'g'ri javob: {{ res.correct_answers.0 }}</span>
+                {% endif %}
+              {% endif %}
+
+            {% elif res.type == 'sha' or res.type == 'es' %}
+              {# Short Answer or Essay #}
+              <span class="skipped-text">
+                <i class="fas fa-pen-nib mr-1"></i> 
+                Sizning javobingiz: {{ res.user_text|default:"Javob berilmagan" }}
+              </span>
+              <small style="color: #718096; margin-top: 5px;">(Ushbu savol turi o'qituvchi tomonidan tekshiriladi)</small>
+            {% endif %}
           </div>
         </div>
       </div>
-
-    {% elif detail.is_correct %}
-      {# Correct #}
-      <div class="detail-card correct">
-        <div class="status-icon"><i class="fas fa-check"></i></div>
-        <div class="detail-body">
-          <div class="q-number-label">Savol {{ forloop.counter }}</div>
-          <div class="q-text">{{ q.question_text }}</div>
-          <div class="answer-row">
-            <span class="correct-answer">
-              <i class="fas fa-check-circle mr-1"></i>
-              {{ detail.question_choice.choice_text }}
-            </span>
-          </div>
-        </div>
-      </div>
-
-    {% else %}
-      {# Incorrect #}
-      <div class="detail-card incorrect">
-        <div class="status-icon"><i class="fas fa-times"></i></div>
-        <div class="detail-body">
-          <div class="q-number-label">Savol {{ forloop.counter }}</div>
-          <div class="q-text">{{ q.question_text }}</div>
-          <div class="answer-row">
-            <span class="your-answer">
-              <i class="fas fa-times-circle mr-1"></i>
-              Sizning javobingiz: {{ detail.question_choice.choice_text }}
-            </span>
-            <span class="correct-answer">
-              <i class="fas fa-check-circle mr-1"></i>
-              To'g'ri javob: {{ detail.correct_answer_text }}
-            </span>
-          </div>
-        </div>
-      </div>
-    {% endif %}
-
-  {% endwith %}
-  {% endfor %}
+    {% endfor %}
 
   <!-- Buttons -->
   <div class="btn-group">
