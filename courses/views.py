@@ -379,53 +379,67 @@ def score_details_view(request, response_id):
         'score': response.score,
         'details':details,
     })
+from django.core.paginator import Paginator
 
 def all_forum_view(request):
     if request.method == "POST" and request.user.is_authenticated:
         title = request.POST.get('title')
         forum_question = request.POST.get('forum_question')
         if not (title and forum_question):
-            messages.error(request,"Xatolik!")
+            messages.error(request, "Xatolik!")
             return redirect('courses:forums')
         topic_id = request.POST.get('topic_id')
         topic = Topic.objects.filter(pk=topic_id).first() if topic_id else None
-
         forum = Forum.objects.create(
-            user=request.user,
-            title=title,
-            forum_question=forum_question,
-            topic=topic, 
+            user=request.user, title=title,
+            forum_question=forum_question, topic=topic,
         )
         messages.success(request, f"Forum #{forum.pk} muvaffaqiyatli yaratildi!")
         return redirect('courses:forums')
-    
+
+    # Filter
     topic_filter = request.GET.get('topic')
+    q = request.GET.get('q')
+    forums = Forum.objects.all()
+
     if topic_filter and topic_filter.isdecimal():
-        forums = Forum.objects.filter(topic__id=topic_filter).order_by('-created_at')
-    elif topic_filter == 'all':
-        forums = Forum.objects.filter(topic__isnull=True).order_by('-created_at')
+        forums = forums.filter(topic__id=topic_filter)
+    elif topic_filter == 'general':
+        forums = forums.filter(topic__isnull=True)
+
+    if q:
+        forums = forums.filter(title__icontains=q) | forums.filter(forum_question__icontains=q)
+
+    # Sort
+    sort = request.GET.get('sort', 'new')
+    if sort == 'top':
+        forums = forums.annotate(like_count=Count('likes')).order_by('-like_count')
+    elif sort == 'active':
+        forums = forums.annotate(comment_count=Count('forumcomment')).order_by('-comment_count')
     else:
-        forums = Forum.objects.order_by('-created_at')
+        forums = forums.order_by('-created_at')
 
-    general_forum_count = Forum.objects.filter(topic__isnull=True).count()
-    total_comments = ForumComment.objects.count()
-    total_users = User.objects.filter(forumcomment__isnull=False).distinct().count()
+    # Paginate
+    paginator = Paginator(forums, 10)
+    page = request.GET.get('page', 1)
+    forums = paginator.get_page(page)
 
+    topics = Topic.objects.order_by('-created_at')
     top_contributors = (
         ForumComment.objects
         .values('user__first_name', 'user__last_name', 'user__id')
         .annotate(comment_count=Count('id'), like_count=Count('likes'))
         .order_by('-comment_count')[:5]
     )
-    topics = Topic.objects.order_by('-created_at')
-   
+
     return render(request, 'courses/forums.html', {
         'topics': topics,
         'forums': forums,
         'top_contributors': top_contributors,
-        'total_comments': total_comments,
-        'total_users': total_users,
-        'general_forum_count': general_forum_count
+        'total_forums': Forum.objects.count(),
+        'total_comments': ForumComment.objects.count(),
+        'total_users': User.objects.filter(forumcomment__isnull=False).distinct().count(),
+        'general_forum_count': Forum.objects.filter(topic__isnull=True).count(),
     })
 
 def forum_view(request, forum_id):
