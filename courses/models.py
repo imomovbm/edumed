@@ -2,8 +2,38 @@ from django.db import models
 from django.contrib.auth.models import User
 
 class Topic(models.Model):
-    title = models.TextField()
-    created_at = models.DateTimeField(auto_now_add=True)
+    title       = models.TextField()
+    description = models.TextField(blank=True)
+    icon        = models.CharField(max_length=50, blank=True, default='fa-book')
+    created_by  = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    created_at  = models.DateTimeField(auto_now_add=True)
+
+class TopicSection(models.Model):
+    TYPE_CHOICES = [
+        ('text',      'Matn bloki'),
+        ('quote',     'Iqtibos'),
+        ('keypoints', 'Asosiy nuqtalar'),
+        ('timeline',  'Vaqt chizig\'i'),
+        ('person',    'Shaxs haqida'),
+        ('info',      'Ma\'lumot bloki'),
+    ]
+    topic  = models.ForeignKey(Topic, on_delete=models.CASCADE, related_name='sections')
+    type   = models.CharField(max_length=20, choices=TYPE_CHOICES)
+    title  = models.CharField(max_length=255, blank=True)
+    order  = models.IntegerField(default=0)
+
+    class Meta:
+        ordering = ['order']
+
+class TopicSectionItem(models.Model):
+    section   = models.ForeignKey(TopicSection, on_delete=models.CASCADE, related_name='items')
+    text      = models.TextField()               # main text or bullet point
+    sub_text  = models.TextField(blank=True)     # secondary text
+    label     = models.CharField(max_length=100, blank=True)  # date for timeline, name for person
+    order     = models.IntegerField(default=0)
+
+    class Meta:
+        ordering = ['order']
 
 class TopicProgress(models.Model):
     STATUS_CHOICES = [
@@ -22,9 +52,13 @@ class TopicComment(models.Model):
     text = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     likes = models.ManyToManyField(User, related_name='topic_comment_likes', blank=True)
+    dislikes = models.ManyToManyField(User, related_name='topic_comment_dislikes', blank=True)
 
     def total_likes(self):
         return self.likes.count()
+
+    def total_dislikes(self):
+        return self.dislikes.count()
 
     def __str__(self):
         return f"{self.user.username} - {self.topic_id}"

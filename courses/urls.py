@@ -9,7 +9,11 @@ urlpatterns = [
     path("modules/", views.modules_view, name="modules"), 
     path("topic/<int:topic_id>/", views.topic_detail, name="topic"), 
     path("comment/<int:comment_id>/like/", views.like_comment, name="like_comment"),
-    
+    path('topic/<int:topic_id>/progress/', views.update_progress_view, name='update_progress'),
+    path('create-topic/',                views.create_topic_view, name='create_topic'),
+    path('edit-topic/<int:topic_id>/',   views.edit_topic_view,   name='edit_topic'),
+    path('delete-topic/<int:topic_id>/', views.delete_topic_view, name='delete_topic'),
+
     # admin panel
     path("all-questions/", views.all_questions_view, name="all_questions"),
     path("create-question/", views.create_question_view, name="add_question"),

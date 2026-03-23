@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from .models import TopicComment, Quiz, Question, QuizQuestion, Response, ResponseDetails, QuestionChoice, Topic, Forum, ForumComment
+from .models import TopicComment, Quiz, Question, QuizQuestion, Response, ResponseDetails, QuestionChoice, Topic, Forum, ForumComment, TopicProgress
 from django.contrib.auth.models import User
 import json
 from django.http import JsonResponse
@@ -40,6 +40,9 @@ def modules_view(request):
 
 @login_required(login_url='user:login')
 def topic_detail(request, topic_id):
+    topic = get_object_or_404(Topic, pk=topic_id)
+    related_quizzes = Quiz.objects.filter(topic=topic)
+
     if request.method == 'POST':
         comment_text = request.POST.get('comment_text')
         if comment_text:
@@ -52,25 +55,187 @@ def topic_detail(request, topic_id):
             return redirect('courses:topic', topic_id=topic_id)
 
     comments = TopicComment.objects.filter(topic_id=topic_id).order_by('-created_at')
-    
-    return render(request, f'courses/topic_detail_{topic_id}.html', {
+    progress = TopicProgress.objects.filter(user=request.user, topic=topic).first()
+
+    return render(request, 'courses/topic_detail.html', {
+        'topic': topic,
         'topic_id': topic_id,
-        'quiz_id': topic_id,
+        'related_quizzes': related_quizzes,
         'comments': comments,
-        'title': "1-MA'RUZA: Hamshiralik ishi tarixi",
+        'progress': progress,
     })
 
 @login_required(login_url='user:login')
-@require_profile
 def like_comment(request, comment_id):
     comment = get_object_or_404(TopicComment, id=comment_id)
-    if comment.likes.filter(id=request.user.id).exists():
-        comment.likes.remove(request.user)
-    else:
-        comment.likes.add(request.user)
-    
-    # Redirect back to the same page
+    action = request.GET.get('action', 'like')
+    if action == 'like':
+        if request.user in comment.likes.all():
+            comment.likes.remove(request.user)
+        else:
+            comment.likes.add(request.user)
+            comment.dislikes.remove(request.user)
+    elif action == 'dislike':
+        if request.user in comment.dislikes.all():
+            comment.dislikes.remove(request.user)
+        else:
+            comment.dislikes.add(request.user)
+            comment.likes.remove(request.user)
     return redirect(request.META.get('HTTP_REFERER', 'courses:index'))
+
+@login_required(login_url='user:login')
+@require_POST
+def update_progress_view(request, topic_id):
+    topic = get_object_or_404(Topic, pk=topic_id)
+    status = request.POST.get('status')
+    if status in ['not_started', 'in_progress', 'completed']:
+        TopicProgress.objects.update_or_create(
+            user=request.user, topic=topic,
+            defaults={'status': status}
+        )
+    return redirect('courses:topic', topic_id=topic_id)
+
+# ── Shared helper: block type descriptions for the template ──
+BLOCK_TYPES = [
+    ('text',      'Matn',              'fa-align-left',    'Oddiy paragraf matni'),
+    ('quote',     'Iqtibos',           'fa-quote-left',    'Muallifga havola bilan iqtibos'),
+    ('keypoints', 'Asosiy nuqtalar',   'fa-star',          'Belgilangan muhim fikrlar ro\'yxati'),
+    ('timeline',  "Vaqt chizig'i",     'fa-history',       'Sana va tarix ketma-ketligi'),
+    ('person',    'Shaxs',             'fa-user-circle',   'Muallif, olim yoki tarixiy shaxs'),
+    ('info',      "Ma'lumot bloki",    'fa-info-circle',   'Izohli ma\'lumot yoki eslatma'),
+]
+
+
+def _build_sections_data(topic):
+    """Serialize a topic's sections+items to a Python list (for JS pre-load)."""
+    result = []
+    for section in topic.sections.all():
+        result.append({
+            'type':  section.type,
+            'title': section.title,
+            'order': section.order,
+            'items': [
+                {
+                    'text':     item.text,
+                    'sub_text': item.sub_text,
+                    'label':    item.label,
+                    'order':    item.order,
+                }
+                for item in section.items.all()
+            ],
+        })
+    return result
+
+
+def _save_sections(topic, sections_json_str):
+    """Parse sections JSON, delete old sections, create new ones."""
+    # Delete all existing sections (cascade deletes items too)
+    topic.sections.all().delete()
+
+    try:
+        sections_data = json.loads(sections_json_str or '[]')
+    except json.JSONDecodeError:
+        sections_data = []
+
+    for section_data in sections_data:
+        section = TopicSection.objects.create(
+            topic=topic,
+            type=section_data.get('type', 'text'),
+            title=section_data.get('title', ''),
+            order=section_data.get('order', 0),
+        )
+        for item_data in section_data.get('items', []):
+            text     = item_data.get('text', '').strip()
+            sub_text = item_data.get('sub_text', '').strip()
+            label    = item_data.get('label', '').strip()
+            # skip completely empty items
+            if not (text or sub_text or label):
+                continue
+            TopicSectionItem.objects.create(
+                section=section,
+                text=text,
+                sub_text=sub_text,
+                label=label,
+                order=item_data.get('order', 0),
+            )
+
+
+# ── Create ────────────────────────────────────────────────────
+@login_required(login_url='user:login')
+@require_profile
+def create_topic_view(request):
+    if request.method == 'POST':
+        title       = request.POST.get('title', '').strip()
+        description = request.POST.get('description', '').strip()
+        icon        = request.POST.get('icon', 'fa-book').strip()
+        sections_json = request.POST.get('sections_json', '[]')
+
+        if not title:
+            messages.error(request, "Mavzu nomi kiritilishi shart!")
+            return redirect('courses:create_topic')
+
+        topic = Topic.objects.create(
+            title=title,
+            description=description,
+            icon=icon,
+            created_by=request.user,
+        )
+        _save_sections(topic, sections_json)
+
+        messages.success(request, f"'{topic.title}' mavzusi muvaffaqiyatli yaratildi!")
+        return redirect('courses:topic', topic_id=topic.id)
+
+    return render(request, 'courses/topic_form.html', {
+        'topic':        None,
+        'sections_data': json.dumps([]),
+        'block_types':  BLOCK_TYPES,
+    })
+
+
+# ── Edit ──────────────────────────────────────────────────────
+@login_required(login_url='user:login')
+@require_profile
+def edit_topic_view(request, topic_id):
+    topic = get_object_or_404(Topic, pk=topic_id)
+
+    if request.method == 'POST':
+        title         = request.POST.get('title', '').strip()
+        description   = request.POST.get('description', '').strip()
+        icon          = request.POST.get('icon', 'fa-book').strip()
+        sections_json = request.POST.get('sections_json', '[]')
+
+        if not title:
+            messages.error(request, "Mavzu nomi kiritilishi shart!")
+            return redirect('courses:edit_topic', topic_id=topic_id)
+
+        topic.title       = title
+        topic.description = description
+        topic.icon        = icon
+        topic.save()
+        _save_sections(topic, sections_json)
+
+        messages.success(request, "Mavzu muvaffaqiyatli saqlandi!")
+        return redirect('courses:edit_topic', topic_id=topic_id)
+
+    sections_data = json.dumps(_build_sections_data(topic), ensure_ascii=False)
+    return render(request, 'courses/topic_form.html', {
+        'topic':        topic,
+        'sections_data': sections_data,
+        'block_types':  BLOCK_TYPES,
+    })
+
+
+# ── Delete ────────────────────────────────────────────────────
+@login_required(login_url='user:login')
+@require_profile
+@require_POST
+def delete_topic_view(request, topic_id):
+    topic = get_object_or_404(Topic, pk=topic_id)
+    title = topic.title
+    topic.delete()
+    messages.success(request, f"'{title}' mavzusi o'chirildi")
+    return redirect('courses:modules')
+
 
 @login_required(login_url='user:login')
 @require_profile

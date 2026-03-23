@@ -1,0 +1,662 @@
+{% extends "courses/layout.html" %}
+{% load static %}
+{% block main %}
+
+<div class="container-fluid">
+
+  <!-- Heading -->
+  <div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <div>
+      <a href="{% url 'courses:modules' %}" class="text-muted small">
+        <i class="fas fa-arrow-left mr-1"></i> Mavzular
+      </a>
+      <h1 class="h3 mb-0 text-gray-800 mt-1">
+        {% if topic %}
+          <i class="fas fa-pen mr-2 text-primary"></i>Mavzuni tahrirlash
+        {% else %}
+          <i class="fas fa-plus-circle mr-2 text-primary"></i>Yangi mavzu yaratish
+        {% endif %}
+      </h1>
+    </div>
+    {% if topic %}
+    <div class="d-flex" style="gap:8px;">
+      <a href="{% url 'courses:topic' topic.id %}" class="btn btn-outline-primary btn-sm">
+        <i class="fas fa-eye mr-1"></i>Ko'rish
+      </a>
+      <button class="btn btn-outline-danger btn-sm"
+        onclick="confirmDeleteTopic({{ topic.id }}, '{{ topic.title|escapejs }}')">
+        <i class="fas fa-trash mr-1"></i>O'chirish
+      </button>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Toast Messages -->
+  {% if messages %}
+  <div id="msg-container" style="position:fixed;top:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:8px;max-width:360px;">
+    {% for message in messages %}
+    <div class="alert-toast" style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;
+      padding:14px 16px;border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,0.12);font-size:0.9rem;font-weight:500;animation:slideIn 0.3s ease;
+      {% if message.tags == 'success' %}background:#d4f5e9;color:#1a7a56;border-left:4px solid #1cc88a;
+      {% elif message.tags == 'error' %}background:#fde8e6;color:#a02020;border-left:4px solid #e74a3b;
+      {% else %}background:#ebf4ff;color:#2b4fa0;border-left:4px solid #4e73df;{% endif %}">
+      <div style="display:flex;align-items:center;gap:8px;">
+        {% if message.tags == 'success' %}<i class="fas fa-check-circle"></i>
+        {% elif message.tags == 'error' %}<i class="fas fa-times-circle"></i>
+        {% else %}<i class="fas fa-info-circle"></i>{% endif %}
+        <span>{{ message }}</span>
+      </div>
+      <button onclick="this.parentElement.remove()" style="background:none;border:none;cursor:pointer;font-size:1rem;opacity:0.6;padding:0;color:inherit;">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <form id="topicForm" method="POST"
+    action="{% if topic %}{% url 'courses:edit_topic' topic.id %}{% else %}{% url 'courses:create_topic' %}{% endif %}">
+    {% csrf_token %}
+    <!-- Hidden field carries the full section JSON -->
+    <input type="hidden" name="sections_json" id="sectionsJson">
+
+    <div class="row">
+
+      <!-- ── LEFT: Topic Meta ── -->
+      <div class="col-xl-8 col-lg-7">
+
+        <!-- Topic info card -->
+        <div class="card shadow mb-4" style="border-radius:12px;">
+          <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+              <i class="fas fa-info-circle mr-2"></i>Mavzu ma'lumotlari
+            </h6>
+          </div>
+          <div class="card-body">
+
+            <div class="form-group">
+              <label class="font-weight-bold">Mavzu nomi <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" name="title"
+                value="{{ topic.title|default:'' }}"
+                placeholder="Masalan: Hamshiralik ishi tarixi" required>
+            </div>
+
+            <div class="form-group">
+              <label class="font-weight-bold">Qisqa tavsif <span class="text-muted">(ixtiyoriy)</span></label>
+              <textarea class="form-control" name="description" rows="2"
+                placeholder="Mavzu haqida qisqacha ma'lumot...">{{ topic.description|default:'' }}</textarea>
+            </div>
+
+            <div class="form-group mb-0">
+              <label class="font-weight-bold">Ikonka <span class="text-muted">(Font Awesome class)</span></label>
+              <div class="input-group">
+                <div class="input-group-prepend">
+                  <span class="input-group-text" id="iconPreview">
+                    <i id="iconPreviewEl" class="fas fa-book"></i>
+                  </span>
+                </div>
+                <input type="text" class="form-control" name="icon" id="iconInput"
+                  value="{{ topic.icon|default:'fa-book' }}"
+                  placeholder="fa-book"
+                  oninput="previewIcon(this.value)">
+              </div>
+              <small class="text-muted">
+                Misol: <code>fa-heartbeat</code>, <code>fa-history</code>, <code>fa-microscope</code>,
+                <a href="https://fontawesome.com/icons" target="_blank">barcha ikonkalar</a>
+              </small>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ── Section Builder ── -->
+        <div class="card shadow mb-4" style="border-radius:12px;">
+          <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-primary">
+              <i class="fas fa-layer-group mr-2"></i>Kontent bloklari
+              <span class="badge badge-primary ml-2" id="sectionCount">0</span>
+            </h6>
+          </div>
+          <div class="card-body pb-2">
+
+            <!-- Add section buttons -->
+            <div class="mb-4">
+              <p class="small text-muted mb-2">Qo'shish uchun blok turini tanlang:</p>
+              <div class="d-flex flex-wrap" style="gap:8px;">
+                <button type="button" class="add-section-btn" onclick="addSection('text')">
+                  <i class="fas fa-align-left mr-1"></i>Matn
+                </button>
+                <button type="button" class="add-section-btn" onclick="addSection('quote')">
+                  <i class="fas fa-quote-left mr-1"></i>Iqtibos
+                </button>
+                <button type="button" class="add-section-btn" onclick="addSection('keypoints')">
+                  <i class="fas fa-star mr-1"></i>Asosiy nuqtalar
+                </button>
+                <button type="button" class="add-section-btn" onclick="addSection('timeline')">
+                  <i class="fas fa-history mr-1"></i>Vaqt chizig'i
+                </button>
+                <button type="button" class="add-section-btn" onclick="addSection('person')">
+                  <i class="fas fa-user-circle mr-1"></i>Shaxs
+                </button>
+                <button type="button" class="add-section-btn" onclick="addSection('info')">
+                  <i class="fas fa-info-circle mr-1"></i>Ma'lumot
+                </button>
+              </div>
+            </div>
+
+            <!-- Sections will be rendered here -->
+            <div id="sectionsContainer">
+              <div id="emptySections" class="text-center py-4 text-muted border rounded"
+                style="border-style:dashed !important;">
+                <i class="fas fa-layer-group fa-2x d-block mb-2 text-gray-300"></i>
+                <p class="small mb-0">Hali bloklar qo'shilmagan. Yuqoridagi tugmalardan birini bosing.</p>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Save button -->
+        <div class="d-flex justify-content-between mb-4">
+          <a href="{% url 'courses:modules' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-times mr-1"></i>Bekor qilish
+          </a>
+          <button type="submit" class="btn btn-success px-4" style="border-radius:8px;">
+            <i class="fas fa-save mr-1"></i>
+            {% if topic %}O'zgarishlarni saqlash{% else %}Mavzuni saqlash{% endif %}
+          </button>
+        </div>
+
+      </div>
+
+      <!-- ── RIGHT: Preview / Help ── -->
+      <div class="col-xl-4 col-lg-5">
+
+        <!-- Live preview -->
+        <div class="card shadow mb-4" style="position:sticky;top:20px;border-radius:12px;">
+          <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+              <i class="fas fa-eye mr-2"></i>Ko'rinish namunasi
+            </h6>
+          </div>
+          <div class="card-body p-0" style="max-height:500px;overflow-y:auto;" id="previewContainer">
+            <div class="text-center py-4 text-muted small">
+              <i class="fas fa-eye-slash d-block fa-2x mb-2 text-gray-300"></i>
+              Blok qo'shilgach ko'rinish bu yerda chiqadi
+            </div>
+          </div>
+        </div>
+
+        <!-- Block type guide -->
+        <div class="card shadow mb-4" style="border-radius:12px;">
+          <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+              <i class="fas fa-question-circle mr-2"></i>Blok turlari
+            </h6>
+          </div>
+          <div class="card-body p-0">
+            {% for type, label, icon, desc in block_types %}
+            <div class="d-flex align-items-start px-3 py-2 border-bottom">
+              <span style="width:28px;flex-shrink:0;color:#4e73df;">
+                <i class="fas {{ icon }}"></i>
+              </span>
+              <div>
+                <div class="font-weight-bold small">{{ label }}</div>
+                <div class="text-muted" style="font-size:0.75rem;">{{ desc }}</div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </form>
+</div>
+
+<!-- Delete Topic Modal -->
+<div class="modal fade" id="deleteTopicModal" tabindex="-1" role="dialog">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="border-radius:12px;border:none;">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title font-weight-bold text-danger">
+          <i class="fas fa-exclamation-triangle mr-2"></i>Mavzuni o'chirish
+        </h5>
+        <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+      </div>
+      <div class="modal-body pt-2">
+        <p class="text-gray-700 mb-1">Quyidagi mavzuni o'chirishni tasdiqlaysizmi?</p>
+        <div class="p-3 rounded mt-2" style="background:#fde8e6;border-left:3px solid #e74a3b;">
+          <span class="font-weight-bold text-danger" id="deleteTopicTitle"></span>
+        </div>
+        <p class="small text-muted mt-2 mb-0">
+          <i class="fas fa-info-circle mr-1"></i>
+          Barcha kontent bloklari va izohlar ham o'chib ketadi.
+        </p>
+      </div>
+      <div class="modal-footer border-0 pt-0">
+        <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">Bekor qilish</button>
+        <form id="deleteTopicForm" method="POST" action="" style="display:inline;">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger">
+            <i class="fas fa-trash mr-1"></i>O'chirish
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock main %}
+
+{% block extra_js %}
+<style>
+  @keyframes slideIn {
+    from { opacity:0; transform:translateX(20px); }
+    to   { opacity:1; transform:translateX(0); }
+  }
+  @keyframes sectionIn {
+    from { opacity:0; transform:translateY(-8px); }
+    to   { opacity:1; transform:translateY(0); }
+  }
+
+  /* Add section buttons */
+  .add-section-btn {
+    background: #f8f9fc; border: 1px solid #e3e6f0;
+    border-radius: 20px; padding: 5px 14px;
+    font-size: 0.8rem; color: #4e73df; font-weight: 600;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .add-section-btn:hover {
+    background: #4e73df; color: #fff; border-color: #4e73df;
+  }
+
+  /* Section cards */
+  .section-block {
+    background: #fff; border: 1px solid #e3e6f0;
+    border-radius: 10px; margin-bottom: 12px;
+    animation: sectionIn 0.2s ease;
+    overflow: hidden;
+  }
+  .section-block.dragging { opacity: 0.5; }
+
+  .section-header {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px; background: #f8f9fc;
+    border-bottom: 1px solid #e3e6f0; cursor: grab;
+  }
+  .section-header:active { cursor: grabbing; }
+  .section-type-label {
+    font-size: 0.72rem; font-weight: 700;
+    padding: 2px 8px; border-radius: 20px;
+    text-transform: uppercase;
+  }
+  .section-type-label.text      { background:#ebf4ff; color:#2b4fa0; }
+  .section-type-label.quote     { background:#fef9e7; color:#8a6200; }
+  .section-type-label.keypoints { background:#d4f5e9; color:#1a7a56; }
+  .section-type-label.timeline  { background:#fde8e6; color:#a02020; }
+  .section-type-label.person    { background:#f3e8ff; color:#6b21a8; }
+  .section-type-label.info      { background:#ebf4ff; color:#0c5460; }
+
+  .section-body { padding: 14px; }
+
+  .drag-handle {
+    color: #c5d4f7; cursor: grab; font-size: 1rem;
+    flex-shrink: 0;
+  }
+  .drag-handle:hover { color: #4e73df; }
+
+  /* Item rows */
+  .item-row {
+    display: flex; flex-direction: column; gap: 6px;
+    background: #f8f9fc; border: 1px solid #e3e6f0;
+    border-radius: 8px; padding: 10px 12px;
+    margin-bottom: 8px; position: relative;
+  }
+  .item-row .remove-item-btn {
+    position: absolute; top: 8px; right: 8px;
+    background: none; border: none; color: #e74a3b;
+    cursor: pointer; font-size: 0.85rem; opacity: 0.5;
+    transition: opacity 0.15s;
+  }
+  .item-row .remove-item-btn:hover { opacity: 1; }
+
+  /* Section controls */
+  .section-controls { display: flex; align-items: center; gap: 6px; margin-left: auto; }
+  .section-ctrl-btn {
+    background: none; border: none; cursor: pointer;
+    color: #a0aec0; font-size: 0.85rem; padding: 2px 6px;
+    border-radius: 4px; transition: all 0.15s;
+  }
+  .section-ctrl-btn:hover { background: #e3e6f0; color: #2d3748; }
+  .section-ctrl-btn.delete:hover { background: #fde8e6; color: #e74a3b; }
+
+  /* Compact inputs */
+  .item-row .form-control {
+    font-size: 0.875rem; padding: 6px 10px;
+    border-radius: 6px;
+  }
+  .item-label { font-size: 0.72rem; color: #718096; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; }
+
+  /* Preview */
+  .preview-section { padding: 12px 16px; border-bottom: 1px solid #e3e6f0; }
+  .preview-section:last-child { border-bottom: none; }
+  .preview-type-badge {
+    font-size: 0.65rem; font-weight: 700; padding: 1px 6px;
+    border-radius: 10px; background: #ebf4ff; color: #2b4fa0;
+    text-transform: uppercase;
+  }
+  .preview-title { font-weight: 700; font-size: 0.85rem; color: #2d3748; }
+  .preview-item { font-size: 0.78rem; color: #718096; line-height: 1.5; }
+</style>
+
+<script>
+// ── State ─────────────────────────────────────────────────
+let sections = [];
+let sectionIdCounter = 0;
+
+const TYPE_CONFIG = {
+  text:      { label: 'Matn',         icon: 'fa-align-left',    color: 'text',      titleLabel: 'Sarlavha (ixtiyoriy)', hasTitle: true,  itemFields: ['text'] },
+  quote:     { label: 'Iqtibos',      icon: 'fa-quote-left',    color: 'quote',     titleLabel: null,                   hasTitle: false, itemFields: ['text', 'label'] },
+  keypoints: { label: 'Asosiy nuqtalar', icon: 'fa-star',       color: 'keypoints', titleLabel: 'Sarlavha',             hasTitle: true,  itemFields: ['text', 'sub_text'] },
+  timeline:  { label: "Vaqt chizig'i", icon: 'fa-history',      color: 'timeline',  titleLabel: 'Sarlavha',             hasTitle: true,  itemFields: ['label', 'text', 'sub_text'] },
+  person:    { label: 'Shaxs',        icon: 'fa-user-circle',   color: 'person',    titleLabel: 'Sarlavha',             hasTitle: true,  itemFields: ['label', 'sub_text', 'text'] },
+  info:      { label: "Ma'lumot",     icon: 'fa-info-circle',   color: 'info',      titleLabel: 'Sarlavha (ixtiyoriy)', hasTitle: true,  itemFields: ['label', 'text'] },
+};
+
+const ITEM_FIELD_CONFIG = {
+  text:     { placeholder: "Matn kiriting...",            label: "Matn",                      type: "textarea" },
+  sub_text: { placeholder: "Qo'shimcha matn...",          label: "Qo'shimcha matn",            type: "textarea" },
+  label:    { placeholder: "Sarlavha / Sana / Ism...",    label: "Sarlavha / Belgi",           type: "input"    },
+};
+
+// ── Pre-load existing sections (edit mode) ─────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  const existing = {{ sections_data|safe }};
+  existing.forEach(s => loadSection(s));
+  updateSectionCount();
+  renderPreview();
+
+  // Toast auto-dismiss
+  document.querySelectorAll('.alert-toast').forEach(el => {
+    setTimeout(() => {
+      el.style.transition = 'opacity 0.4s';
+      el.style.opacity = '0';
+      setTimeout(() => el.remove(), 400);
+    }, 5000);
+  });
+
+  // Icon preview on load
+  previewIcon(document.getElementById('iconInput').value);
+});
+
+// ── Add a brand-new section ───────────────────────────────
+function addSection(type) {
+  const section = {
+    id: ++sectionIdCounter,
+    type,
+    title: '',
+    items: [{ id: Date.now(), text: '', sub_text: '', label: '' }],
+  };
+  sections.push(section);
+  renderSection(section);
+  updateSectionCount();
+  renderPreview();
+  document.getElementById('emptySections').style.display = 'none';
+}
+
+// ── Load existing section (edit mode) ────────────────────
+function loadSection(data) {
+  const section = {
+    id: ++sectionIdCounter,
+    type: data.type,
+    title: data.title || '',
+    items: data.items.map(it => ({ id: Date.now() + Math.random(), ...it })),
+  };
+  if (section.items.length === 0) {
+    section.items.push({ id: Date.now(), text: '', sub_text: '', label: '' });
+  }
+  sections.push(section);
+  renderSection(section);
+  document.getElementById('emptySections').style.display = 'none';
+}
+
+// ── Render section DOM ────────────────────────────────────
+function renderSection(section) {
+  const cfg = TYPE_CONFIG[section.type];
+  const container = document.getElementById('sectionsContainer');
+
+  const div = document.createElement('div');
+  div.className = 'section-block';
+  div.id = `section-${section.id}`;
+  div.dataset.sectionId = section.id;
+
+  div.innerHTML = `
+    <div class="section-header">
+      <span class="drag-handle"><i class="fas fa-grip-vertical"></i></span>
+      <span class="section-type-label ${section.type}">
+        <i class="fas ${cfg.icon} mr-1"></i>${cfg.label}
+      </span>
+      <span class="section-preview-title text-muted small" id="header-title-${section.id}" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+        ${section.title || '...'}
+      </span>
+      <div class="section-controls">
+        <button type="button" class="section-ctrl-btn" onclick="moveSectionUp(${section.id})" title="Yuqoriga">
+          <i class="fas fa-chevron-up"></i>
+        </button>
+        <button type="button" class="section-ctrl-btn" onclick="moveSectionDown(${section.id})" title="Pastga">
+          <i class="fas fa-chevron-down"></i>
+        </button>
+        <button type="button" class="section-ctrl-btn delete" onclick="removeSection(${section.id})" title="O'chirish">
+          <i class="fas fa-trash"></i>
+        </button>
+      </div>
+    </div>
+    <div class="section-body" id="section-body-${section.id}">
+      ${cfg.hasTitle ? `
+        <div class="form-group mb-3">
+          <label class="item-label">${cfg.titleLabel || 'Sarlavha'}</label>
+          <input type="text" class="form-control" placeholder="${cfg.titleLabel || 'Sarlavha'}..."
+            value="${escHtml(section.title)}"
+            oninput="updateSectionTitle(${section.id}, this.value)">
+        </div>
+      ` : ''}
+      <div class="items-container" id="items-${section.id}">
+        ${section.items.map(item => renderItemHTML(section.type, item)).join('')}
+      </div>
+      <button type="button" class="btn btn-sm btn-outline-primary mt-1" style="border-radius:20px;"
+        onclick="addItem(${section.id})">
+        <i class="fas fa-plus mr-1"></i>Qo'shish
+      </button>
+    </div>
+  `;
+
+  container.appendChild(div);
+}
+
+// ── Render a single item's HTML ───────────────────────────
+function renderItemHTML(type, item) {
+  const cfg = TYPE_CONFIG[type];
+  const fieldRows = cfg.itemFields.map(field => {
+    const fc = ITEM_FIELD_CONFIG[field];
+    if (fc.type === 'textarea') {
+      return `
+        <div>
+          <label class="item-label">${fc.label}</label>
+          <textarea class="form-control" rows="2"
+            placeholder="${fc.placeholder}"
+            data-field="${field}"
+            onchange="updateItemField(${item.id}, '${field}', this.value)"
+            oninput="updateItemField(${item.id}, '${field}', this.value)"
+            style="resize:vertical;">${escHtml(item[field] || '')}</textarea>
+        </div>`;
+    } else {
+      return `
+        <div>
+          <label class="item-label">${fc.label}</label>
+          <input type="text" class="form-control"
+            placeholder="${fc.placeholder}"
+            data-field="${field}"
+            value="${escHtml(item[field] || '')}"
+            oninput="updateItemField(${item.id}, '${field}', this.value)">
+        </div>`;
+    }
+  }).join('');
+
+  return `
+    <div class="item-row" id="item-${item.id}">
+      <button type="button" class="remove-item-btn" onclick="removeItem(${item.id})">
+        <i class="fas fa-times"></i>
+      </button>
+      ${fieldRows}
+    </div>`;
+}
+
+// ── Section operations ────────────────────────────────────
+function updateSectionTitle(sectionId, value) {
+  const s = sections.find(x => x.id === sectionId);
+  if (s) {
+    s.title = value;
+    const el = document.getElementById(`header-title-${sectionId}`);
+    if (el) el.textContent = value || '...';
+    renderPreview();
+  }
+}
+
+function removeSection(sectionId) {
+  sections = sections.filter(x => x.id !== sectionId);
+  const el = document.getElementById(`section-${sectionId}`);
+  if (el) el.remove();
+  updateSectionCount();
+  renderPreview();
+  if (sections.length === 0) {
+    document.getElementById('emptySections').style.display = 'block';
+  }
+}
+
+function moveSectionUp(sectionId) {
+  const idx = sections.findIndex(x => x.id === sectionId);
+  if (idx <= 0) return;
+  [sections[idx - 1], sections[idx]] = [sections[idx], sections[idx - 1]];
+  reRenderAllSections();
+}
+
+function moveSectionDown(sectionId) {
+  const idx = sections.findIndex(x => x.id === sectionId);
+  if (idx >= sections.length - 1) return;
+  [sections[idx], sections[idx + 1]] = [sections[idx + 1], sections[idx]];
+  reRenderAllSections();
+}
+
+function reRenderAllSections() {
+  const container = document.getElementById('sectionsContainer');
+  // remove all section blocks but keep emptySections
+  container.querySelectorAll('.section-block').forEach(el => el.remove());
+  sections.forEach(s => renderSection(s));
+}
+
+// ── Item operations ───────────────────────────────────────
+function addItem(sectionId) {
+  const s = sections.find(x => x.id === sectionId);
+  if (!s) return;
+  const item = { id: Date.now(), text: '', sub_text: '', label: '' };
+  s.items.push(item);
+  const container = document.getElementById(`items-${sectionId}`);
+  container.insertAdjacentHTML('beforeend', renderItemHTML(s.type, item));
+  renderPreview();
+}
+
+function removeItem(itemId) {
+  sections.forEach(s => {
+    const idx = s.items.findIndex(it => it.id === itemId);
+    if (idx > -1) {
+      if (s.items.length === 1) { alert("Kamida 1 ta element bo'lishi kerak!"); return; }
+      s.items.splice(idx, 1);
+      const el = document.getElementById(`item-${itemId}`);
+      if (el) el.remove();
+      renderPreview();
+    }
+  });
+}
+
+function updateItemField(itemId, field, value) {
+  sections.forEach(s => {
+    const item = s.items.find(it => it.id === itemId);
+    if (item) {
+      item[field] = value;
+      renderPreview();
+    }
+  });
+}
+
+function updateSectionCount() {
+  document.getElementById('sectionCount').textContent = sections.length;
+}
+
+// ── Live Preview ──────────────────────────────────────────
+function renderPreview() {
+  const container = document.getElementById('previewContainer');
+  if (sections.length === 0) {
+    container.innerHTML = `<div class="text-center py-4 text-muted small">
+      <i class="fas fa-eye-slash d-block fa-2x mb-2 text-gray-300"></i>
+      Blok qo'shilgach ko'rinish bu yerda chiqadi</div>`;
+    return;
+  }
+  container.innerHTML = sections.map(s => {
+    const cfg = TYPE_CONFIG[s.type];
+    const itemPreviews = s.items.map(it => {
+      if (s.type === 'timeline') return `<div class="preview-item"><strong>${it.label || '—'}</strong>: ${it.text || ''}</div>`;
+      if (s.type === 'person')   return `<div class="preview-item"><strong>${it.label || '—'}</strong> — ${it.text || ''}</div>`;
+      if (s.type === 'quote')    return `<div class="preview-item fst-italic">"${it.text || ''}"</div>`;
+      if (s.type === 'info')     return `<div class="preview-item">${it.label ? '<strong>'+it.label+'</strong>: ' : ''}${it.text || ''}</div>`;
+      return `<div class="preview-item">${it.text || ''}</div>`;
+    }).join('');
+    return `
+      <div class="preview-section">
+        <div class="d-flex align-items-center mb-1" style="gap:6px;">
+          <span class="preview-type-badge">${cfg.label}</span>
+          ${s.title ? `<span class="preview-title">${s.title}</span>` : ''}
+        </div>
+        ${itemPreviews}
+      </div>`;
+  }).join('');
+}
+
+// ── Icon preview ─────────────────────────────────────────
+function previewIcon(val) {
+  const el = document.getElementById('iconPreviewEl');
+  if (el) {
+    el.className = `fas ${val || 'fa-book'}`;
+  }
+}
+
+// ── Form submit — serialize sections to JSON ──────────────
+document.getElementById('topicForm').addEventListener('submit', function(e) {
+  const payload = sections.map((s, idx) => ({
+    type:  s.type,
+    title: s.title,
+    order: idx,
+    items: s.items.map((it, itIdx) => ({
+      text:     it.text     || '',
+      sub_text: it.sub_text || '',
+      label:    it.label    || '',
+      order:    itIdx,
+    })),
+  }));
+  document.getElementById('sectionsJson').value = JSON.stringify(payload);
+});
+
+// ── Delete topic ──────────────────────────────────────────
+function confirmDeleteTopic(topicId, title) {
+  document.getElementById('deleteTopicTitle').textContent = title;
+  document.getElementById('deleteTopicForm').action = `/courses/delete-topic/${topicId}/`;
+  $('#deleteTopicModal').modal('show');
+}
+
+// ── Helpers ───────────────────────────────────────────────
+function escHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+</script>
+{% endblock extra_js %}

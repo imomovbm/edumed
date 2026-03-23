@@ -1,0 +1,427 @@
+{% extends "courses/layout.html" %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+  .timeline-item {
+    position: relative; padding-left: 2.5rem;
+    margin-bottom: 1.5rem; border-left: 2px solid #4e73df;
+  }
+  .timeline-item::before {
+    content: ""; position: absolute; left: -9px; top: 4px;
+    width: 16px; height: 16px; border-radius: 50%;
+    background: #4e73df; border: 3px solid #fff;
+    box-shadow: 0 0 0 2px #4e73df;
+  }
+  .timeline-item:last-child { margin-bottom: 0; }
+
+  .section-card { border-radius: 12px; }
+  .section-card .card-header { border-radius: 12px 12px 0 0 !important; }
+
+  .keypoint-item {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 8px 0; border-bottom: 1px solid #f0f0f0;
+  }
+  .keypoint-item:last-child { border-bottom: none; }
+  .keypoint-icon { color: #1cc88a; margin-top: 2px; flex-shrink: 0; }
+
+  .person-card {
+    background: linear-gradient(135deg, #f8f9ff 0%, #fff 100%);
+    border: 1px solid #e3e6f0; border-radius: 10px;
+    padding: 16px; margin-bottom: 12px;
+  }
+  .person-name {
+    font-weight: 700; color: #2d3748; font-size: 1rem;
+  }
+  .person-years { color: #a0aec0; font-size: 0.8rem; }
+
+  blockquote.topic-quote {
+    border-left: 4px solid #4e73df;
+    background: #f8f9ff; padding: 16px 20px;
+    border-radius: 0 8px 8px 0; font-style: italic;
+    color: #4a5568; margin: 0;
+  }
+
+  .info-block {
+    background: #ebf8ff; border-left: 4px solid #4e73df;
+    border-radius: 0 8px 8px 0; padding: 14px 18px;
+  }
+
+  /* Comment section */
+  .comment-item {
+    display: flex; gap: 14px;
+    padding: 14px 0; border-bottom: 1px solid #f0f0f0;
+  }
+  .comment-item:last-child { border-bottom: none; }
+  .comment-body { flex: 1; }
+  .comment-actions { display: flex; gap: 6px; margin-top: 8px; }
+
+  /* Quiz sidebar */
+  .quiz-item {
+    display: flex; align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px; border-bottom: 1px solid #e3e6f0;
+    transition: background 0.15s;
+  }
+  .quiz-item:hover { background: #f8f9ff; }
+  .quiz-item:last-child { border-bottom: none; }
+</style>
+{% endblock extra_css %}
+
+{% block main %}
+<div class="container-fluid">
+
+  <!-- Breadcrumb -->
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb bg-white shadow-sm px-3">
+      <li class="breadcrumb-item">
+        <a href="{% url 'courses:modules' %}">Mavzular</a>
+      </li>
+      <li class="breadcrumb-item active">{{ topic.title }}</li>
+    </ol>
+  </nav>
+
+  <div class="row">
+
+    <!-- ── Main Content ── -->
+    <div class="col-lg-8">
+
+      <!-- Topic Header Card -->
+      <div class="card shadow mb-4 section-card border-left-primary">
+        <div class="card-body">
+          <div class="d-flex align-items-center mb-3">
+            <div class="icon-circle bg-primary mr-3">
+              <i class="fas {% if topic.icon %}{{ topic.icon }}{% else %}fa-book{% endif %} text-white"></i>
+            </div>
+            <h4 class="m-0 font-weight-bold text-primary">{{ topic.title }}</h4>
+          </div>
+          {% if topic.description %}
+          <p class="text-gray-700 mb-0" style="line-height:1.8;">{{ topic.description }}</p>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Dynamic Sections -->
+      {% for section in topic.sections.all %}
+
+        {% if section.type == 'text' %}
+        <div class="card shadow mb-4 section-card">
+          {% if section.title %}
+          <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+              <i class="fas fa-align-left mr-2"></i>{{ section.title }}
+            </h6>
+          </div>
+          {% endif %}
+          <div class="card-body">
+            {% for item in section.items.all %}
+            <p class="text-gray-700 mb-{% if not forloop.last %}3{% else %}0{% endif %}" style="line-height:1.8;">
+              {{ item.text }}
+            </p>
+            {% endfor %}
+          </div>
+        </div>
+
+        {% elif section.type == 'quote' %}
+        <div class="card shadow mb-4 section-card">
+          <div class="card-body">
+            {% for item in section.items.all %}
+            <blockquote class="topic-quote mb-{% if not forloop.last %}3{% else %}0{% endif %}">
+              {{ item.text }}
+              {% if item.label %}
+              <footer class="mt-2 small text-muted">— {{ item.label }}</footer>
+              {% endif %}
+            </blockquote>
+            {% endfor %}
+          </div>
+        </div>
+
+        {% elif section.type == 'keypoints' %}
+        <div class="card shadow mb-4 section-card">
+          <div class="card-header py-3 bg-primary">
+            <h6 class="m-0 font-weight-bold text-white">
+              <i class="fas fa-star mr-2"></i>{{ section.title|default:"Asosiy nuqtalar" }}
+            </h6>
+          </div>
+          <div class="card-body">
+            {% for item in section.items.all %}
+            <div class="keypoint-item">
+              <i class="fas fa-check-circle keypoint-icon mt-1"></i>
+              <div>
+                <span class="font-weight-bold text-gray-800">{{ item.text }}</span>
+                {% if item.sub_text %}
+                <p class="small text-muted mb-0 mt-1">{{ item.sub_text }}</p>
+                {% endif %}
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+
+        {% elif section.type == 'timeline' %}
+        <div class="card shadow mb-4 section-card">
+          <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+              <i class="fas fa-history mr-2"></i>{{ section.title|default:"Vaqt chizig'i" }}
+            </h6>
+          </div>
+          <div class="card-body">
+            {% for item in section.items.all %}
+            <div class="timeline-item">
+              {% if item.label %}
+              <h6 class="font-weight-bold text-primary mb-1">{{ item.label }}</h6>
+              {% endif %}
+              <p class="small text-gray-600 mb-0">{{ item.text }}</p>
+              {% if item.sub_text %}
+              <ul class="small text-gray-600 mt-1 mb-0">
+                {% for line in item.sub_text.splitlines %}
+                {% if line %}<li>{{ line }}</li>{% endif %}
+                {% endfor %}
+              </ul>
+              {% endif %}
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+
+        {% elif section.type == 'person' %}
+        <div class="card shadow mb-4 section-card">
+          <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+              <i class="fas fa-user-circle mr-2"></i>{{ section.title|default:"Shaxslar" }}
+            </h6>
+          </div>
+          <div class="card-body">
+            {% for item in section.items.all %}
+            <div class="person-card">
+              <div class="d-flex justify-content-between align-items-start">
+                <div>
+                  <div class="person-name">{{ item.label }}</div>
+                  {% if item.sub_text %}
+                  <div class="person-years">{{ item.sub_text }}</div>
+                  {% endif %}
+                </div>
+                <i class="fas fa-user-md fa-2x text-gray-200"></i>
+              </div>
+              <p class="text-gray-700 small mb-0 mt-2" style="line-height:1.7;">{{ item.text }}</p>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+
+        {% elif section.type == 'info' %}
+        <div class="card shadow mb-4 section-card">
+          {% if section.title %}
+          <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+              <i class="fas fa-info-circle mr-2"></i>{{ section.title }}
+            </h6>
+          </div>
+          {% endif %}
+          <div class="card-body">
+            {% for item in section.items.all %}
+            <div class="info-block {% if not forloop.last %}mb-3{% endif %}">
+              {% if item.label %}
+              <strong class="text-primary">{{ item.label }}:</strong>
+              {% endif %}
+              <p class="small mb-0 mt-1 text-gray-700">{{ item.text }}</p>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+
+        {% endif %}
+      {% empty %}
+      <!-- Fallback if no sections created yet -->
+      <div class="card shadow mb-4">
+        <div class="card-body text-center py-5 text-muted">
+          <i class="fas fa-book-open fa-3x d-block mb-3 text-gray-300"></i>
+          <h6>Mavzu kontenti hali qo'shilmagan</h6>
+          {% if user_profile.role == 'superadmin' %}
+          <a href="#" class="btn btn-primary btn-sm mt-2">
+            <i class="fas fa-plus mr-1"></i>Kontent qo'shish
+          </a>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+
+      <!-- Comments Section -->
+      <div class="card shadow mb-4 section-card">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">
+            <i class="fas fa-comments mr-2"></i>Mavzu muhokamasi
+            <span class="badge badge-primary ml-2">{{ comments.count }}</span>
+          </h6>
+        </div>
+        <div class="card-body">
+
+          <!-- Comment form -->
+          {% if user_profile %}
+          <form method="POST" class="mb-4">
+            {% csrf_token %}
+            <div class="d-flex align-items-start" style="gap:12px;">
+              <img src="{% if user_profile.profile_image %}{{ user_profile.profile_image.url }}{% else %}{% static 'img/avatar.png' %}{% endif %}"
+                class="rounded-circle border" style="width:40px;height:40px;object-fit:cover;flex-shrink:0;">
+              <div class="flex-grow-1">
+                <textarea class="form-control" name="comment_text" rows="2"
+                  placeholder="Savol yoki fikringizni yozing..." required
+                  style="border-radius:10px; resize:none;"></textarea>
+                <div class="text-right mt-2">
+                  <button type="submit" class="btn btn-primary btn-sm px-4"
+                    style="border-radius:20px;">
+                    <i class="fas fa-paper-plane mr-1"></i>Yuborish
+                  </button>
+                </div>
+              </div>
+            </div>
+          </form>
+          {% endif %}
+
+          <!-- Comments list -->
+          {% if messages %}
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+              {{ message }}
+              <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
+            </div>
+            {% endfor %}
+          {% endif %}
+
+          {% for comment in comments %}
+          <div class="comment-item">
+            <img src="{% if comment.user.userprofile.profile_image %}{{ comment.user.userprofile.profile_image.url }}{% else %}{% static 'img/avatar.png' %}{% endif %}"
+              class="rounded-circle border" style="width:40px;height:40px;object-fit:cover;flex-shrink:0;">
+            <div class="comment-body">
+              <div class="d-flex align-items-center" style="gap:8px;">
+                <span class="font-weight-bold small text-gray-800">
+                  {{ comment.user.get_full_name }}
+                </span>
+                <span class="text-muted" style="font-size:0.75rem;">
+                  · {{ comment.created_at|timesince }} oldin
+                </span>
+              </div>
+              <p class="text-gray-700 small mb-2 mt-1" style="line-height:1.6;">
+                {{ comment.text }}
+              </p>
+              <div class="comment-actions">
+                <a href="{% url 'courses:like_comment' comment.id %}?action=like"
+                  class="btn btn-sm {% if request.user in comment.likes.all %}btn-primary{% else %}btn-outline-primary{% endif %} py-0 px-2"
+                  style="font-size:0.75rem; border-radius:20px;">
+                  <i class="fas fa-thumbs-up mr-1"></i>{{ comment.total_likes }}
+                </a>
+                <a href="{% url 'courses:like_comment' comment.id %}?action=dislike"
+                  class="btn btn-sm {% if request.user in comment.dislikes.all %}btn-danger{% else %}btn-outline-danger{% endif %} py-0 px-2"
+                  style="font-size:0.75rem; border-radius:20px;">
+                  <i class="fas fa-thumbs-down mr-1"></i>{{ comment.total_dislikes }}
+                </a>
+              </div>
+            </div>
+          </div>
+          {% empty %}
+          <div class="text-center py-4 text-muted">
+            <i class="fas fa-comment-slash fa-2x d-block mb-2 text-gray-300"></i>
+            <p class="small mb-0">Hali izohlar yo'q. Birinchi bo'ling!</p>
+          </div>
+          {% endfor %}
+
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ── Sidebar ── -->
+    <div class="col-lg-4">
+
+      <!-- Related Quizzes -->
+      {% if related_quizzes %}
+      <div class="card shadow mb-4 section-card">
+        <div class="card-header py-3 bg-primary">
+          <h6 class="m-0 font-weight-bold text-white">
+            <i class="fas fa-clipboard-list mr-2"></i>Mavzu testlari
+          </h6>
+        </div>
+        <div class="card-body p-0">
+          {% for quiz in related_quizzes %}
+          <div class="quiz-item">
+            <div>
+              <div class="small font-weight-bold text-gray-800">{{ quiz.title }}</div>
+              <div class="text-muted" style="font-size:0.75rem;">
+                <i class="fas fa-question-circle mr-1"></i>{{ quiz.quizquestion_set.count }} ta savol
+              </div>
+            </div>
+            <a href="{% url 'courses:quiz_attempt' quiz.id %}"
+              class="btn btn-sm btn-primary px-3" style="border-radius:20px; white-space:nowrap;">
+              Boshlash
+            </a>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Topic Progress -->
+      {% if user_profile %}
+      <div class="card shadow mb-4 section-card">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">
+            <i class="fas fa-tasks mr-2"></i>Mening progressim
+          </h6>
+        </div>
+        <div class="card-body">
+          {% if progress %}
+            <div class="d-flex justify-content-between small mb-1">
+              <span class="text-muted">O'zlashtirish</span>
+              <span class="font-weight-bold text-primary">{{ progress.status|capfirst }}</span>
+            </div>
+            <div class="progress mb-3" style="height:8px; border-radius:10px;">
+              <div class="progress-bar bg-primary"
+                style="width:{% if progress.status == 'completed' %}100{% elif progress.status == 'in_progress' %}50{% else %}0{% endif %}%; border-radius:10px;">
+              </div>
+            </div>
+          {% else %}
+            <p class="small text-muted mb-2">Bu mavzu boshlanmagan</p>
+          {% endif %}
+          <form method="POST" action="{% url 'courses:update_progress' topic.id %}">
+            {% csrf_token %}
+            <select class="form-control form-control-sm mb-2" name="status">
+              <option value="not_started" {% if not progress or progress.status == 'not_started' %}selected{% endif %}>Boshlanmagan</option>
+              <option value="in_progress" {% if progress.status == 'in_progress' %}selected{% endif %}>Jarayonda</option>
+              <option value="completed" {% if progress.status == 'completed' %}selected{% endif %}>Tugatdim</option>
+            </select>
+            <button type="submit" class="btn btn-outline-primary btn-sm btn-block"
+              style="border-radius:8px;">
+              Saqlash
+            </button>
+          </form>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Audio / PDF -->
+      <div class="card shadow mb-4 section-card">
+        <div class="card-body text-center">
+          <h6 class="font-weight-bold text-gray-800 mb-3">
+            <i class="fas fa-download mr-2 text-primary"></i>Qo'shimcha materiallar
+          </h6>
+          <button class="btn btn-primary btn-block btn-sm mb-2" style="border-radius:8px;">
+            <i class="fas fa-volume-up mr-2"></i>Audio versiya
+          </button>
+          <a href="#" class="btn btn-outline-danger btn-block btn-sm" style="border-radius:8px;">
+            <i class="fas fa-file-pdf mr-1"></i>PDF yuklab olish
+          </a>
+        </div>
+      </div>
+
+      <!-- Admin edit button -->
+      {% if user_profile.role == 'superadmin' %}
+      <a href="{% url 'courses:edit_topic' topic.id %}" class="btn btn-warning btn-block mb-4"
+        style="border-radius:8px;">
+        <i class="fas fa-pen mr-2"></i>Mavzuni tahrirlash
+      </a>
+      {% endif %}
+
+    </div>
+  </div>
+</div>
+{% endblock main %}
