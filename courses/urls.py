@@ -15,12 +15,14 @@ urlpatterns = [
     path("create-question/", views.create_question_view, name="add_question"),
     path("save-question/", views.save_question_view, name="save_question"),
     path("edit-question/<int:question_id>/", views.edit_question_view, name="edit_question"),
+    path('delete-question/<int:question_id>/', views.delete_question_view, name='delete_question'),
 
     path("all-quizzes/", views.all_quizzes_view, name="all_quizzes"),
     path("create-quiz/", views.create_quiz_view, name="add_quiz"),
     path("save-quiz/", views.save_quiz_view, name="save_quiz"),
     path("edit-quiz/<int:quiz_id>/", views.edit_quiz_view, name="edit_quiz"),
-
+    path('delete-quiz/<int:quiz_id>/', views.delete_quiz_view, name='delete_quiz'),
+    
     path('quiz/<int:quiz_id>/', views.quiz_attempt, name='quiz_attempt'),
     path('quiz/violation/', views.log_violation, name='log_violation'),
     path('quiz/submit/<int:quiz_id>/', views.submit_quiz, name='submit_quiz'),

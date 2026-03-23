@@ -65,9 +65,23 @@ class QuizQuestion(models.Model):
     question = models.ForeignKey(Question, on_delete=models.CASCADE)
     order = models.IntegerField()
 
+# ── Model on_delete fixes needed ──────────────────────────────────────────────
+#
+# PROBLEM 1: Response.quiz = CASCADE
+#   Deleting a quiz deletes ALL student results for that quiz — data loss!
+#   Fix: SET_NULL so results are preserved even if quiz is removed.
+#
+# PROBLEM 2: ResponseDetails.question = CASCADE
+#   Deleting a question deletes the response detail row — history is lost.
+#   Fix: SET_NULL so we keep the answer record even if question is deleted.
+#
+# PROBLEM 3: ResponseDetails.question_choice = CASCADE (already nullable)
+#   Same issue — if a choice is deleted, the detail row vanishes.
+#   Fix: SET_NULL.
+#
 class Response(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE)
+    quiz = models.ForeignKey(Quiz, on_delete=models.SET_NULL, null=True, blank=True)  # ← was CASCADE
     score = models.FloatField()
     correct_count = models.IntegerField(default=0)
     incorrect_count = models.IntegerField(default=0)
@@ -76,8 +90,8 @@ class Response(models.Model):
 
 class ResponseDetails(models.Model):
     response = models.ForeignKey(Response, on_delete=models.CASCADE)
-    question = models.ForeignKey(Question, on_delete=models.CASCADE)
-    question_choice = models.ForeignKey(QuestionChoice, on_delete=models.CASCADE, null=True, blank=True)
+    question = models.ForeignKey(Question, on_delete=models.SET_NULL, null=True, blank=True)  # ← was CASCADE
+    question_choice = models.ForeignKey(QuestionChoice, on_delete=models.SET_NULL, null=True, blank=True)  # ← was CASCADE
     is_correct = models.BooleanField(default=None, null=True)
     user_text_answer = models.TextField(blank=True, null=True)
 

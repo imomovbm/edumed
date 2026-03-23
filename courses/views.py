@@ -170,6 +170,15 @@ def edit_question_view(request, question_id):
 
 @login_required(login_url='user:login')
 @require_profile
+@require_POST
+def delete_question_view(request, question_id):
+    question = get_object_or_404(Question, pk=question_id)
+    question.delete()
+    messages.success(request, "Savol o'chirildi")
+    return redirect('courses:all_questions')
+
+@login_required(login_url='user:login')
+@require_profile
 def all_quizzes_view(request):
     quizzes = Quiz.objects.order_by('-id')
     return render(request, 'courses/all_quizzes.html', {'quizzes': quizzes})
@@ -268,6 +277,16 @@ def edit_quiz_view(request, quiz_id):
         'questions':questions,
         'topics':topics
     })
+
+# views.py
+@login_required(login_url='user:login')
+@require_profile
+@require_POST
+def delete_quiz_view(request, quiz_id):
+    quiz = get_object_or_404(Quiz, pk=quiz_id)
+    quiz.delete()
+    messages.success(request, f"'{quiz.title}' testi o'chirildi")
+    return redirect('courses:all_quizzes')
 
 @login_required(login_url='user:login')
 @require_profile
