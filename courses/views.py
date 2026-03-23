@@ -444,18 +444,32 @@ def all_forum_view(request):
 
 def forum_view(request, forum_id):
     forum = get_object_or_404(Forum, pk=forum_id)
-    topics = Topic.objects.order_by('-created_at')
+
+    # Sort comments
+    sort = request.GET.get('sort', 'new')
+    comments = ForumComment.objects.filter(forum=forum, parent=None)
+    if sort == 'top':
+        comments = comments.annotate(like_count=Count('likes')).order_by('-like_count')
+    else:
+        comments = comments.order_by('-created_at')
+
+    # Paginate
+    paginator = Paginator(comments, 10)
+    page = request.GET.get('page', 1)
+    comments = paginator.get_page(page)
+
     top_contributors = (
         ForumComment.objects
         .filter(forum=forum)
         .values('user__first_name', 'user__last_name', 'user__id')
         .annotate(comment_count=Count('id'), like_count=Count('likes'))
         .order_by('-comment_count')[:5]
-    )   
+    )
+
     return render(request, 'courses/forum.html', {
-        'topics': topics,
         'forum': forum,
-        'top_contributors': top_contributors
+        'comments': comments,
+        'top_contributors': top_contributors,
     })
 
 @login_required(login_url='user:login')

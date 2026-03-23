@@ -14,6 +14,16 @@
         <i class="fas fa-comments mr-2 text-primary"></i><b>{{ forum.title }}</b>
       </h1>
     </div>
+    <!-- Comment sort -->
+    <div class="d-flex align-items-center" style="gap:6px;">
+      <span class="small text-muted mr-1">Izohlar:</span>
+      <a href="?sort=new" class="btn btn-sm {% if request.GET.sort == 'new' or not request.GET.sort %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+        <i class="fas fa-clock mr-1"></i>Yangi
+      </a>
+      <a href="?sort=top" class="btn btn-sm {% if request.GET.sort == 'top' %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+        <i class="fas fa-fire mr-1"></i>Mashhur
+      </a>
+    </div>
   </div>
 
   <div class="row">
@@ -35,10 +45,9 @@
       <div class="card shadow mb-4 post-card">
         <div class="card-body px-4 py-4">
 
-          <!-- Author row -->
           <div class="d-flex align-items-center mb-3" style="gap:10px;">
             <img src="{% static 'img/avatar.png' %}" class="rounded-circle border"
-              style="width:36px;height:36px;object-fit:cover;">
+              style="width:42px;height:42px;object-fit:cover;">
             <div>
               <span class="font-weight-bold text-gray-800">
                 {{ forum.user.first_name }} {{ forum.user.last_name }}
@@ -47,23 +56,23 @@
               <small class="text-muted">{{ forum.created_at|timesince }} oldin</small>
             </div>
             {% if forum.topic %}
-              <span class="ml-auto badge badge-pill"
-                style="background:#ebf4ff;color:#2b4fa0;font-size:0.75rem;padding:5px 12px;">
-                {{ forum.topic.title }}
-              </span>                 
+            <span class="ml-auto badge badge-pill"
+              style="background:#ebf4ff;color:#2b4fa0;font-size:0.75rem;padding:5px 14px;">
+              <i class="fas fa-tag mr-1"></i>{{ forum.topic.title }}
+            </span>
             {% else %}
-              <span class="ml-auto badge badge-pill" style="background:#00bb00;color:#ffffff;font-size:0.72rem;">
-                Umumiy
-              </span>       
+            <span class="ml-auto badge badge-pill"
+              style="background:#00bb00;color:#fff;font-size:0.75rem;padding:5px 14px;">
+              <i class="fas fa-globe mr-1"></i>Umumiy
+            </span>
             {% endif %}
           </div>
 
-          <!-- Title & body -->
           <h5 class="font-weight-bold text-gray-800 mb-2">{{ forum.title }}</h5>
-          <p class="text-gray-700 mb-4" style="line-height:1.7;">{{ forum.forum_question }}</p>
+          <p class="text-gray-700 mb-4" style="line-height:1.8;">{{ forum.forum_question }}</p>
 
-          <!-- Actions -->
-          <div class="d-flex align-items-center" style="gap:10px;">
+          <div style="border-top:1px solid #e3e6f0; padding-top:12px;"
+            class="d-flex align-items-center" style="gap:10px;">
             <button class="vote-btn like-btn {% if request.user in forum.likes.all %}active{% endif %}"
               data-id="forum-{{ forum.pk }}" data-type="like">
               <i class="fas fa-thumbs-up"></i>
@@ -75,62 +84,67 @@
               <span class="vote-count">{{ forum.total_dislikes }}</span>
             </button>
             <span class="text-muted small ml-auto">
-              <i class="fas fa-comment mr-1"></i>
-              {{ forum.forumcomment_set.count }} ta izoh
+              <i class="fas fa-comment mr-1"></i>{{ forum.forumcomment_set.count }} ta izoh
             </span>
           </div>
+
         </div>
       </div>
       {% endif %}
 
       <!-- ── Comment Input ── -->
       {% if user_profile %}
-      <div class="card shadow-sm mb-4" style="border-radius:10px;">
+      <div class="card shadow-sm mb-4" style="border-radius:12px;">
         <div class="card-body py-3 px-4">
           <form method="POST" action="{% url 'courses:post_comment' forum.pk %}">
             {% csrf_token %}
             <div class="d-flex align-items-center" style="gap:10px;">
               <img src="{% if user_profile.profile_image %}{{ user_profile.profile_image.url }}{% else %}{% static 'img/avatar.png' %}{% endif %}"
                 class="rounded-circle border"
-                style="width:34px;height:34px;object-fit:cover;flex-shrink:0;">
+                style="width:36px;height:36px;object-fit:cover;flex-shrink:0;">
               <input type="text" class="form-control"
-                name="text"
-                placeholder="Fikringizni yozing..."
-                required
+                name="text" placeholder="Fikringizni yozing..." required
                 style="border-radius:20px;">
-              <button type="submit" class="btn btn-primary px-3" style="border-radius:20px;white-space:nowrap;">
-                <i class="fas fa-paper-plane"></i>
+              <button type="submit" class="btn btn-primary px-3"
+                style="border-radius:20px;white-space:nowrap;">
+                <i class="fas fa-paper-plane mr-1"></i>Yuborish
               </button>
             </div>
           </form>
         </div>
       </div>
+      {% else %}
+      <div class="alert alert-info mb-4" style="border-radius:10px;">
+        <i class="fas fa-info-circle mr-2"></i>
+        Izoh qoldirish uchun <a href="{% url 'user:login' %}">tizimga kiring</a>.
+      </div>
       {% endif %}
 
-      <!-- ── Comments List ── -->
+      <!-- ── Comments ── -->
       <div id="commentsList">
-        {% for comment in forum.forumcomment_set.all %}
+
+        {% for comment in comments %}
         {% if comment.parent is None %}
 
-        <div class="card shadow-sm mb-3 comment-card" style="border-radius:10px;">
+        <div class="card shadow-sm mb-3 comment-card" style="border-radius:12px;">
           <div class="card-body py-3 px-4">
 
-            <!-- Comment header -->
             <div class="d-flex align-items-center mb-2" style="gap:8px;">
               <img src="{% static 'img/avatar.png' %}" class="rounded-circle border"
-                style="width:28px;height:28px;object-fit:cover;">
+                style="width:30px;height:30px;object-fit:cover;">
               <span class="font-weight-bold small text-gray-800">
                 {{ comment.user.first_name }} {{ comment.user.last_name }}
               </span>
               <span class="text-muted" style="font-size:0.75rem;">
                 · {{ comment.created_at|timesince }} oldin
               </span>
+              {% if comment.user == forum.user %}
+              <span class="badge badge-primary ml-1" style="font-size:0.65rem;">Muallif</span>
+              {% endif %}
             </div>
 
-            <!-- Comment text -->
-            <p class="text-gray-700 small mb-2 ml-4" style="line-height:1.6;">{{ comment.text }}</p>
+            <p class="text-gray-700 small mb-2 ml-4" style="line-height:1.7;">{{ comment.text }}</p>
 
-            <!-- Comment actions -->
             <div class="d-flex align-items-center ml-4" style="gap:8px;">
               <button class="vote-btn like-btn {% if request.user in comment.likes.all %}active{% endif %}"
                 data-id="comment-{{ comment.pk }}" data-type="like">
@@ -143,13 +157,18 @@
                 <span class="vote-count">{{ comment.total_dislikes }}</span>
               </button>
               {% if user_profile %}
-              <button class="reply-toggle-btn" onclick="toggleReplyBox('reply-comment-{{ comment.pk }}')">
+              <button class="reply-toggle-btn"
+                onclick="toggleReplyBox('reply-comment-{{ comment.pk }}')">
                 <i class="fas fa-reply mr-1"></i> Javob
+                {% if comment.replies.count %}
+                <span class="badge badge-light ml-1" style="font-size:0.7rem;">
+                  {{ comment.replies.count }}
+                </span>
+                {% endif %}
               </button>
               {% endif %}
             </div>
 
-            <!-- Per-comment reply input -->
             {% if user_profile %}
             <div id="reply-comment-{{ comment.pk }}" class="reply-box mt-3 ml-4" style="display:none;">
               <form method="POST" action="{% url 'courses:post_comment' forum.pk %}">
@@ -160,10 +179,8 @@
                     class="rounded-circle border"
                     style="width:26px;height:26px;object-fit:cover;flex-shrink:0;">
                   <input type="text" class="form-control form-control-sm"
-                    name="text"
-                    placeholder="{{ comment.user.first_name }}ga javob..."
-                    required
-                    style="border-radius:20px;">
+                    name="text" placeholder="{{ comment.user.first_name }}ga javob..."
+                    required style="border-radius:20px;">
                   <button type="submit" class="btn btn-primary btn-sm px-3"
                     style="border-radius:20px;white-space:nowrap;">
                     <i class="fas fa-paper-plane"></i>
@@ -178,36 +195,45 @@
             </div>
             {% endif %}
 
-            <!-- Nested replies -->
-            {% for reply in comment.replies.all %}
-            <div class="mt-3 ml-4 pl-3" style="border-left:2px solid #e3e6f0;">
-              <div class="d-flex align-items-center mb-1" style="gap:8px;">
-                <img src="{% static 'img/avatar.png' %}" class="rounded-circle border"
-                  style="width:22px;height:22px;object-fit:cover;">
-                <span class="font-weight-bold" style="font-size:0.82rem;">
-                  {{ reply.user.first_name }} {{ reply.user.last_name }}
-                </span>
-                <span class="text-muted" style="font-size:0.72rem;">
-                  · {{ reply.created_at|timesince }} oldin
-                </span>
+            {% if comment.replies.count %}
+            <div class="mt-3 ml-4">
+              {% for reply in comment.replies.all %}
+              <div class="d-flex align-items-start mb-3 pl-3"
+                style="border-left:2px solid #e3e6f0;">
+                <div class="flex-grow-1">
+                  <div class="d-flex align-items-center mb-1" style="gap:8px;">
+                    <img src="{% static 'img/avatar.png' %}" class="rounded-circle border"
+                      style="width:22px;height:22px;object-fit:cover;">
+                    <span class="font-weight-bold" style="font-size:0.82rem;">
+                      {{ reply.user.first_name }} {{ reply.user.last_name }}
+                    </span>
+                    <span class="text-muted" style="font-size:0.72rem;">
+                      · {{ reply.created_at|timesince }} oldin
+                    </span>
+                    {% if reply.user == forum.user %}
+                    <span class="badge badge-primary" style="font-size:0.62rem;">Muallif</span>
+                    {% endif %}
+                  </div>
+                  <p class="text-gray-700 mb-1 ml-4" style="font-size:0.85rem;line-height:1.6;">
+                    {{ reply.text }}
+                  </p>
+                  <div class="d-flex align-items-center ml-4" style="gap:8px;">
+                    <button class="vote-btn like-btn {% if request.user in reply.likes.all %}active{% endif %}"
+                      data-id="comment-{{ reply.pk }}" data-type="like">
+                      <i class="fas fa-thumbs-up"></i>
+                      <span class="vote-count">{{ reply.total_likes }}</span>
+                    </button>
+                    <button class="vote-btn dislike-btn {% if request.user in reply.dislikes.all %}active{% endif %}"
+                      data-id="comment-{{ reply.pk }}" data-type="dislike">
+                      <i class="fas fa-thumbs-down"></i>
+                      <span class="vote-count">{{ reply.total_dislikes }}</span>
+                    </button>
+                  </div>
+                </div>
               </div>
-              <p class="text-gray-700 mb-1 ml-4" style="font-size:0.85rem;line-height:1.6;">
-                {{ reply.text }}
-              </p>
-              <div class="d-flex align-items-center ml-4" style="gap:8px;">
-                <button class="vote-btn like-btn {% if request.user in reply.likes.all %}active{% endif %}"
-                  data-id="comment-{{ reply.pk }}" data-type="like">
-                  <i class="fas fa-thumbs-up"></i>
-                  <span class="vote-count">{{ reply.total_likes }}</span>
-                </button>
-                <button class="vote-btn dislike-btn {% if request.user in reply.dislikes.all %}active{% endif %}"
-                  data-id="comment-{{ reply.pk }}" data-type="dislike">
-                  <i class="fas fa-thumbs-down"></i>
-                  <span class="vote-count">{{ reply.total_dislikes }}</span>
-                </button>
-              </div>
+              {% endfor %}
             </div>
-            {% endfor %}
+            {% endif %}
 
           </div>
         </div>
@@ -215,18 +241,68 @@
         {% endif %}
         {% empty %}
         <div class="text-center py-5 text-muted">
-          <i class="fas fa-comment-slash fa-2x d-block mb-3"></i>
-          Hali izohlar yo'q. Birinchi bo'lib fikr bildiring!
+          <i class="fas fa-comment-slash fa-3x d-block mb-3 text-gray-300"></i>
+          <h6>Hali izohlar yo'q</h6>
+          <p class="small">Birinchi bo'lib fikr bildiring!</p>
         </div>
         {% endfor %}
-      </div>
 
+        <!-- Pagination -->
+        {% if comments.has_other_pages %}
+        <nav class="mt-4">
+          <ul class="pagination justify-content-center">
+            {% if comments.has_previous %}
+            <li class="page-item">
+              <a class="page-link"
+                href="?page={{ comments.previous_page_number }}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}">
+                <i class="fas fa-chevron-left"></i>
+              </a>
+            </li>
+            {% else %}
+            <li class="page-item disabled">
+              <span class="page-link"><i class="fas fa-chevron-left"></i></span>
+            </li>
+            {% endif %}
+
+            {% for num in comments.paginator.page_range %}
+              {% if comments.number == num %}
+              <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+              {% elif num > comments.number|add:'-3' and num < comments.number|add:'3' %}
+              <li class="page-item">
+                <a class="page-link"
+                  href="?page={{ num }}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}">
+                  {{ num }}
+                </a>
+              </li>
+              {% endif %}
+            {% endfor %}
+
+            {% if comments.has_next %}
+            <li class="page-item">
+              <a class="page-link"
+                href="?page={{ comments.next_page_number }}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}">
+                <i class="fas fa-chevron-right"></i>
+              </a>
+            </li>
+            {% else %}
+            <li class="page-item disabled">
+              <span class="page-link"><i class="fas fa-chevron-right"></i></span>
+            </li>
+            {% endif %}
+          </ul>
+          <p class="text-center text-muted small">
+            {{ comments.paginator.count }} ta izohdan
+            {{ comments.start_index }}–{{ comments.end_index }} ko'rsatilmoqda
+          </p>
+        </nav>
+        {% endif %}
+
+      </div>
     </div>
 
     <!-- ── Sidebar ── -->
     <div class="col-lg-4">
 
-      <!-- Forum info -->
       <div class="card shadow mb-4">
         <div class="card-header py-3 bg-primary">
           <h6 class="m-0 font-weight-bold text-white">
@@ -246,18 +322,25 @@
             <span class="small text-gray-700"><i class="fas fa-comments mr-2 text-info"></i>Izohlar</span>
             <span class="small font-weight-bold">{{ forum.forumcomment_set.count }} ta</span>
           </div>
-          <div class="d-flex align-items-center justify-content-between px-3 py-2">
-            <span class="small text-gray-700"><i class="fas fa-thumbs-up mr-2 text-warning"></i>Likes</span>
+          <div class="d-flex align-items-center justify-content-between px-3 py-2 {% if forum.topic %}border-bottom{% endif %}">
+            <span class="small text-gray-700"><i class="fas fa-thumbs-up mr-2 text-warning"></i>Foydali</span>
             <span class="small font-weight-bold">{{ forum.total_likes }}</span>
           </div>
+          {% if forum.topic %}
+          <div class="d-flex align-items-center justify-content-between px-3 py-2">
+            <span class="small text-gray-700"><i class="fas fa-tag mr-2 text-primary"></i>Mavzu</span>
+            <span class="badge badge-pill" style="background:#ebf4ff;color:#2b4fa0;">
+              {{ forum.topic.title }}
+            </span>
+          </div>
+          {% endif %}
         </div>
       </div>
 
-      <!-- Top Contributors -->
       <div class="card shadow mb-4">
         <div class="card-header py-3">
           <h6 class="m-0 font-weight-bold text-primary">
-            <i class="fas fa-trophy mr-2 text-warning"></i>Ushbu forumning eng faol a'zolari
+            <i class="fas fa-trophy mr-2 text-warning"></i>Faol a'zolar
           </h6>
         </div>
         <div class="card-body p-0">
@@ -273,7 +356,7 @@
               <div class="text-muted" style="font-size:0.75rem;">{{ contributor.comment_count }} ta fikr</div>
             </div>
             <span class="badge badge-warning badge-pill">
-              {{ contributor.like_count }} <i class="fas fa-thumbs-up"></i>
+              {{ contributor.like_count }} <i class="fas fa-thumbs-up ml-1"></i>
             </span>
           </div>
           {% empty %}
@@ -282,9 +365,9 @@
         </div>
       </div>
 
-      <!-- Back -->
-      <a href="{% url 'courses:forums' %}" class="btn btn-outline-primary btn-block mb-4">
-        <i class="fas fa-arrow-left mr-2"></i> Barcha forumlarga qaytish
+      <a href="{% url 'courses:forums' %}" class="btn btn-outline-primary btn-block mb-4"
+        style="border-radius:8px;">
+        <i class="fas fa-arrow-left mr-2"></i>Barcha forumlarga qaytish
       </a>
 
     </div>
@@ -294,29 +377,35 @@
 
 {% block extra_js %}
 <style>
-  .post-card, .comment-card { border-radius: 12px; transition: box-shadow 0.2s; }
-  .post-card:hover { box-shadow: 0 6px 20px rgba(78,115,223,0.12) !important; }
-  .comment-card:hover { background: #fafbff !important; }
-
+  .post-card {
+    border-radius: 12px;
+    border-left: 4px solid #4e73df;
+  }
+  .comment-card {
+    border-radius: 12px;
+    transition: box-shadow 0.15s, background 0.15s;
+  }
+  .comment-card:hover {
+    box-shadow: 0 4px 16px rgba(78,115,223,0.1) !important;
+    background: #fafbff !important;
+  }
   .vote-btn {
     display: inline-flex; align-items: center; gap: 5px;
     background: none; border: 1px solid #e3e6f0;
     border-radius: 20px; padding: 4px 12px;
     font-size: 0.78rem; color: #a0aec0;
-    cursor: pointer; transition: all 0.2s;
+    cursor: pointer; transition: all 0.18s;
   }
   .vote-btn:hover { border-color: #4e73df; color: #4e73df; }
   .vote-btn.like-btn.active    { background:#ebf4ff; border-color:#4e73df; color:#4e73df; }
   .vote-btn.dislike-btn.active { background:#fde8e6; border-color:#e74a3b; color:#e74a3b; }
-
   .reply-toggle-btn {
     background: none; border: none;
     color: #a0aec0; font-size: 0.78rem;
     cursor: pointer; padding: 4px 8px;
-    border-radius: 6px; transition: all 0.15s;
+    border-radius: 20px; transition: all 0.15s;
   }
-  .reply-toggle-btn:hover { background: #f8f9ff; color: #4e73df; }
-
+  .reply-toggle-btn:hover { background: #f0f4ff; color: #4e73df; }
   .reply-box { animation: fadeIn 0.2s ease; }
   @keyframes fadeIn {
     from { opacity:0; transform:translateY(-4px); }
@@ -329,7 +418,6 @@
     const box = document.getElementById(id);
     if (!box) return;
     const isVisible = box.style.display !== 'none';
-    // Close all open reply boxes
     document.querySelectorAll('.reply-box').forEach(b => b.style.display = 'none');
     if (!isVisible) {
       box.style.display = 'block';
@@ -341,22 +429,19 @@
   document.addEventListener('click', function (e) {
     const btn = e.target.closest('.vote-btn');
     if (!btn) return;
-
     const id      = btn.dataset.id;
     const type    = btn.dataset.type;
     const countEl = btn.querySelector('.vote-count');
     const siblings = document.querySelectorAll(`.vote-btn[data-id="${id}"]`);
     const isActive = btn.classList.contains('active');
-
     siblings.forEach(b => {
       if (b === btn) return;
       if (b.classList.contains('active')) {
         b.classList.remove('active');
-        const c = b.querySelector('.vote-count');
-        c.textContent = Math.max(0, parseInt(c.textContent) - 1);
+        b.querySelector('.vote-count').textContent =
+          Math.max(0, parseInt(b.querySelector('.vote-count').textContent) - 1);
       }
     });
-
     if (isActive) {
       btn.classList.remove('active');
       countEl.textContent = Math.max(0, parseInt(countEl.textContent) - 1);
@@ -364,13 +449,9 @@
       btn.classList.add('active');
       countEl.textContent = parseInt(countEl.textContent) + 1;
     }
-
     fetch("{% url 'courses:toggle_vote' %}", {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRFToken': '{{ csrf_token }}'
-      },
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
       body: JSON.stringify({
         type: id.startsWith('forum') ? 'forum' : 'comment',
         id: parseInt(id.split('-')[1]),
