@@ -27,7 +27,7 @@
 {% endblock extra_css %}
 </head>
 
-<body id="page-top">
+<body id="page-top" class="sidebar-toggled">
 
   <!-- Page Wrapper -->
   <div id="wrapper">
@@ -86,7 +86,6 @@
       </div>
     </div>
   </div>
-
   <!-- Bootstrap core JavaScript-->
   <script src="{% static 'vendor/jquery/jquery.min.js' %}"></script>
   <script src="{% static 'vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
@@ -96,12 +95,27 @@
 
   <!-- Custom scripts for all pages-->
   <script src="{% static 'js/sb-admin-2.min.js' %}"></script>
-
+  <script>
+      $(document).ready(function() {
+        function checkWidth() {
+          var windowSize = $(window).width();
+          if (windowSize < 768) {
+            // Mobil qurilmalarda sidebar-ni yopish
+            $("#accordionSidebar").addClass("toggled");
+          }
+        }
+        // Yuklanganda tekshirish
+        checkWidth();
+        
+        // Ekran o'lchami o'zgarganda (rotate qilinganda) ham tekshirish
+        $(window).resize(checkWidth);
+      });
+    </script>
   <!-- Page level plugins -->
   <script src="{% static 'vendor/chart.js/Chart.min.js' %}"></script>
   <script>
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('service-worker.js');
+    navigator.serviceWorker.register('{% static "service-worker.js" %}');
   }
   </script>
 
