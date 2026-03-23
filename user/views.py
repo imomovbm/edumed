@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
@@ -6,6 +6,24 @@ from django.contrib import messages
 from .models import UserProfile, PasswordResetRequest
 from courses.models import Response
 from datetime import datetime,date
+from django.utils import timezone
+from django.views.decorators.http import require_POST
+from functools import wraps
+
+def require_profile(view_func):
+    @wraps(view_func)
+    def wrapper(request, *args, **kwargs):
+        user_profile = getattr(request.user, 'userprofile', None)
+        if not user_profile:
+            return redirect('courses:index')
+        return view_func(request, *args, **kwargs)
+    return wrapper
+
+# Create your views here.
+def index(request):
+    return render(request, "courses/index.html", {
+        "profile": "profile",
+    })
 
 def calculate_age(dob):
     """Calculates age from a date of birth (datetime.date object)."""
@@ -215,3 +233,34 @@ def forgot_password_view(request):
 
     # GET request
     return render(request, "user/forgot_password.html")
+
+
+@login_required(login_url='user:login')
+@require_profile
+def all_users_view(request):
+    users = User.objects.select_related('userprofile').order_by('-date_joined')
+    
+    now = timezone.now()
+    student_count   = sum(1 for u in users if hasattr(u, 'userprofile') and u.userprofile.role == 'student')
+    teacher_count   = sum(1 for u in users if hasattr(u, 'userprofile') and u.userprofile.role == 'teacher')
+    new_this_month  = users.filter(date_joined__year=now.year, date_joined__month=now.month).count()
+
+    return render(request, 'user/all_users.html', {
+        'users': users,
+        'total_users': users.count(),
+        'student_count': student_count,
+        'teacher_count': teacher_count,
+        'new_this_month': new_this_month,
+    })
+
+@login_required(login_url='user:login')
+@require_profile
+@require_POST
+def delete_user_view(request, user_id):
+    user_to_delete = get_object_or_404(User, pk=user_id)
+    if user_to_delete == request.user:
+        messages.error(request, "O'z akkauntingizni o'chira olmaysiz!")
+        return redirect('user:all_users')
+    user_to_delete.delete()
+    messages.success(request, f"Foydalanuvchi o'chirildi")
+    return redirect('user:all_users')
