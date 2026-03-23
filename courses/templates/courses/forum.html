@@ -6,14 +6,19 @@
 
   <!-- Page Heading -->
   <div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h3 mb-0 text-gray-800">
-      <i class="fas fa-comments mr-2 text-primary"></i>Forum
-    </h1>
+    <div>
+      <a href="{% url 'courses:forums' %}" class="text-muted small">
+        <i class="fas fa-arrow-left mr-1"></i> Barcha forumlar
+      </a>
+      <h1 class="h3 mb-0 text-gray-800 mt-1">
+        <i class="fas fa-comments mr-2 text-primary"></i><b>{{ forum.title }}</b>
+      </h1>
+    </div>
   </div>
 
   <div class="row">
 
-    <!-- ── Main Forum ── -->
+    <!-- ── Main Column ── -->
     <div class="col-lg-8">
 
       {% if messages %}
@@ -24,208 +29,222 @@
         </div>
         {% endfor %}
       {% endif %}
-      
-    {% if user_profile %}
-        <!-- New Post -->
-        <div class="card shadow mb-4">
-            <div class="card-header py-3">
-            <h6 class="m-0 font-weight-bold text-primary">
-                <i class="fas fa-pen mr-2"></i>Yangi post yozish
-            </h6>
+
+      <!-- ── Forum Post Card ── -->
+      {% if forum %}
+      <div class="card shadow mb-4 post-card">
+        <div class="card-body px-4 py-4">
+
+          <!-- Author row -->
+          <div class="d-flex align-items-center mb-3" style="gap:10px;">
+            <img src="{% static 'img/avatar.png' %}" class="rounded-circle border"
+              style="width:36px;height:36px;object-fit:cover;">
+            <div>
+              <span class="font-weight-bold text-gray-800">
+                {{ forum.user.first_name }} {{ forum.user.last_name }}
+              </span>
+              <br>
+              <small class="text-muted">{{ forum.created_at|timesince }} oldin</small>
             </div>
-            <div class="card-body">
-            <form id="newPostForm" method="post" action="{% url "courses:forums" %}">
-                {% csrf_token %}
-                <div class="form-group mb-2">
-                <input type="text" name="title" class="form-control" placeholder="Mavzu nomi..." required>
-                </div>
-                <div class="form-group mb-2">
-                <textarea class="form-control" name="forum_question" rows="3" placeholder="Fikr yoki savolingizni yozing..." required></textarea>
-                </div>
-                <div class="text-right">
-                <button type="submit" class="btn btn-primary px-4">
-                    <i class="fas fa-paper-plane mr-1"></i> Yaratish
-                </button>
-                </div>
-            </form>
-            </div>
+            {% if forum.topic %}
+            <span class="ml-auto badge badge-pill"
+              style="background:#ebf4ff;color:#2b4fa0;font-size:0.75rem;padding:5px 12px;">
+              {{ forum.topic.title }}
+            </span>
+            {% endif %}
+          </div>
+
+          <!-- Title & body -->
+          <h5 class="font-weight-bold text-gray-800 mb-2">{{ forum.title }}</h5>
+          <p class="text-gray-700 mb-4" style="line-height:1.7;">{{ forum.forum_question }}</p>
+
+          <!-- Actions -->
+          <div class="d-flex align-items-center" style="gap:10px;">
+            <button class="vote-btn like-btn {% if request.user in forum.likes.all %}active{% endif %}"
+              data-id="forum-{{ forum.pk }}" data-type="like">
+              <i class="fas fa-thumbs-up"></i>
+              <span class="vote-count">{{ forum.total_likes }}</span>
+            </button>
+            <button class="vote-btn dislike-btn {% if request.user in forum.dislikes.all %}active{% endif %}"
+              data-id="forum-{{ forum.pk }}" data-type="dislike">
+              <i class="fas fa-thumbs-down"></i>
+              <span class="vote-count">{{ forum.total_dislikes }}</span>
+            </button>
+            <span class="text-muted small ml-auto">
+              <i class="fas fa-comment mr-1"></i>
+              {{ forum.forumcomment_set.count }} ta izoh
+            </span>
+          </div>
         </div>
-    {% endif %}
-    
-    <!-- Posts -->
-      <div id="postsList">
+      </div>
+      {% endif %}
 
-        {% for forum in forums %}
-        <!-- ── Post 1 ── -->
-        <div class="card shadow mb-4 post-card">
-          <div class="card-body">
-            <!-- Post Header -->
-            <div class="d-flex align-items-start mb-3">
-              <img src="{% static 'img/avatar.png' %}" class="rounded-circle mr-3 border"
-                style="width:46px;height:46px;object-fit:cover;">
-              <div class="flex-grow-1">
-                <div class="d-flex justify-content-between align-items-start">
-                  <div>
-                    <h6 class="mb-0 font-weight-bold"> {{ forum.user.first_name }} {{ forum.user.last_name }} </h6>
-                    <small class="text-muted">{{ forum.created_at|timesince }} oldin</small>
-                  </div>
-                  <span class="badge badge-pill" style="background:#ebf4ff;color:#2b4fa0;font-size:0.75rem;">
-                    {{ forum.topic.title }}
-                  </span>
-                </div>
-              </div>
+      <!-- ── Comment Input ── -->
+      {% if user_profile %}
+      <div class="card shadow-sm mb-4" style="border-radius:10px;">
+        <div class="card-body py-3 px-4">
+          <form method="POST" action="{% url 'courses:post_comment' forum.pk %}">
+            {% csrf_token %}
+            <div class="d-flex align-items-center" style="gap:10px;">
+              <img src="{% if user_profile.profile_image %}{{ user_profile.profile_image.url }}{% else %}{% static 'img/avatar.png' %}{% endif %}"
+                class="rounded-circle border"
+                style="width:34px;height:34px;object-fit:cover;flex-shrink:0;">
+              <input type="text" class="form-control"
+                name="text"
+                placeholder="Fikringizni yozing..."
+                required
+                style="border-radius:20px;">
+              <button type="submit" class="btn btn-primary px-3" style="border-radius:20px;white-space:nowrap;">
+                <i class="fas fa-paper-plane"></i>
+              </button>
             </div>
+          </form>
+        </div>
+      </div>
+      {% endif %}
 
-            <!-- Post Title & Body -->
-            <h6 class="font-weight-bold text-gray-800 mb-2"> {{ forum.title }} </h6>
-            <p class="text-gray-700 small mb-3">
-                {{ forum.forum_question }}
-            </p>
+      <!-- ── Comments List ── -->
+      <div id="commentsList">
+        {% for comment in forum.forumcomment_set.all %}
+        {% if comment.parent is None %}
 
-            <!-- Post Actions -->
-            <div class="d-flex align-items-center gap-3" style="gap:12px;">
-              <button class="vote-btn like-btn {% if request.user in forum.likes.all %}active{% endif %}" data-id="forum-{{ forum.pk }}" data-type="like">
-                <i class="fas fa-thumbs-up"></i>
-                <span class="vote-count"> {{ forum.total_likes|default:"0" }} </span>
-              </button>
-              <button class="vote-btn dislike-btn {% if request.user in forum.dislikes.all %}active{% endif %}" data-id="forum-{{ forum.pk }}" data-type="dislike">
-                <i class="fas fa-thumbs-down"></i>
-                <span class="vote-count"> {{ forum.total_dislikes|default:"0" }} </span>
-              </button>
-              <button class="reply-toggle-btn" onclick="toggleReplyBox('reply-box-{{ forum.pk }}')">
-                <i class="fas fa-reply mr-1"></i> Javob berish
-              </button>
-              <span class="text-muted small ml-auto">
-                <i class="fas fa-comment mr-1"></i> {{ forum.forumcomment_set.all.count }} ta javob
+        <div class="card shadow-sm mb-3 comment-card" style="border-radius:10px;">
+          <div class="card-body py-3 px-4">
+
+            <!-- Comment header -->
+            <div class="d-flex align-items-center mb-2" style="gap:8px;">
+              <img src="{% static 'img/avatar.png' %}" class="rounded-circle border"
+                style="width:28px;height:28px;object-fit:cover;">
+              <span class="font-weight-bold small text-gray-800">
+                {{ comment.user.first_name }} {{ comment.user.last_name }}
+              </span>
+              <span class="text-muted" style="font-size:0.75rem;">
+                · {{ comment.created_at|timesince }} oldin
               </span>
             </div>
 
-            <!-- Reply Input -->
-            <form method="POST" action="{% url 'courses:post_comment' %}">
-                {% csrf_token %}
-                <div id="reply-box-{{ forum.pk }}" class="reply-box mt-3" style="display:none;">
-                    <div class="d-flex align-items-start">
-                        <img src="{% static 'img/avatar.png' %}" class="rounded-circle mr-2 border"
-                        style="width:32px;height:32px;object-fit:cover;">
-                        <div class="flex-grow-1">
-                            <textarea class="form-control form-control-sm" rows="2"
-                                placeholder="Javobingizni yozing..." name="forumcomment_text"></textarea>
-                                <input type="hidden" name="forum_id" value="{{ forum.pk }}">         
-                                <input type="hidden" name="comment_id" value="{{ comment.pk }}">            
-                                <div class="text-right mt-2">
-                                    <button class="btn btn-sm btn-outline-secondary mr-1"
-                                    onclick="toggleReplyBox('reply-box-{{ forum.pk }}')">Bekor</button>
-                                    <button class="btn btn-sm btn-primary" type="submit">Yuborish</button>
-                                </div>
-                        </div>
-                    </div>
-                </div>
-            </form>
+            <!-- Comment text -->
+            <p class="text-gray-700 small mb-2 ml-4" style="line-height:1.6;">{{ comment.text }}</p>
 
-            <!-- Replies -->
-            <div class="replies-section mt-3">
-            {% for comment in forum.forumcomment_set.all %}
-                {% if comment.parent is None %}
-                <div class="reply-item">
-                    <div class="d-flex align-items-start">
-                    <img src="{% static 'img/avatar.png' %}" class="rounded-circle mr-2 border"
-                        style="width:34px;height:34px;object-fit:cover;">
-                    <div class="reply-bubble flex-grow-1">
-                        <div class="d-flex justify-content-between">
-                        <h6 class="mb-0 font-weight-bold small"> {{ comment.user.first_name}} {{ comment.user.last_name}} </h6>
-                        <small class="text-muted">{{ forum.created_at|timesince }} oldin</small>
-                        </div>
-                        <p class="small text-gray-700 mb-2">
-                        {{ comment.text}}
-                        </p>
-                        <div class="d-flex align-items-center" style="gap:10px;">
-                        <button class="vote-btn like-btn {% if request.user in comment.likes.all %}active{% endif %}" data-id="comment-{{ comment.pk }}" data-type="like">
-                            <i class="fas fa-thumbs-up"></i>
-                            <span class="vote-count"> {{ comment.total_likes|default:"0" }} </span>
-                        </button>
-                        <button class="vote-btn dislike-btn {% if request.user in comment.dislikes.all %}active{% endif %}" data-id="comment-{{ comment.pk }}" data-type="dislike">
-                            <i class="fas fa-thumbs-down"></i>
-                            <span class="vote-count"> {{ comment.total_dislikes|default:"0" }} </span>
-                        </button>
-                        <button class="reply-toggle-btn" onclick="toggleReplyBox('reply-box-{{ forum.pk }}')">
-                            <i class="fas fa-reply mr-1"></i> Javob
-                        </button>
-                        </div>
-                    </div>
-                    </div>
+            <!-- Comment actions -->
+            <div class="d-flex align-items-center ml-4" style="gap:8px;">
+              <button class="vote-btn like-btn {% if request.user in comment.likes.all %}active{% endif %}"
+                data-id="comment-{{ comment.pk }}" data-type="like">
+                <i class="fas fa-thumbs-up"></i>
+                <span class="vote-count">{{ comment.total_likes }}</span>
+              </button>
+              <button class="vote-btn dislike-btn {% if request.user in comment.dislikes.all %}active{% endif %}"
+                data-id="comment-{{ comment.pk }}" data-type="dislike">
+                <i class="fas fa-thumbs-down"></i>
+                <span class="vote-count">{{ comment.total_dislikes }}</span>
+              </button>
+              {% if user_profile %}
+              <button class="reply-toggle-btn" onclick="toggleReplyBox('reply-comment-{{ comment.pk }}')">
+                <i class="fas fa-reply mr-1"></i> Javob
+              </button>
+              {% endif %}
+            </div>
+
+            <!-- Per-comment reply input -->
+            {% if user_profile %}
+            <div id="reply-comment-{{ comment.pk }}" class="reply-box mt-3 ml-4" style="display:none;">
+              <form method="POST" action="{% url 'courses:post_comment' forum.pk %}">
+                {% csrf_token %}
+                <input type="hidden" name="comment_id" value="{{ comment.pk }}">
+                <div class="d-flex align-items-center" style="gap:8px;">
+                  <img src="{% if user_profile.profile_image %}{{ user_profile.profile_image.url }}{% else %}{% static 'img/avatar.png' %}{% endif %}"
+                    class="rounded-circle border"
+                    style="width:26px;height:26px;object-fit:cover;flex-shrink:0;">
+                  <input type="text" class="form-control form-control-sm"
+                    name="text"
+                    placeholder="{{ comment.user.first_name }}ga javob..."
+                    required
+                    style="border-radius:20px;">
+                  <button type="submit" class="btn btn-primary btn-sm px-3"
+                    style="border-radius:20px;white-space:nowrap;">
+                    <i class="fas fa-paper-plane"></i>
+                  </button>
+                  <button type="button" class="btn btn-sm btn-outline-secondary"
+                    style="border-radius:20px;"
+                    onclick="toggleReplyBox('reply-comment-{{ comment.pk }}')">
+                    <i class="fas fa-times"></i>
+                  </button>
                 </div>
-                {% for reply in comment.replies.all %}
-                    <div class="reply-item">
-                        <div class="d-flex align-items-start">
-                        <img src="{% static 'img/avatar.png' %}" class="rounded-circle mr-2 border"
-                            style="width:34px;height:34px;object-fit:cover;">
-                        <div class="reply-bubble flex-grow-1">
-                            <div class="d-flex justify-content-between">
-                            <h6 class="mb-0 font-weight-bold small"> {{ reply.user.first_name}} {{ reply.user.last_name}} </h6>
-                            <small class="text-muted">{{ forum.created_at|timesince }} oldin</small>
-                            </div>
-                            <p class="small text-gray-700 mb-2">
-                            {{ reply.text}}
-                            </p>
-                            <div class="d-flex align-items-center" style="gap:10px;">
-                            <button class="vote-btn like-btn {% if request.user in reply.likes.all %}active{% endif %}" data-id="reply-{{ reply.pk }}" data-type="like">
-                                <i class="fas fa-thumbs-up"></i>
-                                <span class="vote-count"> {{ reply.total_likes|default:"0" }} </span>
-                            </button>
-                            <button class="vote-btn dislike-btn {% if request.user in reply.dislikes.all %}active{% endif %}" data-id="reply-{{ reply.pk }}" data-type="dislike">
-                                <i class="fas fa-thumbs-down"></i>
-                                <span class="vote-count"> {{ reply.total_dislikes|default:"0" }} </span>
-                            </button>
-                            <button class="reply-toggle-btn" onclick="toggleReplyBox('reply-box-{{ forum.pk }}')">
-                                <i class="fas fa-reply mr-1"></i> Javob
-                            </button>
-                            </div>
-                        </div>
-                        </div>
-                    </div>
-                {% endfor %}
-                {% endif %}
+              </form>
+            </div>
+            {% endif %}
+
+            <!-- Nested replies -->
+            {% for reply in comment.replies.all %}
+            <div class="mt-3 ml-4 pl-3" style="border-left:2px solid #e3e6f0;">
+              <div class="d-flex align-items-center mb-1" style="gap:8px;">
+                <img src="{% static 'img/avatar.png' %}" class="rounded-circle border"
+                  style="width:22px;height:22px;object-fit:cover;">
+                <span class="font-weight-bold" style="font-size:0.82rem;">
+                  {{ reply.user.first_name }} {{ reply.user.last_name }}
+                </span>
+                <span class="text-muted" style="font-size:0.72rem;">
+                  · {{ reply.created_at|timesince }} oldin
+                </span>
+              </div>
+              <p class="text-gray-700 mb-1 ml-4" style="font-size:0.85rem;line-height:1.6;">
+                {{ reply.text }}
+              </p>
+              <div class="d-flex align-items-center ml-4" style="gap:8px;">
+                <button class="vote-btn like-btn {% if request.user in reply.likes.all %}active{% endif %}"
+                  data-id="comment-{{ reply.pk }}" data-type="like">
+                  <i class="fas fa-thumbs-up"></i>
+                  <span class="vote-count">{{ reply.total_likes }}</span>
+                </button>
+                <button class="vote-btn dislike-btn {% if request.user in reply.dislikes.all %}active{% endif %}"
+                  data-id="comment-{{ reply.pk }}" data-type="dislike">
+                  <i class="fas fa-thumbs-down"></i>
+                  <span class="vote-count">{{ reply.total_dislikes }}</span>
+                </button>
+              </div>
+            </div>
             {% endfor %}
 
-            </div>
           </div>
+        </div>
+
+        {% endif %}
+        {% empty %}
+        <div class="text-center py-5 text-muted">
+          <i class="fas fa-comment-slash fa-2x d-block mb-3"></i>
+          Hali izohlar yo'q. Birinchi bo'lib fikr bildiring!
         </div>
         {% endfor %}
       </div>
+
     </div>
 
     <!-- ── Sidebar ── -->
     <div class="col-lg-4">
 
-      <!-- Search -->
+      <!-- Forum info -->
       <div class="card shadow mb-4">
-        <div class="card-body">
-          <div class="input-group">
-            <input type="text" class="form-control" placeholder="Forumda qidirish...">
-            <div class="input-group-append">
-              <button class="btn btn-primary"><i class="fas fa-search"></i></button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Stats -->
-      <div class="card shadow mb-4">
-        <div class="card-header py-3">
-          <h6 class="m-0 font-weight-bold text-primary">Forum statistikasi</h6>
+        <div class="card-header py-3 bg-primary">
+          <h6 class="m-0 font-weight-bold text-white">
+            <i class="fas fa-info-circle mr-2"></i>Forum haqida
+          </h6>
         </div>
         <div class="card-body p-0">
           <div class="d-flex align-items-center justify-content-between px-3 py-2 border-bottom">
-            <span class="small text-gray-700"><i class="fas fa-file-alt mr-2 text-primary"></i>Jami postlar</span>
-            <span class="font-weight-bold">124</span>
+            <span class="small text-gray-700"><i class="fas fa-user mr-2 text-primary"></i>Muallif</span>
+            <span class="small font-weight-bold">{{ forum.user.first_name }} {{ forum.user.last_name }}</span>
           </div>
           <div class="d-flex align-items-center justify-content-between px-3 py-2 border-bottom">
-            <span class="small text-gray-700"><i class="fas fa-comments mr-2 text-success"></i>Jami javoblar</span>
-            <span class="font-weight-bold">489</span>
+            <span class="small text-gray-700"><i class="fas fa-calendar mr-2 text-success"></i>Sana</span>
+            <span class="small font-weight-bold">{{ forum.created_at|date:"j/m/Y" }}</span>
+          </div>
+          <div class="d-flex align-items-center justify-content-between px-3 py-2 border-bottom">
+            <span class="small text-gray-700"><i class="fas fa-comments mr-2 text-info"></i>Izohlar</span>
+            <span class="small font-weight-bold">{{ forum.forumcomment_set.count }} ta</span>
           </div>
           <div class="d-flex align-items-center justify-content-between px-3 py-2">
-            <span class="small text-gray-700"><i class="fas fa-users mr-2 text-info"></i>Faol a'zolar</span>
-            <span class="font-weight-bold">38</span>
+            <span class="small text-gray-700"><i class="fas fa-thumbs-up mr-2 text-warning"></i>Likes</span>
+            <span class="small font-weight-bold">{{ forum.total_likes }}</span>
           </div>
         </div>
       </div>
@@ -234,55 +253,35 @@
       <div class="card shadow mb-4">
         <div class="card-header py-3">
           <h6 class="m-0 font-weight-bold text-primary">
-            <i class="fas fa-trophy mr-2 text-warning"></i>Eng faol a'zolar
+            <i class="fas fa-trophy mr-2 text-warning"></i>Forumning eng faol a'zolari
           </h6>
         </div>
         <div class="card-body p-0">
-          {% for i in "123" %}
+          {% for contributor in top_contributors %}
           <div class="d-flex align-items-center px-3 py-2 border-bottom">
             <span class="font-weight-bold text-muted mr-3" style="width:20px;">{{ forloop.counter }}</span>
             <img src="{% static 'img/avatar.png' %}" class="rounded-circle mr-2 border"
               style="width:34px;height:34px;object-fit:cover;">
             <div class="flex-grow-1">
-              <div class="font-weight-bold small">Foydalanuvchi {{ forloop.counter }}</div>
-              <div class="text-muted" style="font-size:0.75rem;">{{ forloop.counter }}2 ta post</div>
+              <div class="font-weight-bold small">
+                {{ contributor.user__first_name }} {{ contributor.user__last_name }}
+              </div>
+              <div class="text-muted" style="font-size:0.75rem;">{{ contributor.comment_count }} ta fikr</div>
             </div>
-            <span class="badge badge-warning badge-pill">{{ forloop.counter }}4 <i class="fas fa-thumbs-up"></i></span>
+            <span class="badge badge-warning badge-pill">
+              {{ contributor.like_count }} <i class="fas fa-thumbs-up"></i>
+            </span>
           </div>
+          {% empty %}
+          <div class="text-center py-3 text-muted small">Hali faol a'zolar yo'q</div>
           {% endfor %}
         </div>
       </div>
 
-      <!-- Categories -->
-      <div class="card shadow mb-4">
-        <div class="card-header py-3">
-          <h6 class="m-0 font-weight-bold text-primary">Mavzular bo'yicha</h6>
-        </div>
-        <div class="card-body p-0">
-          {% for forum in forums %}
-          <a href="#" class="d-flex align-items-center justify-content-between px-3 py-2 border-bottom text-decoration-none category-link">
-            <span class="small text-gray-700">{{ forum.title }}</span>
-            <span class="badge badge-primary badge-pill">24</span>
-          </a>          
-          {% endfor %}            
-          <a href="#" class="d-flex align-items-center justify-content-between px-3 py-2 border-bottom text-decoration-none category-link">
-            <span class="small text-gray-700">Anatomiya</span>
-            <span class="badge badge-primary badge-pill">24</span>
-          </a>
-          <a href="#" class="d-flex align-items-center justify-content-between px-3 py-2 border-bottom text-decoration-none category-link">
-            <span class="small text-gray-700">Fiziologiya</span>
-            <span class="badge badge-primary badge-pill">18</span>
-          </a>
-          <a href="#" class="d-flex align-items-center justify-content-between px-3 py-2 border-bottom text-decoration-none category-link">
-            <span class="small text-gray-700">Kimyo</span>
-            <span class="badge badge-primary badge-pill">12</span>
-          </a>
-          <a href="#" class="d-flex align-items-center justify-content-between px-3 py-2 text-decoration-none category-link">
-            <span class="small text-gray-700">Umumiy savollar</span>
-            <span class="badge badge-primary badge-pill">70</span>
-          </a>
-        </div>
-      </div>
+      <!-- Back -->
+      <a href="{% url 'courses:forums' %}" class="btn btn-outline-primary btn-block mb-4">
+        <i class="fas fa-arrow-left mr-2"></i> Barcha forumlarga qaytish
+      </a>
 
     </div>
   </div>
@@ -291,66 +290,57 @@
 
 {% block extra_js %}
 <style>
-  .post-card { border-radius: 12px; transition: box-shadow 0.2s; }
+  .post-card, .comment-card { border-radius: 12px; transition: box-shadow 0.2s; }
   .post-card:hover { box-shadow: 0 6px 20px rgba(78,115,223,0.12) !important; }
+  .comment-card:hover { background: #fafbff !important; }
 
-  /* Vote buttons */
   .vote-btn {
     display: inline-flex; align-items: center; gap: 5px;
     background: none; border: 1px solid #e3e6f0;
     border-radius: 20px; padding: 4px 12px;
-    font-size: 0.8rem; color: #a0aec0;
+    font-size: 0.78rem; color: #a0aec0;
     cursor: pointer; transition: all 0.2s;
   }
   .vote-btn:hover { border-color: #4e73df; color: #4e73df; }
-  .vote-btn.like-btn.active  { background:#ebf4ff; border-color:#4e73df; color:#4e73df; }
+  .vote-btn.like-btn.active    { background:#ebf4ff; border-color:#4e73df; color:#4e73df; }
   .vote-btn.dislike-btn.active { background:#fde8e6; border-color:#e74a3b; color:#e74a3b; }
 
-  /* Reply button */
   .reply-toggle-btn {
     background: none; border: none;
-    color: #a0aec0; font-size: 0.8rem;
+    color: #a0aec0; font-size: 0.78rem;
     cursor: pointer; padding: 4px 8px;
     border-radius: 6px; transition: all 0.15s;
   }
   .reply-toggle-btn:hover { background: #f8f9ff; color: #4e73df; }
 
-  /* Reply items */
-  .replies-section { border-top: 1px solid #e3e6f0; padding-top: 16px; margin-top: 4px; }
-  .reply-item { margin-bottom: 16px; padding-left: 12px; border-left: 2px solid #e3e6f0; }
-  .reply-bubble {
-    background: #f8f9fc; border-radius: 10px;
-    padding: 10px 14px; border: 1px solid #e3e6f0;
-  }
-
-  /* Category links */
-  .category-link:hover { background: #f8f9ff; }
-
-  /* Reply box animation */
   .reply-box { animation: fadeIn 0.2s ease; }
-  @keyframes fadeIn { from { opacity:0; transform:translateY(-4px); } to { opacity:1; transform:translateY(0); } }
+  @keyframes fadeIn {
+    from { opacity:0; transform:translateY(-4px); }
+    to   { opacity:1; transform:translateY(0); }
+  }
 </style>
 
 <script>
-  // ── Toggle reply box ──────────────────────────────────
   function toggleReplyBox(id) {
     const box = document.getElementById(id);
     if (!box) return;
     const isVisible = box.style.display !== 'none';
-    box.style.display = isVisible ? 'none' : 'block';
-    if (!isVisible) box.querySelector('textarea').focus();
+    // Close all open reply boxes
+    document.querySelectorAll('.reply-box').forEach(b => b.style.display = 'none');
+    if (!isVisible) {
+      box.style.display = 'block';
+      const input = box.querySelector('input[type="text"]');
+      if (input) input.focus();
+    }
   }
 
-  // ── Like / Dislike ────────────────────────────────────
   document.addEventListener('click', function (e) {
     const btn = e.target.closest('.vote-btn');
     if (!btn) return;
 
-    const id   = btn.dataset.id;
-    const type = btn.dataset.type;
+    const id      = btn.dataset.id;
+    const type    = btn.dataset.type;
     const countEl = btn.querySelector('.vote-count');
-
-    // Find sibling vote buttons for this id
     const siblings = document.querySelectorAll(`.vote-btn[data-id="${id}"]`);
     const isActive = btn.classList.contains('active');
 
@@ -371,27 +361,22 @@
       countEl.textContent = parseInt(countEl.textContent) + 1;
     }
 
-    // TODO: send to server via fetch when Django view is ready
-    // fetch('/forum/vote/', { method: 'POST', ... })
     fetch("{% url 'courses:toggle_vote' %}", {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': '{{ csrf_token }}'
-        },
-        body: JSON.stringify({
-            type: id.startsWith('forum') ? 'forum' : 'comment',
-            id: parseInt(id.split('-')[1]),
-            action: type
-        })
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': '{{ csrf_token }}'
+      },
+      body: JSON.stringify({
+        type: id.startsWith('forum') ? 'forum' : 'comment',
+        id: parseInt(id.split('-')[1]),
+        action: type
+      })
     })
     .then(res => res.json())
     .then(data => {
-        // update both counts from server response
-        const likeBtn    = document.querySelector(`.like-btn[data-id="${id}"]`);
-        const dislikeBtn = document.querySelector(`.dislike-btn[data-id="${id}"]`);
-        likeBtn.querySelector('.vote-count').textContent    = data.likes;
-        dislikeBtn.querySelector('.vote-count').textContent = data.dislikes;
+      document.querySelector(`.like-btn[data-id="${id}"]`).querySelector('.vote-count').textContent    = data.likes;
+      document.querySelector(`.dislike-btn[data-id="${id}"]`).querySelector('.vote-count').textContent = data.dislikes;
     });
   });
 </script>

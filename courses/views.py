@@ -6,7 +6,7 @@ from django.contrib.auth.models import User
 import json
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
-
+from django.db.models import Count
 from functools import wraps
 
 def require_profile(view_func):
@@ -380,55 +380,77 @@ def score_details_view(request, response_id):
         'details':details,
     })
 
-
-# add view for forum
-def forum_view(request):
-
+def all_forum_view(request):
     if request.method == "POST" and request.user.is_authenticated:
         title = request.POST.get('title')
         forum_question = request.POST.get('forum_question')
         if not (title and forum_question):
             messages.error(request,"Xatolik!")
             return redirect('courses:forums')
+        topic_id = request.POST.get('topic_id')
+        topic = Topic.objects.filter(pk=topic_id).first() if topic_id else None
+
         forum = Forum.objects.create(
-            user = request.user,
-            title= title,
-            forum_question = forum_question,
+            user=request.user,
+            title=title,
+            forum_question=forum_question,
+            topic=topic, 
         )
         messages.success(request, f"Forum #{forum.pk} muvaffaqiyatli yaratildi!")
         return redirect('courses:forums')
-    
+    top_contributors = (
+        ForumComment.objects
+        .values('user__first_name', 'user__last_name', 'user__id')
+        .annotate(comment_count=Count('id'), like_count=Count('likes'))
+        .order_by('-comment_count')[:5]
+    )
     topics = Topic.objects.order_by('-created_at')
     forums = Forum.objects.order_by('-created_at')
    
-    return render(request, 'courses/forum.html', {
+    return render(request, 'courses/forums.html', {
         'topics': topics,
         'forums': forums,
+        'top_contributors': top_contributors
     })
 
+def forum_view(request, forum_id):
+    forum = get_object_or_404(Forum, pk=forum_id)
+    topics = Topic.objects.order_by('-created_at')
+    top_contributors = (
+        ForumComment.objects
+        .filter(forum=forum)
+        .values('user__first_name', 'user__last_name', 'user__id')
+        .annotate(comment_count=Count('id'), like_count=Count('likes'))
+        .order_by('-comment_count')[:5]
+    )   
+    return render(request, 'courses/forum.html', {
+        'topics': topics,
+        'forum': forum,
+        'top_contributors': top_contributors
+    })
 
 @login_required(login_url='user:login')
 @require_profile
 @require_POST
-def post_comment_view(request):
+def post_comment_view(request, forum_id):
 
-    forum_id = request.POST.get('forum_id')
-    forumcomment_text = request.POST.get('forumcomment_text').strip()
-    if not (forum_id and forumcomment_text):
+    forum = get_object_or_404(Forum, pk=forum_id)
+    text = request.POST.get('text')
+    if not text:
         messages.error(request,"Xatolik!")
-        return redirect('courses:forums')
-    forum= get_object_or_404(Forum, pk=forum_id)
-
+        return redirect('courses:forum', forum_id)
+    
     parent_id = request.POST.get('comment_id')
     parent = ForumComment.objects.filter(pk=parent_id).first() if parent_id else None
     
     forum_comment = ForumComment.objects.create(
         user = request.user,
-        forum= forum,
-        text = forumcomment_text,
-        parent=parent,
-    )        
-    return redirect('courses:forums')
+        forum = forum,
+        text = text,
+        parent = parent,
+    )
+    messages.success(request, f"Fikr muvaffaqiyatli qo'shildi!")
+    return redirect('courses:forum', forum_id)
 
 
 @login_required(login_url='user:login')

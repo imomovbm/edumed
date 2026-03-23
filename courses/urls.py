@@ -28,7 +28,8 @@ urlpatterns = [
     path('quiz/details/<int:response_id>/', views.score_details_view, name='score_details'),
 
 
-    path('forum/', views.forum_view, name='forums'),
-    path('post-comment/', views.post_comment_view, name='post_comment'),
+    path('forums/', views.all_forum_view, name='forums'),
+    path('forum/<int:forum_id>/', views.forum_view, name='forum'),
+    path('post-comment/<int:forum_id>/', views.post_comment_view, name='post_comment'),
     path('toggle-vote/', views.toggle_vote_view, name='toggle_vote'),
 ]

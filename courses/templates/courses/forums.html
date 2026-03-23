@@ -1,0 +1,362 @@
+{% extends "courses/layout.html" %}
+{% load static %}
+
+{% block main %}
+<div class="container-fluid">
+
+  <!-- Page Heading -->
+  <div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">
+      <i class="fas fa-comments mr-2 text-primary"></i>Forumlar
+    </h1>
+  </div>
+
+  <div class="row">
+
+    <!-- ── Main Forum ── -->
+    <div class="col-lg-8">
+
+      {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
+        </div>
+        {% endfor %}
+      {% endif %}
+
+      {% if user_profile %}
+      <div class="card shadow mb-4">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">
+            <i class="fas fa-pen mr-2"></i>Yangi forum ochish
+          </h6>
+        </div>
+        <div class="card-body">
+          <form id="newPostForm" method="post" action="{% url 'courses:forums' %}">
+            {% csrf_token %}
+
+            <div class="form-group mb-2">
+              <input type="text" name="title" class="form-control"
+                placeholder="Mavzu nomi..." required>
+            </div>
+
+            <div class="form-group mb-2">
+              <textarea class="form-control" name="forum_question" rows="3"
+                placeholder="Fikr yoki savolingizni yozing..." required></textarea>
+            </div>
+
+            <!-- Topic toggle -->
+            <div class="form-group mb-2">
+              <div class="d-flex align-items-center" style="gap:10px;">
+                <div class="custom-control custom-switch">
+                  <input type="checkbox" class="custom-control-input" id="topicToggle"
+                    onchange="toggleTopicSelect(this)">
+                  <label class="custom-control-label" for="topicToggle">
+                    Mavzuga bog'lash
+                  </label>
+                </div>
+                <small class="text-muted">Agar forum biror mavzuga tegishli bo'lsa yoqing</small>
+              </div>
+            </div>
+
+            <!-- Topic select — hidden by default -->
+            <div class="form-group mb-3" id="topicSelectSection" style="display:none;">
+              <select class="form-control" name="topic_id" id="topicSelect">
+                <option value="">— Mavzuni tanlang —</option>
+                {% for topic in topics %}
+                <option value="{{ topic.id }}">{{ topic.title }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="text-right">
+              <button type="submit" class="btn btn-primary px-4">
+                <i class="fas fa-paper-plane mr-1"></i> Yaratish
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+      {% endif %}      
+    
+    <!-- Posts -->
+      <div id="postsList">
+        {% for forum in forums %}
+        <div class="card shadow mb-3 post-card" onclick="window.location='{% url 'courses:forum' forum.pk %}'" style="cursor:pointer;">
+          <div class="card-body py-3 px-4">
+
+            <!-- Top meta row -->
+            <div class="d-flex align-items-center mb-2" style="gap:8px;">
+              <img src="{% static 'img/avatar.png' %}" class="rounded-circle border"
+                style="width:24px;height:24px;object-fit:cover;">
+              <span class="small font-weight-bold text-gray-700">
+                {{ forum.user.first_name }} {{ forum.user.last_name }}
+              </span>
+              <span class="text-muted small">·</span>
+              <span class="text-muted small">{{ forum.created_at|timesince }} oldin</span>
+              {% if forum.topic %}
+              <span class="ml-auto badge badge-pill" style="background:#ebf4ff;color:#2b4fa0;font-size:0.72rem;">
+                {{ forum.topic.title }}
+              </span>
+              {% else %}
+              <span class="ml-auto badge badge-pill" style="background:#eebb00;color:#ffffff;font-size:0.72rem;">
+                Umumiy
+              </span>
+              {% endif %}
+            </div>
+
+            <!-- Title — big like Reddit -->
+            <h5 class="font-weight-bold text-gray-800 mb-1" style="font-size:1.5rem; line-height:1.4;">
+              {{ forum.title }}
+            </h5>
+
+            <!-- Preview text -->
+            <p class="text-muted small mb-3" style="
+              display:-webkit-box; -webkit-line-clamp:2;
+              -webkit-box-orient:vertical; overflow:hidden;">
+              {{ forum.forum_question }}
+            </p>
+
+            <!-- Bottom actions -->
+            <div class="d-flex align-items-center" style="gap:8px;">
+              <button class="vote-btn like-btn {% if request.user in forum.likes.all %}active{% endif %}"
+                data-id="forum-{{ forum.pk }}" data-type="like"
+                onclick="event.stopPropagation()">
+                <i class="fas fa-thumbs-up"></i>
+                <span class="vote-count">{{ forum.total_likes }}</span>
+              </button>
+              <button class="vote-btn dislike-btn {% if request.user in forum.dislikes.all %}active{% endif %}"
+                data-id="forum-{{ forum.pk }}" data-type="dislike"
+                onclick="event.stopPropagation()">
+                <i class="fas fa-thumbs-down"></i>
+                <span class="vote-count">{{ forum.total_dislikes }}</span>
+              </button>
+              <span class="text-muted small" style="margin-left:4px;">
+                <i class="fas fa-comment mr-1"></i>{{ forum.forumcomment_set.count }} ta izoh
+              </span>
+              <a href="{% url 'courses:forum' forum.pk %}" class="text-muted small ml-auto"
+                onclick="event.stopPropagation()">
+                O'qish <i class="fas fa-arrow-right ml-1"></i>
+              </a>
+            </div>
+
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- ── Sidebar ── -->
+    <div class="col-lg-4">
+      <!-- Search -->
+      <div class="card shadow mb-4">
+        <div class="card-body">
+          <div class="input-group">
+            <input type="text" class="form-control" placeholder="Forumda qidirish...">
+            <div class="input-group-append">
+              <button class="btn btn-primary"><i class="fas fa-search"></i></button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="card shadow mb-4">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">Forum statistikasi</h6>
+        </div>
+        <div class="card-body p-0">
+          <div class="d-flex align-items-center justify-content-between px-3 py-2 border-bottom">
+            <span class="small text-gray-700"><i class="fas fa-file-alt mr-2 text-primary"></i>Jami postlar</span>
+            <span class="font-weight-bold">124</span>
+          </div>
+          <div class="d-flex align-items-center justify-content-between px-3 py-2 border-bottom">
+            <span class="small text-gray-700"><i class="fas fa-comments mr-2 text-success"></i>Jami javoblar</span>
+            <span class="font-weight-bold">489</span>
+          </div>
+          <div class="d-flex align-items-center justify-content-between px-3 py-2">
+            <span class="small text-gray-700"><i class="fas fa-users mr-2 text-info"></i>Faol a'zolar</span>
+            <span class="font-weight-bold">38</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Top Contributors -->
+      <div class="card shadow mb-4">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">
+            <i class="fas fa-trophy mr-2 text-warning"></i>Forumning eng faol a'zolari
+          </h6>
+        </div>
+        <div class="card-body p-0">
+          {% for contributor in top_contributors %}
+          <div class="d-flex align-items-center px-3 py-2 border-bottom">
+            <span class="font-weight-bold text-muted mr-3" style="width:20px;">{{ forloop.counter }}</span>
+            <img src="{% static 'img/avatar.png' %}" class="rounded-circle mr-2 border"
+              style="width:34px;height:34px;object-fit:cover;">
+            <div class="flex-grow-1">
+              <div class="font-weight-bold small">
+                {{ contributor.user__first_name }} {{ contributor.user__last_name }}
+              </div>
+              <div class="text-muted" style="font-size:0.75rem;">{{ contributor.comment_count }} ta fikr</div>
+            </div>
+            <span class="badge badge-warning badge-pill">
+              {{ contributor.like_count }} <i class="fas fa-thumbs-up"></i>
+            </span>
+          </div>
+          {% empty %}
+          <div class="text-center py-3 text-muted small">Hali faol a'zolar yo'q</div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Categories -->
+      <div class="card shadow mb-4">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">Mavzular bo'yicha</h6>
+        </div>
+        <div class="card-body p-0">
+          {% for forum in forums %}
+          <a href="#" class="d-flex align-items-center justify-content-between px-3 py-2 border-bottom text-decoration-none category-link">
+            <span class="small text-gray-700">{{ forum.title }}</span>
+            <span class="badge badge-primary badge-pill">24</span>
+          </a>          
+          {% endfor %}            
+          <a href="#" class="d-flex align-items-center justify-content-between px-3 py-2 border-bottom text-decoration-none category-link">
+            <span class="small text-gray-700">Anatomiya</span>
+            <span class="badge badge-primary badge-pill">24</span>
+          </a>
+          <a href="#" class="d-flex align-items-center justify-content-between px-3 py-2 border-bottom text-decoration-none category-link">
+            <span class="small text-gray-700">Fiziologiya</span>
+            <span class="badge badge-primary badge-pill">18</span>
+          </a>
+          <a href="#" class="d-flex align-items-center justify-content-between px-3 py-2 border-bottom text-decoration-none category-link">
+            <span class="small text-gray-700">Kimyo</span>
+            <span class="badge badge-primary badge-pill">12</span>
+          </a>
+          <a href="#" class="d-flex align-items-center justify-content-between px-3 py-2 text-decoration-none category-link">
+            <span class="small text-gray-700">Umumiy savollar</span>
+            <span class="badge badge-primary badge-pill">70</span>
+          </a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock main %}
+
+{% block extra_js %}
+<style>
+  .post-card { border-radius: 12px; transition: box-shadow 0.2s; }
+  .post-card:hover { box-shadow: 0 6px 20px rgba(78,115,223,0.12) !important; }
+
+  /* Vote buttons */
+  .vote-btn {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: none; border: 1px solid #e3e6f0;
+    border-radius: 20px; padding: 4px 12px;
+    font-size: 0.8rem; color: #a0aec0;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .vote-btn:hover { border-color: #4e73df; color: #4e73df; }
+  .vote-btn.like-btn.active  { background:#ebf4ff; border-color:#4e73df; color:#4e73df; }
+  .vote-btn.dislike-btn.active { background:#fde8e6; border-color:#e74a3b; color:#e74a3b; }
+
+  /* Reply button */
+  .reply-toggle-btn {
+    background: none; border: none;
+    color: #a0aec0; font-size: 0.8rem;
+    cursor: pointer; padding: 4px 8px;
+    border-radius: 6px; transition: all 0.15s;
+  }
+  .reply-toggle-btn:hover { background: #f8f9ff; color: #4e73df; }
+
+  /* Reply items */
+  .replies-section { border-top: 1px solid #e3e6f0; padding-top: 16px; margin-top: 4px; }
+  .reply-item { margin-bottom: 16px; padding-left: 12px; border-left: 2px solid #e3e6f0; }
+  .reply-bubble {
+    background: #f8f9fc; border-radius: 10px;
+    padding: 10px 14px; border: 1px solid #e3e6f0;
+  }
+
+  /* Category links */
+  .category-link:hover { background: #f8f9ff; }
+
+  /* Reply box animation */
+  .reply-box { animation: fadeIn 0.2s ease; }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(-4px); } to { opacity:1; transform:translateY(0); } }
+</style>
+
+<script>
+  function toggleTopicSelect(checkbox) {
+  const section = document.getElementById('topicSelectSection');
+  const select  = document.getElementById('topicSelect');
+  section.style.display = checkbox.checked ? 'block' : 'none';
+  select.required = checkbox.checked;
+}
+  // ── Toggle reply box ──────────────────────────────────
+  function toggleReplyBox(id) {
+    const box = document.getElementById(id);
+    if (!box) return;
+    const isVisible = box.style.display !== 'none';
+    box.style.display = isVisible ? 'none' : 'block';
+    if (!isVisible) box.querySelector('textarea').focus();
+  }
+
+  // ── Like / Dislike ────────────────────────────────────
+  document.addEventListener('click', function (e) {
+    const btn = e.target.closest('.vote-btn');
+    if (!btn) return;
+
+    const id   = btn.dataset.id;
+    const type = btn.dataset.type;
+    const countEl = btn.querySelector('.vote-count');
+
+    // Find sibling vote buttons for this id
+    const siblings = document.querySelectorAll(`.vote-btn[data-id="${id}"]`);
+    const isActive = btn.classList.contains('active');
+
+    siblings.forEach(b => {
+      if (b === btn) return;
+      if (b.classList.contains('active')) {
+        b.classList.remove('active');
+        const c = b.querySelector('.vote-count');
+        c.textContent = Math.max(0, parseInt(c.textContent) - 1);
+      }
+    });
+
+    if (isActive) {
+      btn.classList.remove('active');
+      countEl.textContent = Math.max(0, parseInt(countEl.textContent) - 1);
+    } else {
+      btn.classList.add('active');
+      countEl.textContent = parseInt(countEl.textContent) + 1;
+    }
+
+    // TODO: send to server via fetch when Django view is ready
+    // fetch('/forum/vote/', { method: 'POST', ... })
+    fetch("{% url 'courses:toggle_vote' %}", {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({
+            type: id.startsWith('forum') ? 'forum' : 'comment',
+            id: parseInt(id.split('-')[1]),
+            action: type
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        // update both counts from server response
+        const likeBtn    = document.querySelector(`.like-btn[data-id="${id}"]`);
+        const dislikeBtn = document.querySelector(`.dislike-btn[data-id="${id}"]`);
+        likeBtn.querySelector('.vote-count').textContent    = data.likes;
+        dislikeBtn.querySelector('.vote-count').textContent = data.dislikes;
+    });
+  });
+</script>
+{% endblock extra_js %}
