@@ -264,3 +264,6 @@ def delete_user_view(request, user_id):
     user_to_delete.delete()
     messages.success(request, f"Foydalanuvchi o'chirildi")
     return redirect('user:all_users')
+
+def user_detail_view(request, user_id):
+    pass
