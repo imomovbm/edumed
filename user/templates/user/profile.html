@@ -271,10 +271,16 @@
                 </tr>
                 {% empty %}
                 <tr>
-                  <td colspan="7" class="text-center py-4 text-muted">
+                  <td> </td>
+                  <td> </td>
+                  <td> </td>
+                  <td class="text-center py-4 text-muted">
                     <i class="fas fa-clipboard fa-2x d-block mb-2 text-gray-300"></i>
                     Hali testlar topshirilmagan
                   </td>
+                  <td> </td>
+                  <td> </td>
+                  <td> </td>
                 </tr>
                 {% endfor %}
               </tbody>
@@ -441,6 +447,7 @@
 {% endblock main %}
 
 {% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap4.min.css">
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap4.min.js"></script>
@@ -497,9 +504,13 @@ document.addEventListener('DOMContentLoaded', function () {
           {
             label: "Sizning natijangiz",
             data: [
-              {{ topic_scores.0 }}, {{ topic_scores.1 }}, {{ topic_scores.2 }},
-              {{ topic_scores.3 }}, {{ topic_scores.4 }}, {{ topic_scores.5 }}
-            ],
+                  {{ topic_scores.0|default:0 }}, 
+                  {{ topic_scores.1|default:0 }}, 
+                  {{ topic_scores.2|default:0 }},
+                  {{ topic_scores.3|default:0 }}, 
+                  {{ topic_scores.4|default:0 }}, 
+                  {{ topic_scores.5|default:0 }}
+                ],
             backgroundColor: 'rgba(78, 115, 223, 0.15)',
             borderColor: 'rgba(78, 115, 223, 1)',
             pointBackgroundColor: 'rgba(78, 115, 223, 1)',
