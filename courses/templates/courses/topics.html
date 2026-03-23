@@ -1,0 +1,368 @@
+{% extends "courses/layout.html" %}
+{% load static %}
+{% load course_extras %}
+{% block extra_css %}
+<style>
+  .topic-card {
+    border-radius: 14px; border: none;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    transition: box-shadow 0.2s, transform 0.15s;
+    overflow: hidden;
+  }
+  .topic-card:hover {
+    box-shadow: 0 6px 24px rgba(78,115,223,0.12);
+    transform: translateY(-2px);
+  }
+
+  .topic-card .card-header {
+    cursor: pointer;
+    border-radius: 14px !important;
+    transition: border-radius 0.2s;
+  }
+  .topic-card .card-header:not(.collapsed) {
+    border-radius: 14px 14px 0 0 !important;
+  }
+
+  .lecture-number {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 32px; height: 32px; border-radius: 10px;
+    background: rgba(78,115,223,0.12); color: #4e73df;
+    font-weight: 800; font-size: 0.85rem; flex-shrink: 0;
+  }
+
+  .topic-preview {
+    font-size: 0.875rem; color: #718096; line-height: 1.7;
+    display: -webkit-box; -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical; overflow: hidden;
+  }
+
+  /* Progress pill */
+  .progress-pill {
+    height: 6px; border-radius: 10px; background: #e3e6f0;
+    overflow: hidden;
+  }
+  .progress-pill .bar {
+    height: 100%; border-radius: 10px;
+    transition: width 1s ease;
+  }
+
+  /* Status badge */
+  .status-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    display: inline-block; margin-right: 5px;
+  }
+
+  /* Lock overlay for unauthenticated */
+  .lock-banner {
+    background: linear-gradient(135deg, #fde8e6, #fff0f0);
+    border: 1px dashed #e74a3b; border-radius: 10px;
+    padding: 14px 18px; text-align: center;
+  }
+
+  /* Stat cards accent line */
+  .stat-card-icon {
+    width: 48px; height: 48px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.3rem; flex-shrink: 0;
+  }
+</style>
+{% endblock extra_css %}
+
+{% block main %}
+<div class="container-fluid">
+
+  <!-- Page Heading -->
+  <div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">
+      <i class="fas fa-layer-group mr-2 text-primary"></i>Mavzular
+    </h1>
+    {% if user_profile.role == 'superadmin' %}
+    <a href="{% url 'courses:create_topic' %}" class="btn btn-primary btn-sm shadow-sm">
+      <i class="fas fa-plus mr-1"></i>Yangi mavzu
+    </a>
+    {% endif %}
+  </div>
+
+  <!-- ── Stats Row ── -->
+  <div class="row mb-4">
+
+    <!-- Total topics -->
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-primary shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                Jami mavzular
+              </div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_topics }} ta</div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-book fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Completed topics -->
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-success shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                Tugatilgan mavzular
+              </div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">
+                {{ completed_count }} / {{ total_topics }}
+              </div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Average quiz score -->
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-info shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                O'rtacha test bali
+              </div>
+              <div class="row no-gutters align-items-center">
+                <div class="col-auto">
+                  <div class="h5 mb-0 mr-3 font-weight-bold text-gray-800">
+                    {{ avg_score }}%
+                  </div>
+                </div>
+                <div class="col">
+                  <div class="progress progress-sm mr-2">
+                    <div class="progress-bar bg-info" style="width:{{ avg_score }}%"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-star fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quiz attempts -->
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-warning shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                Topshirilgan testlar
+              </div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">
+                {{ quiz_count }} ta
+              </div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-clipboard-check fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── Overall progress bar ── -->
+  {% if user.is_authenticated and total_topics > 0 %}
+  <div class="card shadow mb-4" style="border-radius:12px;">
+    <div class="card-body py-3">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <span class="small font-weight-bold text-gray-700">
+          <i class="fas fa-graduation-cap mr-2 text-primary"></i>Umumiy o'zlashtirish
+        </span>
+        <span class="small font-weight-bold text-primary">{{ overall_progress }}%</span>
+      </div>
+      <div class="progress" style="height:10px; border-radius:10px;">
+        <div class="progress-bar bg-primary" style="width:{{ overall_progress }}%; border-radius:10px; transition:width 1.2s ease;"></div>
+      </div>
+      <div class="d-flex justify-content-between mt-1" style="font-size:0.72rem; color:#a0aec0;">
+        <span>{{ completed_count }} ta tugatilgan</span>
+        <span>{{ total_topics }} ta mavzu</span>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- ── Topics Grid ── -->
+  <div class="row">
+    {% for topic in topics %}
+
+    {% with progress=progress_map|get_item:topic.id %}
+
+    <div class="col-lg-6 mb-4">
+      <div class="card topic-card">
+
+        <!-- Card Header (toggle) -->
+        <a href="#collapse-{{ topic.id }}"
+          class="d-block card-header py-3 collapsed bg-white text-decoration-none"
+          data-toggle="collapse" role="button"
+          aria-expanded="false" aria-controls="collapse-{{ topic.id }}">
+          <div class="d-flex align-items-start" style="gap:12px;">
+            <span class="lecture-number">{{ forloop.counter }}</span>
+            <div class="flex-grow-1">
+              <h6 class="m-0 font-weight-bold text-primary" style="line-height:1.4;">
+                {{ forloop.counter }}-MA'RUZA: {{ topic.title }}
+              </h6>
+              <!-- Status indicator -->
+              <div class="mt-1">
+                {% if progress.status == 'completed' %}
+                <small class="text-success">
+                  <span class="status-dot bg-success"></span>Tugatilgan
+                </small>
+                {% elif progress.status == 'in_progress' %}
+                <small class="text-warning">
+                  <span class="status-dot bg-warning"></span>Jarayonda
+                </small>
+                {% else %}
+                <small class="text-muted">
+                  <span class="status-dot bg-secondary"></span>Boshlanmagan
+                </small>
+                {% endif %}
+              </div>
+            </div>
+            <!-- Collapse chevron -->
+            <i class="fas fa-chevron-down text-muted" style="font-size:0.8rem; margin-top:4px; transition:transform 0.2s;" id="chevron-{{ topic.id }}"></i>
+          </div>
+        </a>
+
+        <!-- Collapse body -->
+        <div class="collapse" id="collapse-{{ topic.id }}">
+          <div class="card-body pt-0">
+
+            <!-- Description preview -->
+            {% if topic.description %}
+            <div class="topic-preview mb-3 pt-3" style="border-top:1px solid #f0f0f4;">
+              {{ topic.description }}
+            </div>
+            {% endif %}
+
+            <!-- Progress bar -->
+            {% if user.is_authenticated %}
+            <div class="mb-3">
+              {% if progress.status == 'completed' %}
+              {% with pct=100 %}
+              <div class="d-flex justify-content-between align-items-center mb-1">
+                <small class="text-muted">O'zlashtirish</small>
+                <small class="font-weight-bold text-success">{{ pct }}%</small>
+              </div>
+              <div class="progress-pill"><div class="bar bg-success" style="width:{{ pct }}%;"></div></div>
+              {% endwith %}
+              {% elif progress.status == 'in_progress' %}
+              {% with pct=50 %}
+              <div class="d-flex justify-content-between align-items-center mb-1">
+                <small class="text-muted">O'zlashtirish</small>
+                <small class="font-weight-bold text-warning">Jarayonda</small>
+              </div>
+              <div class="progress-pill"><div class="bar bg-warning" style="width:{{ pct }}%;"></div></div>
+              {% endwith %}
+              {% else %}
+              <div class="d-flex justify-content-between align-items-center mb-1">
+                <small class="text-muted">O'zlashtirish</small>
+                <small class="text-muted">Boshlanmagan</small>
+              </div>
+              <div class="progress-pill"><div class="bar bg-secondary" style="width:5%;"></div></div>
+              {% endif %}
+            </div>
+            {% endif %}
+
+            <!-- Related quiz count -->
+            {% if topic.quiz_set.count %}
+            <p class="small text-muted mb-3">
+              <i class="fas fa-clipboard-list mr-1 text-info"></i>
+              {{ topic.quiz_set.count }} ta test mavjud
+            </p>
+            {% endif %}
+
+            <!-- Action button -->
+            {% if user.is_authenticated %}
+              {% if progress.status == 'completed' %}
+              <a href="{% url 'courses:topic' topic.id %}"
+                class="btn btn-success btn-icon-split btn-block shadow-sm" style="border-radius:8px;">
+                <span class="icon text-white-50"><i class="fas fa-redo"></i></span>
+                <span class="text">Qayta ko'rish</span>
+              </a>
+              {% elif progress.status == 'in_progress' %}
+              <a href="{% url 'courses:topic' topic.id %}"
+                class="btn btn-warning btn-icon-split btn-block shadow-sm" style="border-radius:8px;">
+                <span class="icon text-white-50"><i class="fas fa-play"></i></span>
+                <span class="text">Davom ettirish</span>
+              </a>
+              {% else %}
+              <a href="{% url 'courses:topic' topic.id %}"
+                class="btn btn-primary btn-icon-split btn-block shadow-sm" style="border-radius:8px;">
+                <span class="icon text-white-50"><i class="fas fa-book-open"></i></span>
+                <span class="text">Boshlash</span>
+              </a>
+              {% endif %}
+            {% else %}
+            <div class="lock-banner">
+              <p class="small text-danger font-weight-bold mb-2">
+                <i class="fas fa-lock mr-1"></i>DAVOMINI O'QISH UCHUN KURSGA A'ZO BO'LING
+              </p>
+              <a href="{% url 'user:login' %}" class="btn btn-danger btn-sm rounded-pill px-4 shadow-sm">
+                <i class="fas fa-sign-in-alt mr-1"></i>Kirish / Kursga yozilish
+              </a>
+            </div>
+            {% endif %}
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    {% endwith %}
+    {% empty %}
+    <div class="col-12">
+      <div class="card shadow" style="border-radius:14px;">
+        <div class="card-body text-center py-5 text-muted">
+          <i class="fas fa-book-open fa-3x d-block mb-3 text-gray-300"></i>
+          <h6>Hali mavzular qo'shilmagan</h6>
+          {% if user_profile.role == 'superadmin' %}
+          <a href="{% url 'courses:create_topic' %}" class="btn btn-primary btn-sm mt-2">
+            <i class="fas fa-plus mr-1"></i>Birinchi mavzuni yarating
+          </a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+</div>
+{% endblock main %}
+
+{% block extra_js %}
+<script>
+  // Rotate chevron on collapse toggle
+  document.querySelectorAll('[data-toggle="collapse"]').forEach(btn => {
+    const targetId = btn.getAttribute('href') || btn.dataset.target;
+    const chevron = btn.querySelector('.fa-chevron-down');
+    if (!chevron || !targetId) return;
+    const target = document.querySelector(targetId);
+    if (!target) return;
+    target.addEventListener('show.bs.collapse', () => chevron.style.transform = 'rotate(180deg)');
+    target.addEventListener('hide.bs.collapse', () => chevron.style.transform = 'rotate(0deg)');
+    // Bootstrap 4 uses jQuery events
+    $(target).on('show.bs.collapse', () => chevron.style.transform = 'rotate(180deg)');
+    $(target).on('hide.bs.collapse', () => chevron.style.transform = 'rotate(0deg)');
+  });
+</script>
+{% endblock extra_js %}

@@ -6,7 +6,7 @@ app_name = "courses"
 
 urlpatterns = [
     path("", views.index, name="index"), 
-    path("modules/", views.modules_view, name="modules"), 
+    path("topics/", views.topics_view, name="topics"), 
     path("topic/<int:topic_id>/", views.topic_detail, name="topic"), 
     path("comment/<int:comment_id>/like/", views.like_comment, name="like_comment"),
     path('topic/<int:topic_id>/progress/', views.update_progress_view, name='update_progress'),

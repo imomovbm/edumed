@@ -3,79 +3,208 @@
 
 {% block extra_css %}
 <style>
+  /* ── Typography ── */
+  .topic-body { font-size: 0.95rem; line-height: 1.85; color: #2d3748; }
+
+  /* ── Reading progress bar at top ── */
+  #reading-progress {
+    position: fixed; top: 0; left: 0; z-index: 9999;
+    height: 3px; background: linear-gradient(90deg, #4e73df, #1cc88a);
+    width: 0%; transition: width 0.1s;
+  }
+
+  /* ── Hero header ── */
+  .topic-hero {
+    background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+    border-radius: 16px; padding: 32px;
+    color: #fff; margin-bottom: 28px;
+    position: relative; overflow: hidden;
+  }
+  .topic-hero::before {
+    content: ''; position: absolute; top: -40px; right: -40px;
+    width: 200px; height: 200px; border-radius: 50%;
+    background: rgba(255,255,255,0.06);
+  }
+  .topic-hero::after {
+    content: ''; position: absolute; bottom: -60px; right: 60px;
+    width: 140px; height: 140px; border-radius: 50%;
+    background: rgba(255,255,255,0.04);
+  }
+  .topic-hero .hero-icon {
+    width: 56px; height: 56px; background: rgba(255,255,255,0.15);
+    border-radius: 14px; display: flex; align-items: center;
+    justify-content: center; font-size: 1.6rem; margin-bottom: 14px;
+  }
+  .topic-hero h4 { font-size: 1.3rem; font-weight: 800; margin-bottom: 10px; }
+  .topic-hero p { opacity: 0.85; font-size: 0.95rem; margin: 0; line-height: 1.7; }
+  .topic-hero .hero-meta {
+    display: flex; gap: 16px; margin-top: 16px; opacity: 0.75; font-size: 0.8rem;
+  }
+
+  /* ── Section cards ── */
+  .section-card {
+    border-radius: 14px; border: none;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    margin-bottom: 24px; overflow: hidden;
+  }
+  .section-card .card-header {
+    border-radius: 14px 14px 0 0 !important;
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+  }
+
+  /* ── Timeline ── */
+  .timeline-wrap { padding: 4px 0; }
   .timeline-item {
-    position: relative; padding-left: 2.5rem;
-    margin-bottom: 1.5rem; border-left: 2px solid #4e73df;
+    position: relative; padding-left: 2.8rem;
+    margin-bottom: 20px; border-left: 2px solid #e3e6f0;
+    transition: border-color 0.2s;
   }
-  .timeline-item::before {
-    content: ""; position: absolute; left: -9px; top: 4px;
-    width: 16px; height: 16px; border-radius: 50%;
-    background: #4e73df; border: 3px solid #fff;
-    box-shadow: 0 0 0 2px #4e73df;
-  }
+  .timeline-item:hover { border-left-color: #4e73df; }
   .timeline-item:last-child { margin-bottom: 0; }
+  .timeline-item::before {
+    content: ''; position: absolute; left: -8px; top: 6px;
+    width: 14px; height: 14px; border-radius: 50%;
+    background: #fff; border: 3px solid #c5d4f7;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .timeline-item:hover::before { border-color: #4e73df; background: #ebf4ff; }
+  .timeline-label {
+    font-weight: 700; color: #4e73df; font-size: 0.85rem;
+    text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;
+  }
+  .timeline-text { font-size: 0.9rem; color: #4a5568; line-height: 1.7; }
+  .timeline-sub {
+    margin-top: 8px; padding-left: 12px;
+    border-left: 2px dashed #e3e6f0;
+    font-size: 0.85rem; color: #718096;
+  }
 
-  .section-card { border-radius: 12px; }
-  .section-card .card-header { border-radius: 12px 12px 0 0 !important; }
-
+  /* ── Keypoints ── */
+  .keypoint-list { list-style: none; padding: 0; margin: 0; }
   .keypoint-item {
-    display: flex; align-items: flex-start; gap: 10px;
-    padding: 8px 0; border-bottom: 1px solid #f0f0f0;
-  }
-  .keypoint-item:last-child { border-bottom: none; }
-  .keypoint-icon { color: #1cc88a; margin-top: 2px; flex-shrink: 0; }
-
-  .person-card {
-    background: linear-gradient(135deg, #f8f9ff 0%, #fff 100%);
-    border: 1px solid #e3e6f0; border-radius: 10px;
-    padding: 16px; margin-bottom: 12px;
-  }
-  .person-name {
-    font-weight: 700; color: #2d3748; font-size: 1rem;
-  }
-  .person-years { color: #a0aec0; font-size: 0.8rem; }
-
-  blockquote.topic-quote {
-    border-left: 4px solid #4e73df;
-    background: #f8f9ff; padding: 16px 20px;
-    border-radius: 0 8px 8px 0; font-style: italic;
-    color: #4a5568; margin: 0;
-  }
-
-  .info-block {
-    background: #ebf8ff; border-left: 4px solid #4e73df;
-    border-radius: 0 8px 8px 0; padding: 14px 18px;
-  }
-
-  /* Comment section */
-  .comment-item {
-    display: flex; gap: 14px;
-    padding: 14px 0; border-bottom: 1px solid #f0f0f0;
-  }
-  .comment-item:last-child { border-bottom: none; }
-  .comment-body { flex: 1; }
-  .comment-actions { display: flex; gap: 6px; margin-top: 8px; }
-
-  /* Quiz sidebar */
-  .quiz-item {
-    display: flex; align-items: center;
-    justify-content: space-between;
-    padding: 12px 16px; border-bottom: 1px solid #e3e6f0;
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 12px 0; border-bottom: 1px solid #f7f8fc;
     transition: background 0.15s;
   }
-  .quiz-item:hover { background: #f8f9ff; }
-  .quiz-item:last-child { border-bottom: none; }
+  .keypoint-item:last-child { border-bottom: none; }
+  .kp-icon {
+    width: 28px; height: 28px; border-radius: 8px;
+    background: #d4f5e9; display: flex; align-items: center;
+    justify-content: center; flex-shrink: 0; margin-top: 1px;
+  }
+  .kp-icon i { color: #1cc88a; font-size: 0.75rem; }
+  .kp-text { font-weight: 600; color: #2d3748; font-size: 0.9rem; }
+  .kp-sub { font-size: 0.82rem; color: #718096; margin-top: 2px; }
+
+  /* ── Quote ── */
+  .topic-quote {
+    border-left: 4px solid #4e73df;
+    background: linear-gradient(135deg, #f8f9ff 0%, #f0f4ff 100%);
+    padding: 20px 24px; border-radius: 0 12px 12px 0;
+    font-style: italic; color: #4a5568; font-size: 1.05rem;
+    line-height: 1.7; position: relative;
+  }
+  .topic-quote::before {
+    content: '\201C'; position: absolute; top: -8px; left: 16px;
+    font-size: 4rem; color: #c5d4f7; font-family: Georgia, serif;
+    line-height: 1; font-style: normal;
+  }
+  .topic-quote .quote-footer {
+    margin-top: 10px; font-style: normal;
+    font-size: 0.8rem; color: #a0aec0; font-weight: 600;
+  }
+
+  /* ── Person cards ── */
+  .person-card {
+    background: #fff; border: 1px solid #e3e6f0;
+    border-radius: 12px; padding: 18px; margin-bottom: 14px;
+    transition: box-shadow 0.2s;
+  }
+  .person-card:last-child { margin-bottom: 0; }
+  .person-card:hover { box-shadow: 0 4px 20px rgba(78,115,223,0.1); }
+  .person-avatar {
+    width: 46px; height: 46px; border-radius: 12px;
+    background: linear-gradient(135deg, #4e73df, #224abe);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .person-avatar i { color: #fff; font-size: 1.2rem; }
+  .person-name { font-weight: 800; color: #2d3748; font-size: 0.95rem; }
+  .person-years { font-size: 0.78rem; color: #a0aec0; margin-top: 1px; }
+  .person-text { font-size: 0.875rem; color: #4a5568; line-height: 1.75; margin: 0; }
+
+  /* ── Info blocks ── */
+  .info-item {
+    background: #f8f9ff; border-left: 3px solid #4e73df;
+    border-radius: 0 10px 10px 0; padding: 14px 18px;
+    margin-bottom: 10px;
+  }
+  .info-item:last-child { margin-bottom: 0; }
+  .info-label {
+    font-weight: 700; color: #4e73df; font-size: 0.82rem;
+    text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 4px;
+  }
+  .info-text { font-size: 0.875rem; color: #4a5568; line-height: 1.7; margin: 0; }
+
+  /* ── Text section ── */
+  .text-section p { font-size: 0.93rem; line-height: 1.85; color: #2d3748; }
+
+  /* ── Comments ── */
+  .comment-item {
+    display: flex; gap: 14px;
+    padding: 16px 0; border-bottom: 1px solid #f0f0f4;
+  }
+  .comment-item:last-child { border-bottom: none; }
+  .comment-avatar img {
+    width: 40px; height: 40px; border-radius: 50%;
+    object-fit: cover; flex-shrink: 0;
+  }
+  .comment-name { font-weight: 700; font-size: 0.875rem; color: #2d3748; }
+  .comment-time { font-size: 0.75rem; color: #a0aec0; }
+  .comment-text { font-size: 0.875rem; color: #4a5568; line-height: 1.6; margin: 6px 0 8px; }
+  .comment-actions { display: flex; gap: 6px; }
+
+  /* ── Sidebar ── */
+  .quiz-card {
+    display: flex; align-items: center;
+    justify-content: space-between;
+    padding: 13px 16px; border-bottom: 1px solid #f0f4ff;
+    transition: background 0.15s;
+  }
+  .quiz-card:hover { background: #f8f9ff; }
+  .quiz-card:last-child { border-bottom: none; }
+  .quiz-title { font-weight: 700; font-size: 0.875rem; color: #2d3748; }
+  .quiz-meta { font-size: 0.75rem; color: #a0aec0; margin-top: 2px; }
+
+  /* ── TOC (Table of Contents) ── */
+  .toc-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 12px; border-radius: 8px;
+    font-size: 0.82rem; color: #4a5568;
+    cursor: pointer; transition: background 0.15s;
+    text-decoration: none;
+  }
+  .toc-item:hover { background: #f0f4ff; color: #4e73df; text-decoration: none; }
+  .toc-num {
+    width: 22px; height: 22px; border-radius: 6px;
+    background: #e3e6f0; display: flex; align-items: center;
+    justify-content: center; font-size: 0.7rem; font-weight: 700;
+    flex-shrink: 0; color: #718096;
+  }
 </style>
 {% endblock extra_css %}
 
 {% block main %}
-<div class="container-fluid">
+<!-- Reading progress bar -->
+<div id="reading-progress"></div>
+
+<div class="container-fluid topic-body">
 
   <!-- Breadcrumb -->
-  <nav aria-label="breadcrumb">
-    <ol class="breadcrumb bg-white shadow-sm px-3">
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb bg-white shadow-sm px-3 py-2" style="border-radius:10px;">
       <li class="breadcrumb-item">
-        <a href="{% url 'courses:modules' %}">Mavzular</a>
+        <a href="{% url 'courses:topics' %}"><i class="fas fa-layer-group mr-1"></i>Mavzular</a>
       </li>
       <li class="breadcrumb-item active">{{ topic.title }}</li>
     </ol>
@@ -83,20 +212,23 @@
 
   <div class="row">
 
-    <!-- ── Main Content ── -->
+    <!-- ── MAIN COLUMN ── -->
     <div class="col-lg-8">
 
-      <!-- Topic Header Card -->
-      <div class="card shadow mb-4 section-card border-left-primary">
-        <div class="card-body">
-          <div class="d-flex align-items-center mb-3">
-            <div class="icon-circle bg-primary mr-3">
-              <i class="fas {% if topic.icon %}{{ topic.icon }}{% else %}fa-book{% endif %} text-white"></i>
-            </div>
-            <h4 class="m-0 font-weight-bold text-primary">{{ topic.title }}</h4>
-          </div>
-          {% if topic.description %}
-          <p class="text-gray-700 mb-0" style="line-height:1.8;">{{ topic.description }}</p>
+      <!-- Hero -->
+      <div class="topic-hero">
+        <div class="hero-icon">
+          <i class="fas {% if topic.icon %}{{ topic.icon }}{% else %}fa-book{% endif %}"></i>
+        </div>
+        <h4>{{ topic.title }}</h4>
+        {% if topic.description %}
+        <p>{{ topic.description }}</p>
+        {% endif %}
+        <div class="hero-meta">
+          <span><i class="fas fa-clock mr-1"></i>~10 daqiqa o'qish</span>
+          <span><i class="fas fa-comment mr-1"></i>{{ comments.count }} ta izoh</span>
+          {% if related_quizzes %}
+          <span><i class="fas fa-clipboard-list mr-1"></i>{{ related_quizzes.count }} ta test</span>
           {% endif %}
         </div>
       </div>
@@ -105,88 +237,88 @@
       {% for section in topic.sections.all %}
 
         {% if section.type == 'text' %}
-        <div class="card shadow mb-4 section-card">
+        <div class="card section-card" id="section-{{ forloop.counter }}">
           {% if section.title %}
-          <div class="card-header py-3">
+          <div class="card-header py-3 bg-white">
             <h6 class="m-0 font-weight-bold text-primary">
-              <i class="fas fa-align-left mr-2"></i>{{ section.title }}
+              <i class="fas fa-align-left mr-2 text-primary"></i>{{ section.title }}
             </h6>
           </div>
           {% endif %}
-          <div class="card-body">
+          <div class="card-body text-section">
             {% for item in section.items.all %}
-            <p class="text-gray-700 mb-{% if not forloop.last %}3{% else %}0{% endif %}" style="line-height:1.8;">
-              {{ item.text }}
-            </p>
+            <p class="{% if not forloop.last %}mb-3{% else %}mb-0{% endif %}">{{ item.text }}</p>
             {% endfor %}
           </div>
         </div>
 
         {% elif section.type == 'quote' %}
-        <div class="card shadow mb-4 section-card">
-          <div class="card-body">
-            {% for item in section.items.all %}
-            <blockquote class="topic-quote mb-{% if not forloop.last %}3{% else %}0{% endif %}">
-              {{ item.text }}
-              {% if item.label %}
-              <footer class="mt-2 small text-muted">— {{ item.label }}</footer>
-              {% endif %}
-            </blockquote>
-            {% endfor %}
-          </div>
+        <div class="mb-4" id="section-{{ forloop.counter }}">
+          {% for item in section.items.all %}
+          <blockquote class="topic-quote {% if not forloop.last %}mb-3{% endif %}">
+            {{ item.text }}
+            {% if item.label %}
+            <div class="quote-footer"><i class="fas fa-quote-right mr-1"></i>{{ item.label }}</div>
+            {% endif %}
+          </blockquote>
+          {% endfor %}
         </div>
 
         {% elif section.type == 'keypoints' %}
-        <div class="card shadow mb-4 section-card">
-          <div class="card-header py-3 bg-primary">
+        <div class="card section-card" id="section-{{ forloop.counter }}">
+          <div class="card-header py-3" style="background:linear-gradient(135deg,#4e73df,#224abe);">
             <h6 class="m-0 font-weight-bold text-white">
               <i class="fas fa-star mr-2"></i>{{ section.title|default:"Asosiy nuqtalar" }}
             </h6>
           </div>
-          <div class="card-body">
-            {% for item in section.items.all %}
-            <div class="keypoint-item">
-              <i class="fas fa-check-circle keypoint-icon mt-1"></i>
-              <div>
-                <span class="font-weight-bold text-gray-800">{{ item.text }}</span>
-                {% if item.sub_text %}
-                <p class="small text-muted mb-0 mt-1">{{ item.sub_text }}</p>
-                {% endif %}
-              </div>
-            </div>
-            {% endfor %}
+          <div class="card-body py-2 px-4">
+            <ul class="keypoint-list">
+              {% for item in section.items.all %}
+              <li class="keypoint-item">
+                <div class="kp-icon"><i class="fas fa-check"></i></div>
+                <div>
+                  <div class="kp-text">{{ item.text }}</div>
+                  {% if item.sub_text %}
+                  <div class="kp-sub">{{ item.sub_text }}</div>
+                  {% endif %}
+                </div>
+              </li>
+              {% endfor %}
+            </ul>
           </div>
         </div>
 
         {% elif section.type == 'timeline' %}
-        <div class="card shadow mb-4 section-card">
-          <div class="card-header py-3">
+        <div class="card section-card" id="section-{{ forloop.counter }}">
+          <div class="card-header py-3 bg-white">
             <h6 class="m-0 font-weight-bold text-primary">
               <i class="fas fa-history mr-2"></i>{{ section.title|default:"Vaqt chizig'i" }}
             </h6>
           </div>
           <div class="card-body">
-            {% for item in section.items.all %}
-            <div class="timeline-item">
-              {% if item.label %}
-              <h6 class="font-weight-bold text-primary mb-1">{{ item.label }}</h6>
-              {% endif %}
-              <p class="small text-gray-600 mb-0">{{ item.text }}</p>
-              {% if item.sub_text %}
-              <ul class="small text-gray-600 mt-1 mb-0">
-                {% for line in item.sub_text.splitlines %}
-                {% if line %}<li>{{ line }}</li>{% endif %}
-                {% endfor %}
-              </ul>
-              {% endif %}
+            <div class="timeline-wrap">
+              {% for item in section.items.all %}
+              <div class="timeline-item">
+                {% if item.label %}
+                <div class="timeline-label">{{ item.label }}</div>
+                {% endif %}
+                <div class="timeline-text">{{ item.text }}</div>
+                {% if item.sub_text %}
+                <div class="timeline-sub">
+                  {% for line in item.sub_text.splitlines %}
+                  {% if line %}<div class="mb-1"><i class="fas fa-angle-right mr-1 text-muted"></i>{{ line }}</div>{% endif %}
+                  {% endfor %}
+                </div>
+                {% endif %}
+              </div>
+              {% endfor %}
             </div>
-            {% endfor %}
           </div>
         </div>
 
         {% elif section.type == 'person' %}
-        <div class="card shadow mb-4 section-card">
-          <div class="card-header py-3">
+        <div class="card section-card" id="section-{{ forloop.counter }}">
+          <div class="card-header py-3 bg-white">
             <h6 class="m-0 font-weight-bold text-primary">
               <i class="fas fa-user-circle mr-2"></i>{{ section.title|default:"Shaxslar" }}
             </h6>
@@ -194,25 +326,23 @@
           <div class="card-body">
             {% for item in section.items.all %}
             <div class="person-card">
-              <div class="d-flex justify-content-between align-items-start">
+              <div class="d-flex align-items-start gap-3 mb-3" style="gap:14px;">
+                <div class="person-avatar"><i class="fas fa-user-md"></i></div>
                 <div>
                   <div class="person-name">{{ item.label }}</div>
-                  {% if item.sub_text %}
-                  <div class="person-years">{{ item.sub_text }}</div>
-                  {% endif %}
+                  {% if item.sub_text %}<div class="person-years">{{ item.sub_text }}</div>{% endif %}
                 </div>
-                <i class="fas fa-user-md fa-2x text-gray-200"></i>
               </div>
-              <p class="text-gray-700 small mb-0 mt-2" style="line-height:1.7;">{{ item.text }}</p>
+              <p class="person-text">{{ item.text }}</p>
             </div>
             {% endfor %}
           </div>
         </div>
 
         {% elif section.type == 'info' %}
-        <div class="card shadow mb-4 section-card">
+        <div class="card section-card" id="section-{{ forloop.counter }}">
           {% if section.title %}
-          <div class="card-header py-3">
+          <div class="card-header py-3 bg-white">
             <h6 class="m-0 font-weight-bold text-primary">
               <i class="fas fa-info-circle mr-2"></i>{{ section.title }}
             </h6>
@@ -220,11 +350,9 @@
           {% endif %}
           <div class="card-body">
             {% for item in section.items.all %}
-            <div class="info-block {% if not forloop.last %}mb-3{% endif %}">
-              {% if item.label %}
-              <strong class="text-primary">{{ item.label }}:</strong>
-              {% endif %}
-              <p class="small mb-0 mt-1 text-gray-700">{{ item.text }}</p>
+            <div class="info-item">
+              {% if item.label %}<div class="info-label">{{ item.label }}</div>{% endif %}
+              <p class="info-text">{{ item.text }}</p>
             </div>
             {% endfor %}
           </div>
@@ -232,13 +360,12 @@
 
         {% endif %}
       {% empty %}
-      <!-- Fallback if no sections created yet -->
-      <div class="card shadow mb-4">
+      <div class="card section-card">
         <div class="card-body text-center py-5 text-muted">
           <i class="fas fa-book-open fa-3x d-block mb-3 text-gray-300"></i>
           <h6>Mavzu kontenti hali qo'shilmagan</h6>
           {% if user_profile.role == 'superadmin' %}
-          <a href="#" class="btn btn-primary btn-sm mt-2">
+          <a href="{% url 'courses:edit_topic' topic.id %}" class="btn btn-primary btn-sm mt-2">
             <i class="fas fa-plus mr-1"></i>Kontent qo'shish
           </a>
           {% endif %}
@@ -246,30 +373,28 @@
       </div>
       {% endfor %}
 
-      <!-- Comments Section -->
-      <div class="card shadow mb-4 section-card">
-        <div class="card-header py-3">
+      <!-- Comments -->
+      <div class="card section-card">
+        <div class="card-header py-3 bg-white d-flex align-items-center justify-content-between">
           <h6 class="m-0 font-weight-bold text-primary">
-            <i class="fas fa-comments mr-2"></i>Mavzu muhokamasi
-            <span class="badge badge-primary ml-2">{{ comments.count }}</span>
+            <i class="fas fa-comments mr-2"></i>Muhokama
           </h6>
+          <span class="badge badge-primary badge-pill">{{ comments.count }} ta</span>
         </div>
         <div class="card-body">
 
-          <!-- Comment form -->
           {% if user_profile %}
           <form method="POST" class="mb-4">
             {% csrf_token %}
             <div class="d-flex align-items-start" style="gap:12px;">
               <img src="{% if user_profile.profile_image %}{{ user_profile.profile_image.url }}{% else %}{% static 'img/avatar.png' %}{% endif %}"
-                class="rounded-circle border" style="width:40px;height:40px;object-fit:cover;flex-shrink:0;">
+                class="rounded-circle border" style="width:40px;height:40px;object-fit:cover;flex-shrink:0;margin-top:2px;">
               <div class="flex-grow-1">
                 <textarea class="form-control" name="comment_text" rows="2"
-                  placeholder="Savol yoki fikringizni yozing..." required
-                  style="border-radius:10px; resize:none;"></textarea>
+                  placeholder="Savol yoki fikringizni yozing..."
+                  required style="border-radius:10px; resize:none; font-size:0.9rem;"></textarea>
                 <div class="text-right mt-2">
-                  <button type="submit" class="btn btn-primary btn-sm px-4"
-                    style="border-radius:20px;">
+                  <button type="submit" class="btn btn-primary btn-sm px-4" style="border-radius:20px;">
                     <i class="fas fa-paper-plane mr-1"></i>Yuborish
                   </button>
                 </div>
@@ -278,7 +403,6 @@
           </form>
           {% endif %}
 
-          <!-- Comments list -->
           {% if messages %}
             {% for message in messages %}
             <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
@@ -290,20 +414,16 @@
 
           {% for comment in comments %}
           <div class="comment-item">
-            <img src="{% if comment.user.userprofile.profile_image %}{{ comment.user.userprofile.profile_image.url }}{% else %}{% static 'img/avatar.png' %}{% endif %}"
-              class="rounded-circle border" style="width:40px;height:40px;object-fit:cover;flex-shrink:0;">
-            <div class="comment-body">
+            <div class="comment-avatar">
+              <img src="{% if comment.user.userprofile.profile_image %}{{ comment.user.userprofile.profile_image.url }}{% else %}{% static 'img/avatar.png' %}{% endif %}"
+                class="rounded-circle border" style="width:40px;height:40px;object-fit:cover;">
+            </div>
+            <div class="flex-grow-1">
               <div class="d-flex align-items-center" style="gap:8px;">
-                <span class="font-weight-bold small text-gray-800">
-                  {{ comment.user.get_full_name }}
-                </span>
-                <span class="text-muted" style="font-size:0.75rem;">
-                  · {{ comment.created_at|timesince }} oldin
-                </span>
+                <span class="comment-name">{{ comment.user.get_full_name }}</span>
+                <span class="comment-time">· {{ comment.created_at|timesince }} oldin</span>
               </div>
-              <p class="text-gray-700 small mb-2 mt-1" style="line-height:1.6;">
-                {{ comment.text }}
-              </p>
+              <p class="comment-text">{{ comment.text }}</p>
               <div class="comment-actions">
                 <a href="{% url 'courses:like_comment' comment.id %}?action=like"
                   class="btn btn-sm {% if request.user in comment.likes.all %}btn-primary{% else %}btn-outline-primary{% endif %} py-0 px-2"
@@ -330,28 +450,49 @@
 
     </div>
 
-    <!-- ── Sidebar ── -->
+    <!-- ── SIDEBAR ── -->
     <div class="col-lg-4">
+
+      <!-- Table of Contents -->
+      {% if topic.sections.count > 2 %}
+      <div class="card section-card mb-4">
+        <div class="card-header py-3 bg-white">
+          <h6 class="m-0 font-weight-bold text-primary">
+            <i class="fas fa-list-ul mr-2"></i>Mundarija
+          </h6>
+        </div>
+        <div class="card-body py-2 px-2">
+          {% for section in topic.sections.all %}
+          {% if section.title %}
+          <a href="#section-{{ forloop.counter }}" class="toc-item d-flex">
+            <span class="toc-num">{{ forloop.counter }}</span>
+            <span>{{ section.title }}</span>
+          </a>
+          {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
 
       <!-- Related Quizzes -->
       {% if related_quizzes %}
-      <div class="card shadow mb-4 section-card">
-        <div class="card-header py-3 bg-primary">
+      <div class="card section-card mb-4">
+        <div class="card-header py-3" style="background:linear-gradient(135deg,#1cc88a,#13a370);">
           <h6 class="m-0 font-weight-bold text-white">
             <i class="fas fa-clipboard-list mr-2"></i>Mavzu testlari
           </h6>
         </div>
         <div class="card-body p-0">
           {% for quiz in related_quizzes %}
-          <div class="quiz-item">
+          <div class="quiz-card">
             <div>
-              <div class="small font-weight-bold text-gray-800">{{ quiz.title }}</div>
-              <div class="text-muted" style="font-size:0.75rem;">
+              <div class="quiz-title">{{ quiz.title }}</div>
+              <div class="quiz-meta">
                 <i class="fas fa-question-circle mr-1"></i>{{ quiz.quizquestion_set.count }} ta savol
               </div>
             </div>
             <a href="{% url 'courses:quiz_attempt' quiz.id %}"
-              class="btn btn-sm btn-primary px-3" style="border-radius:20px; white-space:nowrap;">
+              class="btn btn-sm btn-success px-3" style="border-radius:20px; white-space:nowrap;">
               Boshlash
             </a>
           </div>
@@ -360,46 +501,50 @@
       </div>
       {% endif %}
 
-      <!-- Topic Progress -->
+      <!-- Progress (read-only for now) -->
       {% if user_profile %}
-      <div class="card shadow mb-4 section-card">
-        <div class="card-header py-3">
+      <div class="card section-card mb-4">
+        <div class="card-header py-3 bg-white">
           <h6 class="m-0 font-weight-bold text-primary">
             <i class="fas fa-tasks mr-2"></i>Mening progressim
           </h6>
         </div>
         <div class="card-body">
           {% if progress %}
-            <div class="d-flex justify-content-between small mb-1">
-              <span class="text-muted">O'zlashtirish</span>
-              <span class="font-weight-bold text-primary">{{ progress.status|capfirst }}</span>
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="small text-muted">Holati</span>
+            {% if progress.status == 'completed' %}
+            <span class="badge badge-success px-3 py-1" style="border-radius:20px;">
+              <i class="fas fa-check mr-1"></i>Tugatilgan
+            </span>
+            {% elif progress.status == 'in_progress' %}
+            <span class="badge badge-warning px-3 py-1" style="border-radius:20px;">
+              <i class="fas fa-spinner mr-1"></i>Jarayonda
+            </span>
+            {% else %}
+            <span class="badge badge-secondary px-3 py-1" style="border-radius:20px;">
+              Boshlanmagan
+            </span>
+            {% endif %}
+          </div>
+          <div class="progress" style="height:8px;border-radius:10px;">
+            <div class="progress-bar {% if progress.status == 'completed' %}bg-success{% elif progress.status == 'in_progress' %}bg-warning{% else %}bg-secondary{% endif %}"
+              style="width:{% if progress.status == 'completed' %}100{% elif progress.status == 'in_progress' %}50{% else %}5{% endif %}%; border-radius:10px;
+              transition:width 1s ease;">
             </div>
-            <div class="progress mb-3" style="height:8px; border-radius:10px;">
-              <div class="progress-bar bg-primary"
-                style="width:{% if progress.status == 'completed' %}100{% elif progress.status == 'in_progress' %}50{% else %}0{% endif %}%; border-radius:10px;">
-              </div>
-            </div>
+          </div>
           {% else %}
-            <p class="small text-muted mb-2">Bu mavzu boshlanmagan</p>
+          <p class="small text-muted mb-0 text-center py-2">
+            <i class="fas fa-play-circle d-block fa-2x mb-2 text-gray-300"></i>
+            Mavzuni o'qishni boshlang
+          </p>
           {% endif %}
-          <form method="POST" action="{% url 'courses:update_progress' topic.id %}">
-            {% csrf_token %}
-            <select class="form-control form-control-sm mb-2" name="status">
-              <option value="not_started" {% if not progress or progress.status == 'not_started' %}selected{% endif %}>Boshlanmagan</option>
-              <option value="in_progress" {% if progress.status == 'in_progress' %}selected{% endif %}>Jarayonda</option>
-              <option value="completed" {% if progress.status == 'completed' %}selected{% endif %}>Tugatdim</option>
-            </select>
-            <button type="submit" class="btn btn-outline-primary btn-sm btn-block"
-              style="border-radius:8px;">
-              Saqlash
-            </button>
-          </form>
         </div>
       </div>
       {% endif %}
 
-      <!-- Audio / PDF -->
-      <div class="card shadow mb-4 section-card">
+      <!-- Extra materials -->
+      <div class="card section-card mb-4">
         <div class="card-body text-center">
           <h6 class="font-weight-bold text-gray-800 mb-3">
             <i class="fas fa-download mr-2 text-primary"></i>Qo'shimcha materiallar
@@ -413,7 +558,6 @@
         </div>
       </div>
 
-      <!-- Admin edit button -->
       {% if user_profile.role == 'superadmin' %}
       <a href="{% url 'courses:edit_topic' topic.id %}" class="btn btn-warning btn-block mb-4"
         style="border-radius:8px;">
@@ -422,6 +566,29 @@
       {% endif %}
 
     </div>
+
   </div>
 </div>
 {% endblock main %}
+
+{% block extra_js %}
+<script>
+  // ── Reading progress bar ───────────────────────────────
+  window.addEventListener('scroll', function() {
+    const doc = document.documentElement;
+    const scrolled = doc.scrollTop || document.body.scrollTop;
+    const total = doc.scrollHeight - doc.clientHeight;
+    const pct = total > 0 ? (scrolled / total) * 100 : 0;
+    document.getElementById('reading-progress').style.width = pct + '%';
+  });
+
+  // ── Smooth scroll for TOC ─────────────────────────────
+  document.querySelectorAll('a.toc-item').forEach(link => {
+    link.addEventListener('click', function(e) {
+      e.preventDefault();
+      const target = document.querySelector(this.getAttribute('href'));
+      if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+</script>
+{% endblock extra_js %}

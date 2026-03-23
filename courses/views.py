@@ -24,19 +24,46 @@ def index(request):
         "profile": "profile",
     })
 
+from django.db.models import Avg
 @login_required(login_url='user:login')
 @require_profile
-def modules_view(request):
-    # Later you can create a 'Progress' model to track this accurately.
-    mock_progress = {
-        1: 100, # 100% complete
-        2: 45,  # 45% complete
-        3: 0,   # Not started
-    }
+def topics_view(request):
+    topics = Topic.objects.order_by('created_at')
 
-    return render(request, "courses/modules.html", {
-        "progress": mock_progress,
+    # ── Per-topic progress map {topic_id: TopicProgress} ──────────────
+    user_progresses = TopicProgress.objects.filter(user=request.user)
+    progress_map = {p.topic_id: p for p in user_progresses}
+
+    # ── Stats ─────────────────────────────────────────────────────────
+    total_topics    = topics.count()
+    completed_count = user_progresses.filter(status='completed').count()
+    in_progress_count = user_progresses.filter(status='in_progress').count()
+
+    # Overall progress % — weight completed=100, in_progress=50, rest=0
+    if total_topics > 0:
+        overall_progress = round(
+            (completed_count * 100 + in_progress_count * 50) / total_topics
+        )
+    else:
+        overall_progress = 0
+
+    # Average quiz score across all user responses
+    avg_result = Response.objects.filter(user=request.user).aggregate(avg=Avg('score'))
+    avg_score  = round(avg_result['avg'] or 0)
+
+    # Total quiz attempts
+    quiz_count = Response.objects.filter(user=request.user).count()
+
+    return render(request, "courses/topics.html", {
+        "topics":           topics,
+        "progress_map":     progress_map,
+        "total_topics":     total_topics,
+        "completed_count":  completed_count,
+        "overall_progress": overall_progress,
+        "avg_score":        avg_score,
+        "quiz_count":       quiz_count,
     })
+
 
 @login_required(login_url='user:login')
 def topic_detail(request, topic_id):
