@@ -9,7 +9,7 @@ from datetime import datetime,date
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 from functools import wraps
-from django.db.models import Avg
+from django.db.models import Avg, Q
 
 def require_profile(view_func):
     @wraps(view_func)
@@ -56,7 +56,13 @@ def _build_profile_context(viewed_user, request_user):
     score_d = responses.filter(score__lt=50).count()
 
     # ── Topic progress ────────────────────────────────────────────────
-    all_topics     = Topic.objects.order_by('created_at')
+    all_topics = Topic.objects.annotate(
+        user_avg_score=Avg(
+            'quiz__response__score', 
+            filter=Q(quiz__response__user=viewed_user)
+        )
+    ).order_by('created_at')
+
     total_topics   = all_topics.count()
     user_progresses = TopicProgress.objects.filter(user=viewed_user)
     progress_map   = {p.topic_id: p for p in user_progresses}
@@ -77,16 +83,13 @@ def _build_profile_context(viewed_user, request_user):
         prog = progress_map.get(topic.id)
         status = prog.status if prog else 'not_started'
         pct = 100 if status == 'completed' else (50 if status == 'in_progress' else 0)
+        
         topic_progress_data.append({
             'title':  topic.title,
             'status': status,
             'pct':    pct,
         })
-        topic_responses = Response.objects.filter(
-        user=viewed_user,
-        quiz__topic=topic
-        ).aggregate(avg=Avg('score'))
-        score = round(topic_responses['avg'] or 0)
+        score = round(topic.user_avg_score or 0)
         topic_scores.append(score)
 
     # ── Forum activity ────────────────────────────────────────────────
@@ -109,7 +112,7 @@ def _build_profile_context(viewed_user, request_user):
         'overall_progress':     overall_progress,
         'topic_progress_data':  topic_progress_data,
         'forum_comments':       forum_comments,
-        'topic_scores':         topic_scores
+        'topic_scores': topic_scores
     }
 
 
@@ -133,6 +136,7 @@ def user_detail_view(request, user_id):
     viewed_user = get_object_or_404(User, pk=user_id)
     ctx = _build_profile_context(viewed_user, request.user)
     ctx['is_own_profile'] = False
+
     return render(request, 'user/profile.html', ctx)
 
 def register_view(request):
@@ -342,6 +346,3 @@ def delete_user_view(request, user_id):
     user_to_delete.delete()
     messages.success(request, f"Foydalanuvchi o'chirildi")
     return redirect('user:all_users')
-
-def user_detail_view(request, user_id):
-    pass
