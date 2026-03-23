@@ -398,6 +398,16 @@ def all_forum_view(request):
         )
         messages.success(request, f"Forum #{forum.pk} muvaffaqiyatli yaratildi!")
         return redirect('courses:forums')
+    
+    topic_filter = request.GET.get('topic')
+    if topic_filter:
+        forums = Forum.objects.filter(topic__id=topic_filter).order_by('-created_at')
+    else:
+        forums = Forum.objects.order_by('-created_at')
+    
+    total_comments = ForumComment.objects.count()
+    total_users = User.objects.filter(forumcomment__isnull=False).distinct().count()
+
     top_contributors = (
         ForumComment.objects
         .values('user__first_name', 'user__last_name', 'user__id')
@@ -405,12 +415,13 @@ def all_forum_view(request):
         .order_by('-comment_count')[:5]
     )
     topics = Topic.objects.order_by('-created_at')
-    forums = Forum.objects.order_by('-created_at')
    
     return render(request, 'courses/forums.html', {
         'topics': topics,
         'forums': forums,
-        'top_contributors': top_contributors
+        'top_contributors': top_contributors,
+        'total_comments': total_comments,
+        'total_users': total_users,
     })
 
 def forum_view(request, forum_id):

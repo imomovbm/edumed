@@ -164,20 +164,20 @@
       <!-- Stats -->
       <div class="card shadow mb-4">
         <div class="card-header py-3">
-          <h6 class="m-0 font-weight-bold text-primary">Forum statistikasi</h6>
+          <h6 class="m-0 font-weight-bold text-primary">Forumlar statistikasi</h6>
         </div>
         <div class="card-body p-0">
           <div class="d-flex align-items-center justify-content-between px-3 py-2 border-bottom">
             <span class="small text-gray-700"><i class="fas fa-file-alt mr-2 text-primary"></i>Jami postlar</span>
-            <span class="font-weight-bold">124</span>
+            <span class="font-weight-bold">{{ forums.count }}</span>
           </div>
           <div class="d-flex align-items-center justify-content-between px-3 py-2 border-bottom">
-            <span class="small text-gray-700"><i class="fas fa-comments mr-2 text-success"></i>Jami javoblar</span>
-            <span class="font-weight-bold">489</span>
+            <span class="small text-gray-700"><i class="fas fa-comments mr-2 text-success"></i>Jami izohlar</span>
+            <span class="font-weight-bold">{{ total_comments }}</span>
           </div>
           <div class="d-flex align-items-center justify-content-between px-3 py-2">
             <span class="small text-gray-700"><i class="fas fa-users mr-2 text-info"></i>Faol a'zolar</span>
-            <span class="font-weight-bold">38</span>
+            <span class="font-weight-bold">{{ total_users }}</span>
           </div>
         </div>
       </div>
@@ -217,37 +217,24 @@
           <h6 class="m-0 font-weight-bold text-primary">Mavzular bo'yicha</h6>
         </div>
         <div class="card-body p-0">
-          {% for forum in forums %}
-          <a href="#" class="d-flex align-items-center justify-content-between px-3 py-2 border-bottom text-decoration-none category-link">
-            <span class="small text-gray-700">{{ forum.title }}</span>
-            <span class="badge badge-primary badge-pill">24</span>
-          </a>          
-          {% endfor %}            
-          <a href="#" class="d-flex align-items-center justify-content-between px-3 py-2 border-bottom text-decoration-none category-link">
-            <span class="small text-gray-700">Anatomiya</span>
-            <span class="badge badge-primary badge-pill">24</span>
-          </a>
-          <a href="#" class="d-flex align-items-center justify-content-between px-3 py-2 border-bottom text-decoration-none category-link">
-            <span class="small text-gray-700">Fiziologiya</span>
-            <span class="badge badge-primary badge-pill">18</span>
-          </a>
-          <a href="#" class="d-flex align-items-center justify-content-between px-3 py-2 border-bottom text-decoration-none category-link">
-            <span class="small text-gray-700">Kimyo</span>
-            <span class="badge badge-primary badge-pill">12</span>
-          </a>
-          <a href="#" class="d-flex align-items-center justify-content-between px-3 py-2 text-decoration-none category-link">
-            <span class="small text-gray-700">Umumiy savollar</span>
-            <span class="badge badge-primary badge-pill">70</span>
-          </a>
+        {% for topic in topics %}
+          <a href="{% url 'courses:forums' %}?topic={{ topic.id }}" class="d-flex align-items-center justify-content-between px-3 py-2 border-bottom text-decoration-none category-link">
+            <span class="small text-gray-700">{{ topic.title }}</span>
+            <span class="badge badge-primary badge-pill"> {{ topic.forum_set.count }} </span>
+          </a>        
+        {% endfor %}
         </div>
       </div>
-
     </div>
   </div>
 </div>
 {% endblock main %}
 
 {% block extra_js %}
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/select2-bootstrap4-theme@1.0.0/dist/select2-bootstrap4.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
 <style>
   .post-card { border-radius: 12px; transition: box-shadow 0.2s; }
   .post-card:hover { box-shadow: 0 6px 20px rgba(78,115,223,0.12) !important; }
@@ -290,12 +277,26 @@
 </style>
 
 <script>
+  document.addEventListener('DOMContentLoaded', function() {
+    $('#topicSelect').select2({
+      theme: 'bootstrap4',
+      placeholder: '— Mavzuni tanlang —',
+      allowClear: true,
+      language: {
+        noResults: function() { return "Mavzu topilmadi"; },
+        searching: function() { return "Qidirilmoqda..."; }
+      }
+    });
+  });
+
   function toggleTopicSelect(checkbox) {
-  const section = document.getElementById('topicSelectSection');
-  const select  = document.getElementById('topicSelect');
-  section.style.display = checkbox.checked ? 'block' : 'none';
-  select.required = checkbox.checked;
-}
+    const section = document.getElementById('topicSelectSection');
+    section.style.display = checkbox.checked ? 'block' : 'none';
+    $('#topicSelect').prop('required', checkbox.checked);
+    if (!checkbox.checked) {
+      $('#topicSelect').val(null).trigger('change'); // clear selection when hiding
+    }
+  }
   // ── Toggle reply box ──────────────────────────────────
   function toggleReplyBox(id) {
     const box = document.getElementById(id);
