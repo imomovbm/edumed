@@ -9,6 +9,8 @@ from django.views.decorators.http import require_POST
 from django.db.models import Count, Avg
 from functools import wraps
 from django.core.paginator import Paginator
+from datetime import date
+from django.utils import timezone
 
 def require_profile(view_func):
     @wraps(view_func)
@@ -43,22 +45,19 @@ def index(request):
     total_forum_posts    = Forum.objects.count()
     total_forum_comments = ForumComment.objects.count()
 
-    # ── Monthly user signups (last 7 months) ──────────────────────────
-    from datetime import date
-    from dateutil.relativedelta import relativedelta
-
     monthly_labels = []
     monthly_signups = []
     UZ_MONTHS = ['Yanvar','Fevral','Mart','Aprel','May','Iyun',
                  'Iyul','Avgust','Sentabr','Oktabr','Noyabr','Dekabr']
-    today = date.today()
+    now = timezone.now()
     for i in range(6, -1, -1):
-        month_date = today - relativedelta(months=i)
+        month = (now.month - i - 1) % 12 + 1
+        year  = now.year + ((now.month - i - 1) // 12)
         count = User.objects.filter(
-            date_joined__year=month_date.year,
-            date_joined__month=month_date.month
+            date_joined__year=year,
+            date_joined__month=month,
         ).count()
-        monthly_labels.append(UZ_MONTHS[month_date.month - 1])
+        monthly_labels.append(UZ_MONTHS[month - 1])
         monthly_signups.append(count)
 
     # ── Score distribution across all responses ────────────────────────
@@ -89,7 +88,7 @@ def index(request):
     recent_responses = Response.objects.select_related(
         'user', 'quiz'
     ).order_by('-created_date_time')[:8]
-
+    print(monthly_signups)
     return render(request, "courses/index.html", {
         # Stats
         'total_topics':         total_topics,

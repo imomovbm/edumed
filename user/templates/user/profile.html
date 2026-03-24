@@ -502,7 +502,7 @@ document.addEventListener('DOMContentLoaded', function () {
         ],
         datasets: [
           {
-            label: "Sizning natijangiz",
+            label: " {% if is_own_profile %} Sizning natijangiz {% else %} Natijalar {% endif %}",
             data: [
                   {{ topic_scores.0|default:0 }}, 
                   {{ topic_scores.1|default:0 }}, 

@@ -9,7 +9,7 @@ from datetime import datetime,date
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 from functools import wraps
-from django.db.models import Avg, Q
+from django.db.models import Avg, Q, Count, Case, When, Value, CharField
 
 def require_profile(view_func):
     @wraps(view_func)
@@ -316,23 +316,48 @@ def forgot_password_view(request):
     # GET request
     return render(request, "user/forgot_password.html")
 
-
+# ===== VERSION 1: OPTIMIZED WITH ANNOTATIONS (RECOMMENDED) =====
 @login_required(login_url='user:login')
 @require_profile
 def all_users_view(request):
-    users = User.objects.select_related('userprofile').order_by('-date_joined')
-    
+    """
+    ✅ OPTIMIZED: Uses database aggregations instead of Python loops
+    - Single query with annotations
+    - Counts performed at database level
+    - No N+1 query problem
+    """
     now = timezone.now()
-    student_count   = sum(1 for u in users if hasattr(u, 'userprofile') and u.userprofile.role == 'student')
-    teacher_count   = sum(1 for u in users if hasattr(u, 'userprofile') and u.userprofile.role == 'teacher')
-    new_this_month  = users.filter(date_joined__year=now.year, date_joined__month=now.month).count()
+    
+    # ✅ Single query with aggregations
+    user_stats = User.objects.select_related('userprofile').aggregate(
+        total_count=Count('id'),
+        student_count=Count(
+            Case(When(userprofile__role='student', then=1), output_field=CharField())
+        ),
+        teacher_count=Count(
+            Case(When(userprofile__role='teacher', then=1), output_field=CharField())
+        ),
+        new_this_month=Count(
+            Case(
+                When(
+                    date_joined__year=now.year,
+                    date_joined__month=now.month,
+                    then=1
+                ),
+                output_field=CharField()
+            )
+        ),
+    )
+
+    # Get ordered users (separate query, but efficient)
+    users = User.objects.select_related('userprofile').order_by('-date_joined')
 
     return render(request, 'user/all_users.html', {
         'users': users,
-        'total_users': users.count(),
-        'student_count': student_count,
-        'teacher_count': teacher_count,
-        'new_this_month': new_this_month,
+        'total_users': user_stats['total_count'],
+        'student_count': user_stats['student_count'],
+        'teacher_count': user_stats['teacher_count'],
+        'new_this_month': user_stats['new_this_month'],
     })
 
 @login_required(login_url='user:login')

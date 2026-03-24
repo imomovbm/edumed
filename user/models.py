@@ -19,7 +19,7 @@ class UserProfile(models.Model):
 
     # Required Fields
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='student') 
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='student', db_index=True) 
     phone = models.CharField(max_length=30, blank=True, null=True)
     avatar = models.CharField(max_length=255, blank=True, null=True)
 
@@ -30,12 +30,16 @@ class UserProfile(models.Model):
     
     # --- dates ---
     date_of_birth = models.DateField(verbose_name="Tug'ilgan sana", null=True, blank=True)
-    join_date = models.DateField(auto_now_add=True) 
+
+    class Meta:
+        verbose_name = 'User Profile'
+        verbose_name_plural = 'User Profiles'
+        indexes = [
+            models.Index(fields=['role', 'user']),  # ✅ Composite index for common queries
+        ]
 
     def __str__(self):
         return f"{self.user.username} : {self.role}"
-
-
 
 class PasswordResetRequest(models.Model):
     # This stores the input the user provided (email or phone)

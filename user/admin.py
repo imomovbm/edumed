@@ -13,7 +13,6 @@ class UserProfileAdmin(admin.ModelAdmin):
         'phone', 
         'get_gender_display',
         'date_of_birth',   # <-- NEW: Display Date of Birth
-        'join_date',       # <-- NEW: Display Join Date
         'region',
         'otm',
     )
@@ -34,14 +33,12 @@ class UserProfileAdmin(admin.ModelAdmin):
         'gender', 
         'region', 
         'otm', 
-        'join_date',       # <-- NEW: Allow filtering by join date
     )
     
     # Read-only fields in the detail view
-    readonly_fields = ('join_date',) # <-- Updated: Make join_date read-only
     
     # Ordering the list by role and then by join date (newest first)
-    ordering = ('role', '-join_date',) 
+    ordering = ('role', 'user__date_joined') 
 
     # --- Custom Methods to retrieve User data ---
     
