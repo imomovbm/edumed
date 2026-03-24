@@ -179,26 +179,38 @@
 
   </div>
 
-  <!-- ── Overall progress bar ── -->
-  {% if user.is_authenticated and total_topics > 0 %}
-  <div class="card shadow mb-4" style="border-radius:12px;">
-    <div class="card-body py-3">
-      <div class="d-flex justify-content-between align-items-center mb-2">
-        <span class="small font-weight-bold text-gray-700">
-          <i class="fas fa-graduation-cap mr-2 text-primary"></i>Umumiy o'zlashtirish
-        </span>
-        <span class="small font-weight-bold text-primary">{{ overall_progress }}%</span>
-      </div>
-      <div class="progress" style="height:10px; border-radius:10px;">
-        <div class="progress-bar bg-primary" style="width:{{ overall_progress }}%; border-radius:10px; transition:width 1.2s ease;"></div>
-      </div>
-      <div class="d-flex justify-content-between mt-1" style="font-size:0.72rem; color:#a0aec0;">
-        <span>{{ completed_count }} ta tugatilgan</span>
-        <span>{{ total_topics }} ta mavzu</span>
+{% if user.is_authenticated and total_topics > 0 %}
+<div class="card shadow mb-4" style="border-radius:12px;">
+  <div class="card-body py-3">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <span class="small font-weight-bold text-gray-700">
+        <i class="fas fa-graduation-cap mr-2 text-primary"></i>Umumiy o'zlashtirish
+      </span>
+      <span class="small font-weight-bold
+        {% if overall_progress == 100 %}text-success
+        {% elif overall_progress >= 50 %}text-warning
+        {% elif overall_progress > 0 %}text-info
+        {% else %}text-muted{% endif %}">
+        {{ overall_progress }}%
+      </span>
+    </div>
+    <div class="progress" style="height:10px; border-radius:10px;">
+      <div class="progress-bar
+        {% if overall_progress == 100 %}bg-success
+        {% elif overall_progress >= 50 %}bg-warning
+        {% elif overall_progress > 0 %}bg-info
+        {% else %}bg-secondary{% endif %}"
+        style="width:{% if overall_progress > 0 %}{{ overall_progress }}{% else %}3{% endif %}%;
+        border-radius:10px; transition:width 1.2s ease;">
       </div>
     </div>
+    <div class="d-flex justify-content-between mt-1" style="font-size:0.72rem; color:#a0aec0;">
+      <span>{{ completed_count }} ta tugatilgan</span>
+      <span>{{ total_topics }} ta mavzu</span>
+    </div>
   </div>
-  {% endif %}
+</div>
+{% endif %}
 
   <!-- ── Topics Grid ── -->
   <div class="row">
@@ -253,31 +265,34 @@
             </div>
             {% endif %}
 
-            <!-- Progress bar -->
             {% if user.is_authenticated %}
             <div class="mb-3">
-              {% if progress.status == 'completed' %}
-              {% with pct=100 %}
-              <div class="d-flex justify-content-between align-items-center mb-1">
-                <small class="text-muted">O'zlashtirish</small>
-                <small class="font-weight-bold text-success">{{ pct }}%</small>
-              </div>
-              <div class="progress-pill"><div class="bar bg-success" style="width:{{ pct }}%;"></div></div>
-              {% endwith %}
-              {% elif progress.status == 'in_progress' %}
-              {% with pct=50 %}
-              <div class="d-flex justify-content-between align-items-center mb-1">
-                <small class="text-muted">O'zlashtirish</small>
-                <small class="font-weight-bold text-warning">Jarayonda</small>
-              </div>
-              <div class="progress-pill"><div class="bar bg-warning" style="width:{{ pct }}%;"></div></div>
-              {% endwith %}
+              {% if progress %}
+                {% with pct=progress.progress|floatformat:0 %}
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <small class="text-muted">O'zlashtirish</small>
+                  <small class="font-weight-bold
+                    {% if progress.status == 'completed' %}text-success
+                    {% elif progress.status == 'in_progress' %}text-warning
+                    {% else %}text-muted{% endif %}">
+                    {{ pct }}%
+                  </small>
+                </div>
+                <div class="progress-pill">
+                  <div class="bar
+                    {% if progress.status == 'completed' %}bg-success
+                    {% elif progress.status == 'in_progress' %}bg-warning
+                    {% else %}bg-secondary{% endif %}"
+                    style="width:{% if pct %}{{ pct }}{% else %}3{% endif %}%;">
+                  </div>
+                </div>
+                {% endwith %}
               {% else %}
-              <div class="d-flex justify-content-between align-items-center mb-1">
-                <small class="text-muted">O'zlashtirish</small>
-                <small class="text-muted">Boshlanmagan</small>
-              </div>
-              <div class="progress-pill"><div class="bar bg-secondary" style="width:5%;"></div></div>
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <small class="text-muted">O'zlashtirish</small>
+                  <small class="text-muted">Boshlanmagan</small>
+                </div>
+                <div class="progress-pill"><div class="bar bg-secondary" style="width:3%;"></div></div>
               {% endif %}
             </div>
             {% endif %}

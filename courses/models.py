@@ -42,6 +42,7 @@ class TopicProgress(models.Model):
     ('completed', 'Completed'),
     ]
     topic = models.ForeignKey(Topic, on_delete=models.CASCADE)
+    progress = models.FloatField(default=0)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     status = models.CharField(max_length=32, choices=STATUS_CHOICES)
     enrolled_date = models.DateField(auto_now_add=True)

@@ -321,7 +321,8 @@
                   </span>
                   <span class="small font-weight-bold
                     {% if item.pct == 100 %}text-success
-                    {% elif item.pct >= 50 %}text-warning
+                    {% elif item.pct >= 50 %}text-primary
+                    {% elif item.pct >= 30 %}text-warning
                     {% else %}text-muted{% endif %}">
                     {% if item.status == 'completed' %}Tugatilgan
                     {% elif item.status == 'in_progress' %}Jarayonda
@@ -331,7 +332,8 @@
                 <div class="progress" style="height:10px; border-radius:10px;">
                   <div class="progress-bar
                     {% if item.pct == 100 %}bg-success
-                    {% elif item.pct >= 50 %}bg-warning
+                    {% elif item.pct >= 50 %}bg-primary
+                    {% elif item.pct >= 30 %}bg-warning
                     {% else %}bg-secondary{% endif %}"
                     style="width:{{ item.pct }}%; border-radius:10px; transition:width 1.2s ease;">
                   </div>

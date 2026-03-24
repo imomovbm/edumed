@@ -191,7 +191,14 @@
     justify-content: center; font-size: 0.7rem; font-weight: 700;
     flex-shrink: 0; color: #718096;
   }
+  .quiz-done {
+    background: #f8fff8;
+  }
+  .quiz-done .quiz-title {
+    color: #2d3748;
+  }
 </style>
+
 {% endblock extra_css %}
 
 {% block main %}
@@ -227,9 +234,6 @@
         <div class="hero-meta">
           <span><i class="fas fa-clock mr-1"></i>~10 daqiqa o'qish</span>
           <span><i class="fas fa-comment mr-1"></i>{{ comments.count }} ta izoh</span>
-          {% if related_quizzes %}
-          <span><i class="fas fa-clipboard-list mr-1"></i>{{ related_quizzes.count }} ta test</span>
-          {% endif %}
         </div>
       </div>
 
@@ -359,18 +363,18 @@
         </div>
 
         {% endif %}
-      {% empty %}
-      <div class="card section-card">
-        <div class="card-body text-center py-5 text-muted">
-          <i class="fas fa-book-open fa-3x d-block mb-3 text-gray-300"></i>
-          <h6>Mavzu kontenti hali qo'shilmagan</h6>
-          {% if user_profile.role == 'superadmin' %}
-          <a href="{% url 'courses:edit_topic' topic.id %}" class="btn btn-primary btn-sm mt-2">
-            <i class="fas fa-plus mr-1"></i>Kontent qo'shish
-          </a>
-          {% endif %}
+        {% empty %}
+        <div class="card section-card">
+          <div class="card-body text-center py-5 text-muted">
+            <i class="fas fa-book-open fa-3x d-block mb-3 text-gray-300"></i>
+            <h6>Mavzu kontenti hali qo'shilmagan</h6>
+            {% if user_profile.role == 'superadmin' %}
+            <a href="{% url 'courses:edit_topic' topic.id %}" class="btn btn-primary btn-sm mt-2">
+              <i class="fas fa-plus mr-1"></i>Kontent qo'shish
+            </a>
+            {% endif %}
+          </div>
         </div>
-      </div>
       {% endfor %}
 
       <!-- Comments -->
@@ -474,34 +478,66 @@
       </div>
       {% endif %}
 
-      <!-- Related Quizzes -->
-      {% if related_quizzes %}
-      <div class="card section-card mb-4">
-        <div class="card-header py-3" style="background:linear-gradient(135deg,#1cc88a,#13a370);">
-          <h6 class="m-0 font-weight-bold text-white">
-            <i class="fas fa-clipboard-list mr-2"></i>Mavzu testlari
-          </h6>
-        </div>
-        <div class="card-body p-0">
-          {% for quiz in related_quizzes %}
-          <div class="quiz-card">
-            <div>
-              <div class="quiz-title">{{ quiz.title }}</div>
-              <div class="quiz-meta">
-                <i class="fas fa-question-circle mr-1"></i>{{ quiz.quizquestion_set.count }} ta savol
-              </div>
+{% if quiz_data %}
+          <div class="card section-card mb-4">
+            <div class="card-header py-3" style="background:linear-gradient(135deg,#1cc88a,#13a370);">
+              <h6 class="m-0 font-weight-bold text-white">
+                <i class="fas fa-clipboard-list mr-2"></i>Mavzu testlari
+                <span class="badge badge-light ml-1" style="font-size:0.7rem;">{{ quiz_data|length }} ta</span>
+              </h6>
             </div>
-            <a href="{% url 'courses:quiz_attempt' quiz.id %}"
-              class="btn btn-sm btn-success px-3" style="border-radius:20px; white-space:nowrap;">
-              Boshlash
-            </a>
+            <div class="card-body p-0">
+              {% for item in quiz_data %}
+              <div class="quiz-card {% if item.attempted %}quiz-done{% endif %}">
+                <div class="flex-grow-1">
+                  <div class="quiz-title d-flex align-items-center" style="gap:6px;">
+                    {% if item.attempted %}
+                    <i class="fas fa-check-circle text-success" style="font-size:0.8rem;"></i>
+                    {% else %}
+                    <i class="fas fa-circle text-gray-300" style="font-size:0.8rem; color:#d1d5db;"></i>
+                    {% endif %}
+                    {{ item.quiz.title }}
+                  </div>
+                  <div class="quiz-meta mt-1">
+                    <i class="fas fa-question-circle mr-1"></i>{{ item.question_count }} ta savol
+                    {% if item.attempted %}
+                    · <span style="color:#718096;">
+                        eng yaxshi:
+                        <strong class="
+                          {% if item.best.score >= 90 %}text-success
+                          {% elif item.best.score >= 70 %}text-primary
+                          {% elif item.best.score >= 50 %}text-warning
+                          {% else %}text-danger{% endif %}">
+                          {{ item.best.score|floatformat:0 }}%
+                        </strong>
+                      </span>
+                    {% endif %}
+                  </div>
+                </div>
+                <div class="d-flex flex-column align-items-end" style="gap:4px;">
+                  <a href="{% url 'courses:quiz_attempt' item.quiz.id %}"
+                    class="btn btn-sm {% if item.attempted %}btn-outline-success{% else %}btn-success{% endif %} px-2"
+                    style="border-radius:16px; font-size:0.75rem; white-space:nowrap;">
+                    {% if item.attempted %}
+                      <i class="fas fa-redo mr-1"></i>Qayta
+                    {% else %}
+                      <i class="fas fa-play mr-1"></i>Boshlash
+                    {% endif %}
+                  </a>
+                  {% if item.attempted %}
+                  <a href="{% url 'courses:score_details' item.best.id %}"
+                    class="btn btn-sm btn-outline-primary px-2"
+                    style="border-radius:16px; font-size:0.72rem; white-space:nowrap;">
+                    <i class="fas fa-eye mr-1"></i>Natija
+                  </a>
+                  {% endif %}
+                </div>
+              </div>
+              {% endfor %}
+            </div>
           </div>
-          {% endfor %}
-        </div>
-      </div>
-      {% endif %}
+          {% endif %}
 
-      <!-- Progress (read-only for now) -->
       {% if user_profile %}
       <div class="card section-card mb-4">
         <div class="card-header py-3 bg-white">
@@ -511,8 +547,23 @@
         </div>
         <div class="card-body">
           {% if progress %}
-          <div class="d-flex justify-content-between align-items-center mb-2">
-            <span class="small text-muted">Holati</span>
+          {% with pct=progress.progress|default:0|add:0 %}
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <span class="small text-muted">O'zlashtirish</span>
+            <span class="font-weight-bold small
+              {% if pct == 100 %}text-success
+              {% elif pct >= 50 %}text-warning
+              {% elif pct > 0 %}text-info
+              {% else %}text-muted{% endif %}">
+              {{ pct }}%
+            </span>
+          </div>
+          <div class="progress mb-2" style="height: 12px; background-color: #eaecf4; overflow: visible;">
+            <div class="progress-bar {% if pct >= 100 %}bg-success{% elif pct >= 50 %}bg-warning{% else %}bg-info{% endif %}"
+              style="width: {{ pct|default:0 }}%; border-radius: 10px;">
+            </div>
+          </div>
+          <div class="text-center mt-2">
             {% if progress.status == 'completed' %}
             <span class="badge badge-success px-3 py-1" style="border-radius:20px;">
               <i class="fas fa-check mr-1"></i>Tugatilgan
@@ -527,17 +578,12 @@
             </span>
             {% endif %}
           </div>
-          <div class="progress" style="height:8px;border-radius:10px;">
-            <div class="progress-bar {% if progress.status == 'completed' %}bg-success{% elif progress.status == 'in_progress' %}bg-warning{% else %}bg-secondary{% endif %}"
-              style="width:{% if progress.status == 'completed' %}100{% elif progress.status == 'in_progress' %}50{% else %}5{% endif %}%; border-radius:10px;
-              transition:width 1s ease;">
-            </div>
-          </div>
+          {% endwith %}
           {% else %}
-          <p class="small text-muted mb-0 text-center py-2">
+          <div class="text-center py-2 text-muted">
             <i class="fas fa-play-circle d-block fa-2x mb-2 text-gray-300"></i>
-            Mavzuni o'qishni boshlang
-          </p>
+            <p class="small mb-0">Testlarni bajaring, progress ko'rsatiladi</p>
+          </div>
           {% endif %}
         </div>
       </div>

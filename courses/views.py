@@ -6,7 +6,7 @@ from django.contrib.auth.models import User
 import json
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
-from django.db.models import Count, Avg
+from django.db.models import Count, Avg, Max
 from functools import wraps
 from django.core.paginator import Paginator
 from datetime import date
@@ -20,6 +20,46 @@ def require_profile(view_func):
             return redirect('courses:index')
         return view_func(request, *args, **kwargs)
     return wrapper
+
+def _update_topic_progress(user, topic, latest_score=None):
+    total_quizzes = Quiz.objects.filter(topic=topic).count()
+    if total_quizzes == 0:
+        return
+
+    attempted_quiz_ids = (
+        Response.objects
+        .filter(user=user, quiz__topic=topic)
+        .values_list('quiz_id', flat=True)
+        .distinct()
+    )
+    attempted_count = attempted_quiz_ids.count()
+    progress_pct = round((attempted_count / total_quizzes) * 100)
+
+    # Status logic:
+    # - not_started: nothing attempted yet
+    # - in_progress: some attempted, or attempted all but no passing score
+    # - completed: all quizzes attempted AND latest score >= 60
+    best_score = (
+        Response.objects
+        .filter(user=user, quiz__topic=topic)
+        .aggregate(best=Max('score'))['best'] or 0
+    )
+    if attempted_count == 0:
+        status = 'not_started'
+    elif attempted_count >= total_quizzes and best_score >= 60:
+        status = 'completed'
+        progress_pct = 100
+    else:
+        status = 'in_progress'
+
+    TopicProgress.objects.update_or_create(
+        user=user,
+        topic=topic,
+        defaults={
+            'status': status,
+            'progress': progress_pct,
+        }
+    )
 
 def index(request):
     # ── Platform-wide stats ────────────────────────────────────────────
@@ -171,12 +211,28 @@ def topic_detail(request, topic_id):
     comments = TopicComment.objects.filter(topic_id=topic_id).order_by('-created_at')
     progress = TopicProgress.objects.filter(user=request.user, topic=topic).first()
 
+    # ── Build quiz list with best score per quiz ──────────────────────
+    quiz_data = []
+    for quiz in related_quizzes:
+        best = (
+            Response.objects
+            .filter(user=request.user, quiz=quiz)
+            .order_by('-score')
+            .first()
+        )
+        quiz_data.append({
+            'quiz':       quiz,
+            'best':       best,          # None if never attempted
+            'attempted':  best is not None,
+            'question_count': quiz.quizquestion_set.count(),
+        })
+
     return render(request, 'courses/topic_detail.html', {
-        'topic': topic,
-        'topic_id': topic_id,
-        'related_quizzes': related_quizzes,
-        'comments': comments,
-        'progress': progress,
+        'topic':        topic,
+        'topic_id':     topic_id,
+        'quiz_data':    quiz_data,       # replaces related_quizzes
+        'comments':     comments,
+        'progress':     progress,
     })
 
 @login_required(login_url='user:login')
@@ -591,50 +647,35 @@ def log_violation(request):
 @require_profile
 @require_POST
 def submit_quiz(request, quiz_id):
-    # take the quiz_id and its object from db
     quiz = get_object_or_404(Quiz, pk=quiz_id)
-    response = Response.objects.create(
-        user=request.user,
-        quiz=quiz,
-        score = 0,
-    )
-    # now take all the questions related or linked to this quiz
+    response = Response.objects.create(user=request.user, quiz=quiz, score=0)
+
     questions = QuizQuestion.objects.filter(quiz=quiz).select_related('question')
-    # initialize score, from 0 to calculate overall
     correct_count = 0
     incorrect_count = 0
     skipped_count = 0
-    # debug for checking number of questions in quiz
-    # print(f'quiz question amount: {len(questions)}')
 
-    # now for loop to iterate each question
     for qq in questions:
-        # qq is only one instance of QuizQestion
-       # we need question of that instance 
         q = qq.question
-        # take users input from POST (q = one question, we take id of that question)
         if q.type == 'mc':
             user_choice = request.POST.get(f'q_{q.pk}')
-            # if user is not selected anything
             if not user_choice:
-                skipped_count +=1
+                skipped_count += 1
                 ResponseDetails.objects.create(response=response, question=q, is_correct=None)
             else:
-                # take this questions correct choice
-                correct_choice = QuestionChoice.objects.filter(pk = user_choice, question=q).first()    
-                # check if there is actually users choice and is his choice correct. If there is not actual user choice mark it as incorrect
+                correct_choice = QuestionChoice.objects.filter(pk=user_choice, question=q).first()
                 if correct_choice and correct_choice.is_correct:
-                    correct_count +=1
-                    ResponseDetails.objects.create(response=response, question=q, question_choice = correct_choice, is_correct= True)
+                    correct_count += 1
+                    ResponseDetails.objects.create(response=response, question=q, question_choice=correct_choice, is_correct=True)
                 else:
-                    incorrect_count +=1
-                    ResponseDetails.objects.create(response=response, question=q, question_choice = correct_choice, is_correct= False)
+                    incorrect_count += 1
+                    ResponseDetails.objects.create(response=response, question=q, question_choice=correct_choice, is_correct=False)
         elif q.type == 'ms':
             selected_ids = request.POST.getlist(f'q_{q.pk}')
             if not selected_ids:
                 skipped_count += 1
             else:
-                correct_ids  = set(QuestionChoice.objects.filter(question=q, is_correct=True).values_list('id', flat=True))
+                correct_ids = set(QuestionChoice.objects.filter(question=q, is_correct=True).values_list('id', flat=True))
                 selected_ids = set(int(i) for i in selected_ids)
                 for cid in selected_ids:
                     choice = QuestionChoice.objects.filter(id=cid, question=q).first()
@@ -661,18 +702,20 @@ def submit_quiz(request, quiz_id):
                 skipped_count += 1
             else:
                 ResponseDetails.objects.create(response=response, question=q, user_text_answer=text)
-                # Text answers need manual grading — count as skipped for now
-                skipped_count += 1 
+                skipped_count += 1
 
-    # calculate score in percentage
     number_of_questions = len(questions)
-    score = round((correct_count/number_of_questions)*100,1) if number_of_questions > 0 else 0
-    # save to db score and quiz response
+    score = round((correct_count / number_of_questions) * 100, 1) if number_of_questions > 0 else 0
     response.score = score
     response.correct_count = correct_count
     response.incorrect_count = incorrect_count
     response.skipped_count = skipped_count
     response.save()
+
+    # ── Auto-update topic progress after quiz submission ──
+    if quiz.topic and score >= 60:
+        _update_topic_progress(request.user, quiz.topic, score)
+
     return redirect('courses:score_view', response_id=response.pk)
 
 # it gets response_id from redirect above submit_quiz view
