@@ -1,3 +1,4 @@
 Django
 PyMySQL
 python-decouple
+python-dateutil

@@ -6,8 +6,9 @@ from django.contrib.auth.models import User
 import json
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
-from django.db.models import Count
+from django.db.models import Count, Avg
 from functools import wraps
+from django.core.paginator import Paginator
 
 def require_profile(view_func):
     @wraps(view_func)
@@ -18,13 +19,100 @@ def require_profile(view_func):
         return view_func(request, *args, **kwargs)
     return wrapper
 
-# Create your views here.
 def index(request):
+    # ── Platform-wide stats ────────────────────────────────────────────
+    total_topics    = Topic.objects.count()
+    total_quizzes   = Quiz.objects.count()
+    total_users     = User.objects.filter(userprofile__isnull=False).count()
+    total_responses = Response.objects.count()
+
+    # Active users = users who submitted at least one response
+    active_users = Response.objects.values('user').distinct().count()
+
+    # Average platform score
+    avg_platform_score = round(
+        Response.objects.aggregate(avg=Avg('score'))['avg'] or 0
+    )
+
+    # Completion rate: completed TopicProgress / all TopicProgress
+    total_progress   = TopicProgress.objects.count()
+    completed_count  = TopicProgress.objects.filter(status='completed').count()
+    completion_rate  = round((completed_count / total_progress * 100) if total_progress else 0)
+
+    # Forum activity
+    total_forum_posts    = Forum.objects.count()
+    total_forum_comments = ForumComment.objects.count()
+
+    # ── Monthly user signups (last 7 months) ──────────────────────────
+    from datetime import date
+    from dateutil.relativedelta import relativedelta
+
+    monthly_labels = []
+    monthly_signups = []
+    UZ_MONTHS = ['Yanvar','Fevral','Mart','Aprel','May','Iyun',
+                 'Iyul','Avgust','Sentabr','Oktabr','Noyabr','Dekabr']
+    today = date.today()
+    for i in range(6, -1, -1):
+        month_date = today - relativedelta(months=i)
+        count = User.objects.filter(
+            date_joined__year=month_date.year,
+            date_joined__month=month_date.month
+        ).count()
+        monthly_labels.append(UZ_MONTHS[month_date.month - 1])
+        monthly_signups.append(count)
+
+    # ── Score distribution across all responses ────────────────────────
+    score_a = Response.objects.filter(score__gte=90).count()
+    score_b = Response.objects.filter(score__gte=70, score__lt=90).count()
+    score_c = Response.objects.filter(score__gte=50, score__lt=70).count()
+    score_d = Response.objects.filter(score__lt=50).count()
+
+    # ── Per-topic average scores for radar ────────────────────────────
+    topics = Topic.objects.order_by('created_at')
+    topic_labels = []
+    topic_avg_scores = []
+    for topic in topics:
+        avg = Response.objects.filter(quiz__topic=topic).aggregate(avg=Avg('score'))['avg'] or 0
+        topic_labels.append(topic.title[:20])  # truncate for chart
+        topic_avg_scores.append(round(avg))
+
+    # ── Top 5 students by avg score ───────────────────────────────────
+    top_students = (
+        Response.objects
+        .values('user__first_name', 'user__last_name', 'user__id')
+        .annotate(avg=Avg('score'), count=Count('id'))
+        .filter(count__gte=1)
+        .order_by('-avg')[:5]
+    )
+
+    # ── Recent activity ───────────────────────────────────────────────
+    recent_responses = Response.objects.select_related(
+        'user', 'quiz'
+    ).order_by('-created_date_time')[:8]
+
     return render(request, "courses/index.html", {
-        "profile": "profile",
+        # Stats
+        'total_topics':         total_topics,
+        'total_quizzes':        total_quizzes,
+        'total_users':          total_users,
+        'active_users':         active_users,
+        'total_responses':      total_responses,
+        'avg_platform_score':   avg_platform_score,
+        'completion_rate':      completion_rate,
+        'total_forum_posts':    total_forum_posts,
+        'total_forum_comments': total_forum_comments,
+        # Charts
+        'monthly_labels':       monthly_labels,
+        'monthly_signups':      monthly_signups,
+        'score_a': score_a, 'score_b': score_b,
+        'score_c': score_c, 'score_d': score_d,
+        'topic_labels':         topic_labels,
+        'topic_avg_scores':     topic_avg_scores,
+        # Tables
+        'top_students':         top_students,
+        'recent_responses':     recent_responses,
     })
 
-from django.db.models import Avg
 @login_required(login_url='user:login')
 @require_profile
 def topics_view(request):
@@ -646,7 +734,6 @@ def score_details_view(request, response_id):
         'results': results_list,
     })
 
-from django.core.paginator import Paginator
 
 def all_forum_view(request):
     if request.method == "POST" and request.user.is_authenticated:
