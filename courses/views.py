@@ -739,7 +739,12 @@ def score_view(request, response_id):
 @login_required(login_url='user:login')
 @require_profile
 def score_details_view(request, response_id):
-    response = get_object_or_404(Response, pk=response_id, user=request.user)
+    if request.GET.get('user'):
+        user = get_object_or_404(User, pk=request.GET.get('user'))
+        response = get_object_or_404(Response, pk=response_id, user=user)
+    else:
+        response = get_object_or_404(Response, pk=response_id, user=request.user)
+    
     
     # 1. Fetch all details and prefetch questions/choices to avoid N+1 queries
     details = ResponseDetails.objects.filter(response=response).select_related('question', 'question_choice')

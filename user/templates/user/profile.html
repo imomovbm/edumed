@@ -264,7 +264,8 @@
                   <td class="align-middle" style="color:#e74a3b;font-weight:600;">{{ response.incorrect_count }}</td>
                   <td class="align-middle" style="color:#a0aec0;font-size:0.82rem;">{{ response.created_date_time|date:"j/m/y, H:i" }}</td>
                   <td class="align-middle">
-                    <a href="{% url 'courses:score_details' response.id %}" class="btn btn-sm btn-outline-primary" style="border-radius:20px;">
+                    <a href="{% url 'courses:score_details' response.id %}?user={% if not is_own_profile %}{{ viewed_user.id }}{% endif %}" 
+                    class="btn btn-sm btn-outline-primary" style="border-radius:20px;">
                       Ko'rish
                     </a>
                   </td>
