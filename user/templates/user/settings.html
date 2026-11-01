@@ -1,0 +1,118 @@
+{% extends "courses/layout.html" %}
+{% load course_extras %}
+
+{% block title %}Sozlamalar — EDUMED.UZ{% endblock title %}
+
+{% block main %}
+<div class="container-fluid">
+
+  <div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">
+      <i class="fas fa-cog mr-2 text-primary"></i>Sozlamalar
+    </h1>
+    <a href="{% url 'user:index' %}" class="btn btn-outline-primary btn-sm mt-2 mt-sm-0">
+      <i class="fas fa-user mr-1"></i>Profilga qaytish
+    </a>
+  </div>
+
+  <div class="row">
+    <!-- Personal data -->
+    <div class="col-lg-7 mb-4">
+      <div class="card shadow h-100" style="border-radius:14px;">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-id-card mr-2"></i>Shaxsiy ma'lumotlar</h6>
+        </div>
+        <div class="card-body">
+          <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="profile">
+            <div class="form-row">
+              <div class="form-group col-sm-6">
+                <label for="firstName" class="small font-weight-bold">Ism</label>
+                <input type="text" class="form-control" id="firstName" name="first_name" maxlength="150" required value="{{ user.first_name }}">
+              </div>
+              <div class="form-group col-sm-6">
+                <label for="lastName" class="small font-weight-bold">Familiya</label>
+                <input type="text" class="form-control" id="lastName" name="last_name" maxlength="150" required value="{{ user.last_name }}">
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="small font-weight-bold">Email</label>
+              <input type="email" class="form-control" value="{{ user.email }}" disabled>
+              <small class="text-muted">Email tizimga kirish uchun ishlatiladi. O'zgartirish uchun administratorga murojaat qiling.</small>
+            </div>
+            <div class="form-row">
+              <div class="form-group col-sm-6">
+                <label for="phone" class="small font-weight-bold">Telefon raqami</label>
+                <input type="tel" class="form-control" id="phone" name="phone" maxlength="30" value="{{ profile.phone|default:'' }}" placeholder="+998 90 123 45 67">
+              </div>
+              <div class="form-group col-sm-6">
+                <label for="dob" class="small font-weight-bold">Tug'ilgan sana</label>
+                <input type="date" class="form-control" id="dob" name="date_of_birth" value="{{ profile.date_of_birth|date:'Y-m-d' }}">
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="small font-weight-bold d-block">Jins</label>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" name="gender" id="gMale" value="1" {% if profile.gender == 1 %}checked{% endif %}>
+                <label class="form-check-label" for="gMale">Erkak</label>
+              </div>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" name="gender" id="gFemale" value="0" {% if profile.gender == 0 %}checked{% endif %}>
+                <label class="form-check-label" for="gFemale">Ayol</label>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="region" class="small font-weight-bold">Viloyat</label>
+              <select class="form-control" id="region" name="region">
+                <option value="">— Tanlanmagan —</option>
+                {% for r in regions %}<option value="{{ r }}" {% if profile.region == r %}selected{% endif %}>{{ r }}</option>{% endfor %}
+                {% if profile.region and profile.region not in regions %}<option value="{{ profile.region }}" selected>{{ profile.region }}</option>{% endif %}
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="otm" class="small font-weight-bold">Ta'lim muassasasi</label>
+              <select class="form-control" id="otm" name="otm">
+                <option value="">— Tanlanmagan —</option>
+                {% for o in otms %}<option value="{{ o }}" {% if profile.otm == o %}selected{% endif %}>{{ o }}</option>{% endfor %}
+                {% if profile.otm and profile.otm not in otms %}<option value="{{ profile.otm }}" selected>{{ profile.otm }}</option>{% endif %}
+              </select>
+            </div>
+            <button type="submit" class="btn btn-success px-4"><i class="fas fa-save mr-1"></i>Saqlash</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Password -->
+    <div class="col-lg-5 mb-4" id="password">
+      <div class="card shadow h-100" style="border-radius:14px;">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-lock mr-2"></i>Parolni o'zgartirish</h6>
+        </div>
+        <div class="card-body">
+          <form method="post" autocomplete="off">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="password">
+            <div class="form-group">
+              <label for="oldPassword" class="small font-weight-bold">Joriy parol</label>
+              <input type="password" class="form-control" id="oldPassword" name="old_password" required autocomplete="current-password">
+            </div>
+            <div class="form-group">
+              <label for="newPassword" class="small font-weight-bold">Yangi parol</label>
+              <input type="password" class="form-control" id="newPassword" name="new_password" required minlength="8" autocomplete="new-password">
+              <small class="text-muted">Kamida 8 ta belgi, faqat raqamlardan iborat bo'lmasin.</small>
+            </div>
+            <div class="form-group">
+              <label for="newPassword2" class="small font-weight-bold">Yangi parolni takrorlang</label>
+              <input type="password" class="form-control" id="newPassword2" name="new_password2" required minlength="8" autocomplete="new-password">
+            </div>
+            <button type="submit" class="btn btn-primary px-4"><i class="fas fa-key mr-1"></i>Parolni yangilash</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock main %}

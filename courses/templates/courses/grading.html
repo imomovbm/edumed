@@ -1,0 +1,103 @@
+{% extends "courses/layout.html" %}
+{% load course_extras %}
+
+{% block title %}Javoblarni tekshirish — EDUMED.UZ{% endblock title %}
+
+{% block main %}
+<div class="container-fluid">
+
+  <div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <div>
+      <h1 class="h3 mb-0 text-gray-800">
+        <i class="fas fa-pen-nib mr-2 text-primary"></i>Javoblarni tekshirish
+      </h1>
+      <p class="text-muted small mb-0 mt-1">
+        Qisqa javobli va esse savollarini baholang — test bali avtomatik qayta hisoblanadi.
+      </p>
+    </div>
+    <span class="badge badge-warning px-3 py-2 mt-2 mt-sm-0" style="font-size:0.9rem;">
+      {{ total_pending }} ta javob kutmoqda
+    </span>
+  </div>
+
+  <div class="card shadow mb-4" style="border-radius:14px;">
+    <div class="card-header py-3">
+      <h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-inbox mr-2"></i>Tekshirilmagan natijalar</h6>
+    </div>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0" style="font-size:0.9rem;">
+          <thead style="background:#f8f9fc;">
+            <tr>
+              <th class="px-3 py-3">Talaba</th>
+              <th class="py-3">Test</th>
+              <th class="py-3">Hozirgi ball</th>
+              <th class="py-3">Kutayotgan</th>
+              <th class="py-3">Sana</th>
+              <th class="py-3 text-center">Amal</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in page %}
+            <tr>
+              <td class="px-3 align-middle font-weight-bold">{{ r.user.get_full_name|default:r.user.username }}</td>
+              <td class="align-middle">
+                {{ r.quiz.title|default:"O'chirilgan test" }}
+                {% if r.quiz.topic %}<div class="small text-muted">{{ r.quiz.topic.title }}</div>{% endif %}
+              </td>
+              <td class="align-middle"><span class="badge badge-pill badge-{{ r.score|score_color }} px-2">{{ r.score|floatformat:0 }}%</span></td>
+              <td class="align-middle"><span class="badge badge-warning">{{ r.pending_count }} ta javob</span></td>
+              <td class="align-middle text-muted small" style="white-space:nowrap;">{{ r.created_date_time|date:"j/m/Y, H:i" }}</td>
+              <td class="align-middle text-center">
+                <a href="{% url 'courses:score_details' r.id %}" class="btn btn-sm btn-primary" style="border-radius:16px;">
+                  <i class="fas fa-check-double mr-1"></i>Tekshirish
+                </a>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="6" class="text-center py-5 text-muted">
+                <i class="fas fa-check-circle fa-2x d-block mb-2 text-success"></i>
+                Hamma javoblar tekshirilgan!
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% if page.has_other_pages %}
+    <div class="card-footer bg-white">
+      <nav aria-label="Sahifalar">
+        <ul class="pagination pagination-sm justify-content-center mb-0">
+          {% if page.has_previous %}
+          <li class="page-item"><a class="page-link" href="?page={{ page.previous_page_number }}" aria-label="Oldingi"><i class="fas fa-chevron-left"></i></a></li>
+          {% endif %}
+          <li class="page-item active"><span class="page-link">{{ page.number }} / {{ page.paginator.num_pages }}</span></li>
+          {% if page.has_next %}
+          <li class="page-item"><a class="page-link" href="?page={{ page.next_page_number }}" aria-label="Keyingi"><i class="fas fa-chevron-right"></i></a></li>
+          {% endif %}
+        </ul>
+      </nav>
+    </div>
+    {% endif %}
+  </div>
+
+  {% if recently_graded %}
+  <div class="card shadow mb-4" style="border-radius:14px;">
+    <div class="card-header py-3">
+      <h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-history mr-2"></i>Yaqinda tekshirilganlar</h6>
+    </div>
+    <div class="card-body p-0">
+      {% for r in recently_graded %}
+      <a href="{% url 'courses:score_details' r.id %}" class="d-flex align-items-center justify-content-between px-3 py-2 border-bottom text-decoration-none text-gray-700">
+        <span class="small"><strong>{{ r.user.get_full_name|default:r.user.username }}</strong> — {{ r.quiz.title|default:"O'chirilgan test" }}</span>
+        <span class="badge badge-pill badge-{{ r.score|score_color }}">{{ r.score|floatformat:0 }}%</span>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock main %}

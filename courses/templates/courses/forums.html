@@ -1,5 +1,7 @@
 {% extends "courses/layout.html" %}
-{% load static %}
+{% load static course_extras %}
+
+{% block title %}Forumlar — EDUMED.UZ{% endblock title %}
 
 {% block main %}
 <div class="container-fluid">
@@ -11,18 +13,18 @@
       <a href="{% url 'courses:forums' %}" class="text-gray-800 text-decoration-none">Forumlar</a>
     </h1>
     <!-- Sort buttons -->
-    <div class="d-flex align-items-center" style="gap:6px;">
+    <div class="d-flex align-items-center flex-wrap mt-2 mt-sm-0" style="gap:6px;">
       <span class="small text-muted mr-1">Saralash:</span>
-      <a href="?{% if request.GET.topic %}topic={{ request.GET.topic }}&{% endif %}{% if request.GET.q %}q={{ request.GET.q }}&{% endif %}sort=new"
-        class="btn btn-sm {% if request.GET.sort == 'new' or not request.GET.sort %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+      <a href="?{% if sort_qs %}{{ sort_qs }}&{% endif %}sort=new"
+        class="btn btn-sm {% if sort != 'top' and sort != 'active' %}btn-primary{% else %}btn-outline-secondary{% endif %}">
         <i class="fas fa-clock mr-1"></i>Yangi
       </a>
-      <a href="?{% if request.GET.topic %}topic={{ request.GET.topic }}&{% endif %}{% if request.GET.q %}q={{ request.GET.q }}&{% endif %}sort=top"
-        class="btn btn-sm {% if request.GET.sort == 'top' %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+      <a href="?{% if sort_qs %}{{ sort_qs }}&{% endif %}sort=top"
+        class="btn btn-sm {% if sort == 'top' %}btn-primary{% else %}btn-outline-secondary{% endif %}">
         <i class="fas fa-fire mr-1"></i>Mashhur
       </a>
-      <a href="?{% if request.GET.topic %}topic={{ request.GET.topic }}&{% endif %}{% if request.GET.q %}q={{ request.GET.q }}&{% endif %}sort=active"
-        class="btn btn-sm {% if request.GET.sort == 'active' %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+      <a href="?{% if sort_qs %}{{ sort_qs }}&{% endif %}sort=active"
+        class="btn btn-sm {% if sort == 'active' %}btn-primary{% else %}btn-outline-secondary{% endif %}">
         <i class="fas fa-comments mr-1"></i>Faol
       </a>
     </div>
@@ -33,15 +35,6 @@
     <!-- ── Main Forum ── -->
     <div class="col-lg-8">
 
-      {% if messages %}
-        {% for message in messages %}
-        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-          {{ message }}
-          <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
-        </div>
-        {% endfor %}
-      {% endif %}
-
       <!-- New Forum Card -->
       {% if user_profile %}
       <div class="card shadow mb-4">
@@ -51,7 +44,7 @@
           </h6>
           <button class="btn btn-sm btn-outline-primary" type="button"
             data-toggle="collapse" data-target="#newForumForm"
-            aria-expanded="false">
+            aria-expanded="false" aria-controls="newForumForm">
             <i class="fas fa-plus mr-1"></i> Ochish
           </button>
         </div>
@@ -60,16 +53,16 @@
             <form id="newPostForm" method="post" action="{% url 'courses:forums' %}">
               {% csrf_token %}
               <div class="form-group mb-2">
-                <input type="text" name="title" class="form-control"
-                  placeholder="Mavzu nomi..." required>
+                <input type="text" name="title" class="form-control" maxlength="255"
+                  placeholder="Mavzu nomi..." aria-label="Forum nomi" required>
               </div>
               <div class="form-group mb-2">
-                <textarea class="form-control" name="forum_question" rows="3"
-                  placeholder="Fikr yoki savolingizni yozing..." required></textarea>
+                <textarea class="form-control" name="forum_question" rows="3" maxlength="5000"
+                  placeholder="Fikr yoki savolingizni yozing..." aria-label="Savol matni" required></textarea>
               </div>
               <!-- Topic toggle -->
               <div class="form-group mb-2">
-                <div class="d-flex align-items-center" style="gap:10px;">
+                <div class="d-flex align-items-center flex-wrap" style="gap:10px;">
                   <div class="custom-control custom-switch">
                     <input type="checkbox" class="custom-control-input" id="topicToggle"
                       onchange="toggleTopicSelect(this)">
@@ -82,7 +75,7 @@
               </div>
               <!-- Topic select -->
               <div class="form-group mb-3" id="topicSelectSection" style="display:none;">
-                <select class="form-control" name="topic_id" id="topicSelect">
+                <select class="form-control" name="topic_id" id="topicSelect" aria-label="Mavzu">
                   <option value="">— Mavzuni tanlang —</option>
                   {% for topic in topics %}
                   <option value="{{ topic.id }}">{{ topic.title }}</option>
@@ -98,17 +91,21 @@
           </div>
         </div>
       </div>
+      {% elif not user.is_authenticated %}
+      <div class="alert alert-info mb-4" style="border-radius:10px;">
+        <i class="fas fa-info-circle mr-2"></i>
+        Forum ochish va fikr bildirish uchun <a href="{% url 'user:login' %}?next={{ request.get_full_path|urlencode }}">tizimga kiring</a>.
+      </div>
       {% endif %}
 
       <!-- Active filter indicator -->
       {% if request.GET.topic or request.GET.q %}
-      <div class="d-flex align-items-center mb-3" style="gap:8px;">
+      <div class="d-flex align-items-center flex-wrap mb-3" style="gap:8px;">
         <span class="small text-muted">Filtr:</span>
         {% if request.GET.q %}
         <span class="badge badge-info px-3 py-2" style="border-radius:20px;">
           <i class="fas fa-search mr-1"></i>"{{ request.GET.q }}"
-          <a href="?{% if request.GET.topic %}topic={{ request.GET.topic }}&{% endif %}{% if request.GET.sort %}sort={{ request.GET.sort }}{% endif %}"
-            class="text-white ml-2"><i class="fas fa-times"></i></a>
+          <a href="?{{ search_qs }}" class="text-white ml-2" aria-label="Qidiruvni olib tashlash"><i class="fas fa-times"></i></a>
         </span>
         {% endif %}
         {% if request.GET.topic %}
@@ -118,12 +115,11 @@
           {% else %}
             {% for topic in topics %}{% if topic.id|stringformat:'s' == request.GET.topic %}{{ topic.title }}{% endif %}{% endfor %}
           {% endif %}
-          <a href="?{% if request.GET.q %}q={{ request.GET.q }}&{% endif %}{% if request.GET.sort %}sort={{ request.GET.sort }}{% endif %}"
-            class="text-white ml-2"><i class="fas fa-times"></i></a>
+          <a href="?{{ filter_qs }}" class="text-white ml-2" aria-label="Mavzu filtrini olib tashlash"><i class="fas fa-times"></i></a>
         </span>
         {% endif %}
         <a href="{% url 'courses:forums' %}" class="small text-muted ml-auto">
-          Barcha filtrllarni tozalash
+          Barcha filtrlarni tozalash
         </a>
       </div>
       {% endif %}
@@ -131,35 +127,32 @@
       <!-- Posts List -->
       <div id="postsList">
         {% for forum in forums %}
-        <div class="card shadow mb-3 post-card"
-          onclick="window.location='{% url 'courses:forum' forum.pk %}'"
-          style="cursor:pointer;">
+        <div class="card shadow mb-3 post-card" data-href="{% url 'courses:forum' forum.pk %}" style="cursor:pointer;">
           <div class="card-body py-3 px-4">
 
             <!-- Meta row -->
             <div class="d-flex align-items-center mb-2" style="gap:8px; flex-wrap:wrap;">
-              <img src="{% static 'img/avatar.png' %}" class="rounded-circle border"
+              <img src="{% static 'img/avatar.png' %}" class="rounded-circle border" alt=""
                 style="width:24px;height:24px;object-fit:cover;">
               <span class="small font-weight-bold text-gray-700">
-                {{ forum.user.first_name }} {{ forum.user.last_name }}
+                {{ forum.user.get_full_name|default:forum.user.username }}
               </span>
               <span class="text-muted small">·</span>
               <span class="text-muted small">{{ forum.created_at|timesince }} oldin</span>
-              <span class="ml-auto badge badge-pill
-                {% if forum.topic %}
-                  " style="background:#ebf4ff;color:#2b4fa0;font-size:0.72rem;">
-                  {{ forum.topic.title }}
-                {% else %}
-                  " style="background:#00bb00;color:#ffffff;font-size:0.72rem;">
-                  Umumiy
-                {% endif %}
+              {% if forum.topic %}
+              <span class="ml-auto badge badge-pill" style="background:#ebf4ff;color:#2b4fa0;font-size:0.72rem;">
+                {{ forum.topic.title }}
               </span>
+              {% else %}
+              <span class="ml-auto badge badge-pill" style="background:#00bb00;color:#ffffff;font-size:0.72rem;">
+                Umumiy
+              </span>
+              {% endif %}
             </div>
 
             <!-- Title -->
-            <h5 class="font-weight-bold text-gray-800 mb-1"
-              style="font-size:1.15rem; line-height:1.4;">
-              {{ forum.title }}
+            <h5 class="font-weight-bold text-gray-800 mb-1" style="font-size:1.15rem; line-height:1.4;">
+              <a href="{% url 'courses:forum' forum.pk %}" class="text-gray-800 text-decoration-none">{{ forum.title }}</a>
             </h5>
 
             <!-- Preview -->
@@ -170,25 +163,22 @@
             </p>
 
             <!-- Actions -->
-            <div class="d-flex align-items-center" style="gap:8px;">
-              <button class="vote-btn like-btn {% if request.user in forum.likes.all %}active{% endif %}"
-                data-id="forum-{{ forum.pk }}" data-type="like"
-                onclick="event.stopPropagation()">
+            <div class="d-flex align-items-center flex-wrap" style="gap:8px;">
+              <button type="button" class="vote-btn like-btn {% if forum.pk in liked_ids %}active{% endif %}"
+                data-id="forum-{{ forum.pk }}" data-type="like" aria-label="Yoqdi">
                 <i class="fas fa-thumbs-up"></i>
-                <span class="vote-count">{{ forum.total_likes }}</span>
+                <span class="vote-count">{{ forum.like_count }}</span>
               </button>
-              <button class="vote-btn dislike-btn {% if request.user in forum.dislikes.all %}active{% endif %}"
-                data-id="forum-{{ forum.pk }}" data-type="dislike"
-                onclick="event.stopPropagation()">
+              <button type="button" class="vote-btn dislike-btn {% if forum.pk in disliked_ids %}active{% endif %}"
+                data-id="forum-{{ forum.pk }}" data-type="dislike" aria-label="Yoqmadi">
                 <i class="fas fa-thumbs-down"></i>
-                <span class="vote-count">{{ forum.total_dislikes }}</span>
+                <span class="vote-count">{{ forum.dislike_count }}</span>
               </button>
               <span class="text-muted small">
-                <i class="fas fa-comment mr-1"></i>{{ forum.forumcomment_set.count }} ta izoh
+                <i class="fas fa-comment mr-1"></i>{{ forum.comment_count }} ta izoh
               </span>
               <a href="{% url 'courses:forum' forum.pk %}"
-                class="text-primary small ml-auto font-weight-bold"
-                onclick="event.stopPropagation()">
+                class="text-primary small ml-auto font-weight-bold">
                 O'qish <i class="fas fa-arrow-right ml-1"></i>
               </a>
             </div>
@@ -212,12 +202,11 @@
 
       <!-- Pagination -->
       {% if forums.has_other_pages %}
-      <nav class="mt-4">
+      <nav class="mt-4" aria-label="Sahifalar">
         <ul class="pagination justify-content-center">
           {% if forums.has_previous %}
           <li class="page-item">
-            <a class="page-link"
-              href="?page={{ forums.previous_page_number }}{% if request.GET.topic %}&topic={{ request.GET.topic }}{% endif %}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">
+            <a class="page-link" href="?{% if base_qs %}{{ base_qs }}&{% endif %}page={{ forums.previous_page_number }}" aria-label="Oldingi">
               <i class="fas fa-chevron-left"></i>
             </a>
           </li>
@@ -234,18 +223,14 @@
             </li>
             {% elif num > forums.number|add:'-3' and num < forums.number|add:'3' %}
             <li class="page-item">
-              <a class="page-link"
-                href="?page={{ num }}{% if request.GET.topic %}&topic={{ request.GET.topic }}{% endif %}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">
-                {{ num }}
-              </a>
+              <a class="page-link" href="?{% if base_qs %}{{ base_qs }}&{% endif %}page={{ num }}">{{ num }}</a>
             </li>
             {% endif %}
           {% endfor %}
 
           {% if forums.has_next %}
           <li class="page-item">
-            <a class="page-link"
-              href="?page={{ forums.next_page_number }}{% if request.GET.topic %}&topic={{ request.GET.topic }}{% endif %}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">
+            <a class="page-link" href="?{% if base_qs %}{{ base_qs }}&{% endif %}page={{ forums.next_page_number }}" aria-label="Keyingi">
               <i class="fas fa-chevron-right"></i>
             </a>
           </li>
@@ -269,15 +254,15 @@
       <!-- Search -->
       <div class="card shadow mb-4">
         <div class="card-body py-3">
-          <form method="GET" action="{% url 'courses:forums' %}">
+          <form method="GET" action="{% url 'courses:forums' %}" role="search">
             {% if request.GET.topic %}<input type="hidden" name="topic" value="{{ request.GET.topic }}">{% endif %}
             {% if request.GET.sort %}<input type="hidden" name="sort" value="{{ request.GET.sort }}">{% endif %}
             <div class="input-group">
               <input type="text" name="q" class="form-control"
-                placeholder="Forumda qidirish..."
+                placeholder="Forumda qidirish..." aria-label="Forumda qidirish"
                 value="{{ request.GET.q|default:'' }}">
               <div class="input-group-append">
-                <button type="submit" class="btn btn-primary">
+                <button type="submit" class="btn btn-primary" aria-label="Qidirish">
                   <i class="fas fa-search"></i>
                 </button>
               </div>
@@ -326,7 +311,7 @@
             <span class="font-weight-bold text-muted mr-3" style="width:20px;">
               {{ forloop.counter }}
             </span>
-            <img src="{% static 'img/avatar.png' %}" class="rounded-circle mr-2 border"
+            <img src="{% static 'img/avatar.png' %}" class="rounded-circle mr-2 border" alt=""
               style="width:34px;height:34px;object-fit:cover;">
             <div class="flex-grow-1">
               <div class="font-weight-bold small">
@@ -354,7 +339,7 @@
         <div class="card-body p-0">
 
           <!-- All forums -->
-          <a href="{% url 'courses:forums' %}{% if request.GET.sort %}?sort={{ request.GET.sort }}{% endif %}"
+          <a href="{% url 'courses:forums' %}{% if request.GET.sort %}?sort={{ request.GET.sort|urlencode }}{% endif %}"
             class="category-link d-flex align-items-center justify-content-between px-3 py-2 border-bottom text-decoration-none
               {% if not request.GET.topic %}active{% endif %}">
             <span class="small">
@@ -364,7 +349,7 @@
           </a>
 
           <!-- General (no topic) -->
-          <a href="?topic=general{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}"
+          <a href="?topic=general{% if request.GET.sort %}&sort={{ request.GET.sort|urlencode }}{% endif %}"
             class="category-link d-flex align-items-center justify-content-between px-3 py-2 border-bottom text-decoration-none
               {% if request.GET.topic == 'general' %}active{% endif %}">
             <span class="small">
@@ -375,13 +360,13 @@
 
           <!-- Per topic -->
           {% for topic in topics %}
-          <a href="?topic={{ topic.id }}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}"
+          <a href="?topic={{ topic.id }}{% if request.GET.sort %}&sort={{ request.GET.sort|urlencode }}{% endif %}"
             class="category-link d-flex align-items-center justify-content-between px-3 py-2 border-bottom text-decoration-none
               {% if request.GET.topic == topic.id|stringformat:'s' %}active{% endif %}">
             <span class="small">
               <i class="fas fa-tag mr-2 text-primary"></i>{{ topic.title }}
             </span>
-            <span class="badge badge-primary badge-pill">{{ topic.forum_set.count }}</span>
+            <span class="badge badge-primary badge-pill">{{ topic.forum_count }}</span>
           </a>
           {% endfor %}
 
@@ -439,28 +424,29 @@
     font-weight: 700;
   }
   .category-link.active span { color: #041447 !important; }
-
-  /* Reply box animation */
-  .reply-box { animation: fadeIn 0.2s ease; }
-  @keyframes fadeIn {
-    from { opacity:0; transform:translateY(-4px); }
-    to   { opacity:1; transform:translateY(0); }
-  }
 </style>
 
 <script>
   document.addEventListener('DOMContentLoaded', function () {
+    // ── Select2 (only when the CDN script loaded) ─────
+    if ($.fn.select2) {
+      $('#topicSelect').select2({
+        theme: 'bootstrap4',
+        placeholder: '— Mavzuni tanlang —',
+        allowClear: true,
+        language: {
+          noResults: function () { return "Mavzu topilmadi"; },
+          searching: function () { return "Qidirilmoqda..."; }
+        }
+      });
+    }
+  });
 
-    // ── Select2 ───────────────────────────────────────
-    $('#topicSelect').select2({
-      theme: 'bootstrap4',
-      placeholder: '— Mavzuni tanlang —',
-      allowClear: true,
-      language: {
-        noResults: function () { return "Mavzu topilmadi"; },
-        searching: function () { return "Qidirilmoqda..."; }
-      }
-    });
+  // ── Whole card opens the forum, except clicks on buttons / links ──
+  document.addEventListener('click', function (e) {
+    const card = e.target.closest('.post-card[data-href]');
+    if (!card || e.target.closest('a, button, input, textarea, select, label, form')) return;
+    window.location = card.dataset.href;
   });
 
   // ── Topic toggle ──────────────────────────────────
@@ -472,52 +458,6 @@
       $('#topicSelect').val(null).trigger('change');
     }
   }
-
-  // ── Like / Dislike ────────────────────────────────
-  document.addEventListener('click', function (e) {
-    const btn = e.target.closest('.vote-btn');
-    if (!btn) return;
-
-    const id      = btn.dataset.id;
-    const type    = btn.dataset.type;
-    const countEl = btn.querySelector('.vote-count');
-    const siblings = document.querySelectorAll(`.vote-btn[data-id="${id}"]`);
-    const isActive = btn.classList.contains('active');
-
-    siblings.forEach(b => {
-      if (b === btn) return;
-      if (b.classList.contains('active')) {
-        b.classList.remove('active');
-        const c = b.querySelector('.vote-count');
-        c.textContent = Math.max(0, parseInt(c.textContent) - 1);
-      }
-    });
-
-    if (isActive) {
-      btn.classList.remove('active');
-      countEl.textContent = Math.max(0, parseInt(countEl.textContent) - 1);
-    } else {
-      btn.classList.add('active');
-      countEl.textContent = parseInt(countEl.textContent) + 1;
-    }
-
-    fetch("{% url 'courses:toggle_vote' %}", {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRFToken': '{{ csrf_token }}'
-      },
-      body: JSON.stringify({
-        type: id.startsWith('forum') ? 'forum' : 'comment',
-        id: parseInt(id.split('-')[1]),
-        action: type
-      })
-    })
-    .then(res => res.json())
-    .then(data => {
-      document.querySelector(`.like-btn[data-id="${id}"]`).querySelector('.vote-count').textContent    = data.likes;
-      document.querySelector(`.dislike-btn[data-id="${id}"]`).querySelector('.vote-count').textContent = data.dislikes;
-    });
-  });
 </script>
+{% include "courses/partials/vote_script.html" %}
 {% endblock extra_js %}

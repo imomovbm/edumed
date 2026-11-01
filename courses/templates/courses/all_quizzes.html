@@ -13,29 +13,6 @@
     </a>
   </div>
 
-  {% if messages %}
-  <div id="messages-container" style="position:fixed; top:20px; right:20px; z-index:9999; display:flex; flex-direction:column; gap:8px; max-width:360px;">
-    {% for message in messages %}
-    <div class="alert-toast" style="
-      display:flex; align-items:flex-start; justify-content:space-between; gap:12px;
-      padding:14px 16px; border-radius:10px; box-shadow:0 4px 16px rgba(0,0,0,0.12);
-      font-size:0.9rem; font-weight:500; animation: slideIn 0.3s ease;
-      {% if message.tags == 'success' %}background:#d4f5e9; color:#1a7a56; border-left:4px solid #1cc88a;
-      {% elif message.tags == 'error' %}background:#fde8e6; color:#a02020; border-left:4px solid #e74a3b;
-      {% else %}background:#ebf4ff; color:#2b4fa0; border-left:4px solid #4e73df;{% endif %}">
-      <div style="display:flex; align-items:center; gap:8px;">
-        {% if message.tags == 'success' %}<i class="fas fa-check-circle"></i>
-        {% elif message.tags == 'error' %}<i class="fas fa-times-circle"></i>
-        {% else %}<i class="fas fa-info-circle"></i>{% endif %}
-        <span>{{ message }}</span>
-      </div>
-      <button onclick="this.parentElement.remove()" style="background:none; border:none; cursor:pointer; font-size:1rem; opacity:0.6; padding:0; line-height:1; color:inherit;">
-        <i class="fas fa-times"></i>
-      </button>
-    </div>
-    {% endfor %}
-  </div>
-  {% endif %}
 
   <div class="card shadow mb-4">
     <div class="card-header py-3 d-flex justify-content-between align-items-center">
@@ -53,7 +30,9 @@
               <th class="py-3">Test nomi</th>
               <th class="py-3" style="width:160px;">Turi</th>
               <th class="py-3" style="width:150px;">Mavzu</th>
-              <th class="py-3" style="width:110px;">Savollar</th>
+              <th class="py-3" style="width:100px;">Savollar</th>
+              <th class="py-3" style="width:90px;">Vaqt</th>
+              <th class="py-3" style="width:100px;">Urinishlar</th>
               <th class="py-3" style="width:130px;">Yaratilgan</th>
               <th class="py-3 text-center" style="width:160px;">Amallar</th>
             </tr>
@@ -83,11 +62,18 @@
                   <span class="text-muted">—</span>
                 {% endif %}
               </td>
-              <td class="align-middle text-muted">
-                <i class="fas fa-question-circle mr-1 text-info"></i>{{ quiz.quizquestion_set.count }} ta
+              <td class="align-middle text-muted" data-order="{{ quiz.question_count }}">
+                <i class="fas fa-question-circle mr-1 text-info"></i>{{ quiz.question_count }} ta
+                {% if not quiz.question_count %}<i class="fas fa-exclamation-triangle text-warning ml-1" title="Talabalar savolsiz testni ocha olmaydi"></i>{% endif %}
               </td>
-              <td class="align-middle" style="color:#a0aec0; font-size:0.82rem;">
-                {{ quiz.created_at|date:"H:i, j/m/y" }}
+              <td class="align-middle text-muted small" data-order="{{ quiz.duration }}">
+                <i class="fas fa-clock mr-1"></i>{{ quiz.duration }} daq
+              </td>
+              <td class="align-middle text-muted" data-order="{{ quiz.attempt_count }}">
+                <i class="fas fa-user-check mr-1 text-success"></i>{{ quiz.attempt_count }}
+              </td>
+              <td class="align-middle" style="color:#a0aec0; font-size:0.82rem;" data-order="{{ quiz.created_at|date:'U' }}">
+                {{ quiz.created_at|date:"j/m/Y, H:i" }}
               </td>
               <td class="align-middle text-center">
                 <div class="d-flex justify-content-center" style="gap:5px;">
@@ -99,19 +85,12 @@
                     class="btn btn-sm btn-outline-primary" title="Tahrirlash">
                     <i class="fas fa-pen"></i>
                   </a>
-                  <button
+                  <button type="button"
                     class="btn btn-sm btn-outline-danger" title="O'chirish"
                     onclick="confirmDelete({{ quiz.id }}, '{{ quiz.title|truncatechars:50|escapejs }}')">
                     <i class="fas fa-trash"></i>
                   </button>
                 </div>
-              </td>
-            </tr>
-            {% empty %}
-            <tr>
-              <td colspan="7" class="text-center py-5 text-muted">
-                <i class="fas fa-inbox fa-2x d-block mb-2"></i>
-                Hali testlar qo'shilmagan
               </td>
             </tr>
             {% endfor %}
@@ -146,7 +125,7 @@
         <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">
           <i class="fas fa-times mr-1"></i>Bekor qilish
         </button>
-        <form id="deleteForm" method="POST" action="" style="display:inline;">
+        <form id="deleteForm" method="POST" action="" style="display:inline;" data-url-template="{% url 'courses:delete_quiz' 0 %}">
           {% csrf_token %}
           <button type="submit" class="btn btn-danger">
             <i class="fas fa-trash mr-1"></i>O'chirish
@@ -186,32 +165,26 @@
     $('#quizzesTable').DataTable({
       pageLength: 25,
       lengthMenu: [10, 25, 50, 100],
-      order: [[5, 'desc']],
+      order: [[7, 'desc']],
       language: {
         search: "Qidirish:",
         lengthMenu: "_MENU_ ta ko'rsatish",
         info: "_TOTAL_ tadan _START_ – _END_ ko'rsatilmoqda",
         infoEmpty: "Testlar mavjud emas",
+        emptyTable: "Hali testlar qo'shilmagan",
         infoFiltered: "(jami _MAX_ tadan filtr qilindi)",
         paginate: { first: "Birinchi", last: "Oxirgi", next: "Keyingi", previous: "Oldingi" },
         zeroRecords: "Natija topilmadi"
       },
-      columnDefs: [{ orderable: false, targets: [6] }]
+      columnDefs: [{ orderable: false, targets: [8] }]
     });
 
-    // Auto-dismiss toasts
-    document.querySelectorAll('.alert-toast').forEach(el => {
-      setTimeout(() => {
-        el.style.transition = 'opacity 0.4s';
-        el.style.opacity = '0';
-        setTimeout(() => el.remove(), 400);
-      }, 5000);
-    });
   });
 
   function confirmDelete(quizId, quizTitle) {
+    const form = document.getElementById('deleteForm');
     document.getElementById('deleteQuizTitle').textContent = quizTitle;
-    document.getElementById('deleteForm').action = `/courses/delete-quiz/${quizId}/`;
+    form.action = form.dataset.urlTemplate.replace('/0/', `/${quizId}/`);
     $('#deleteModal').modal('show');
   }
 </script>

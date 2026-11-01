@@ -1,31 +1,9 @@
 {% extends "courses/layout.html" %}
-{% load static %}
-{% block main %}
+{% load static course_extras %}
 
-<!-- Toast Messages -->
-{% if messages %}
-<div id="messages-container" style="position:fixed; top:20px; right:20px; z-index:9999; display:flex; flex-direction:column; gap:8px; max-width:360px;">
-  {% for message in messages %}
-  <div class="alert-toast" style="
-    display:flex; align-items:flex-start; justify-content:space-between; gap:12px;
-    padding:14px 16px; border-radius:10px; box-shadow:0 4px 16px rgba(0,0,0,0.12);
-    font-size:0.9rem; font-weight:500; animation: slideIn 0.3s ease;
-    {% if message.tags == 'success' %}background:#d4f5e9; color:#1a7a56; border-left:4px solid #1cc88a;
-    {% elif message.tags == 'error' %}background:#fde8e6; color:#a02020; border-left:4px solid #e74a3b;
-    {% else %}background:#ebf4ff; color:#2b4fa0; border-left:4px solid #4e73df;{% endif %}">
-    <div style="display:flex; align-items:center; gap:8px;">
-      {% if message.tags == 'success' %}<i class="fas fa-check-circle"></i>
-      {% elif message.tags == 'error' %}<i class="fas fa-times-circle"></i>
-      {% else %}<i class="fas fa-info-circle"></i>{% endif %}
-      <span>{{ message }}</span>
-    </div>
-    <button onclick="this.parentElement.remove()" style="background:none;border:none;cursor:pointer;font-size:1rem;opacity:0.6;padding:0;color:inherit;">
-      <i class="fas fa-times"></i>
-    </button>
-  </div>
-  {% endfor %}
-</div>
-{% endif %}
+{% block title %}{% if is_own_profile %}Mening profilim{% else %}{{ viewed_user.get_full_name|default:viewed_user.username }} — Profil{% endif %} — EDUMED.UZ{% endblock title %}
+
+{% block main %}
 
 <div class="container-fluid">
 
@@ -36,15 +14,23 @@
         <i class="fas fa-user-circle mr-2 text-primary"></i>Mening profilim
       {% else %}
         <i class="fas fa-user mr-2 text-primary"></i>
-        {{ viewed_user.first_name }} {{ viewed_user.last_name }} — Profil
+        {{ viewed_user.get_full_name|default:viewed_user.username }} — Profil
       {% endif %}
     </h1>
-    {% if not is_own_profile and user_profile.role == 'superadmin' %}
-    <button class="btn btn-outline-danger btn-sm"
-      onclick="confirmDelete({{ viewed_user.id }}, '{{ viewed_user.first_name|escapejs }} {{ viewed_user.last_name|escapejs }}')">
-      <i class="fas fa-trash mr-1"></i>Foydalanuvchini o'chirish
-    </button>
-    {% endif %}
+    <div class="d-flex mt-2 mt-sm-0" style="gap:8px;">
+      {% if is_own_profile %}
+      <a href="{% url 'user:settings' %}" class="btn btn-outline-primary btn-sm">
+        <i class="fas fa-cog mr-1"></i>Ma'lumotlarni tahrirlash
+      </a>
+      {% elif is_admin %}
+      <a href="{% url 'user:all_users' %}" class="btn btn-outline-secondary btn-sm">
+        <i class="fas fa-arrow-left mr-1"></i>Foydalanuvchilar
+      </a>
+      <button type="button" class="btn btn-outline-danger btn-sm" onclick="$('#deleteModal').modal('show')">
+        <i class="fas fa-trash mr-1"></i>Foydalanuvchini o'chirish
+      </button>
+      {% endif %}
+    </div>
   </div>
 
   <!-- ── Stat Cards ── -->
@@ -98,6 +84,7 @@
             <div class="col mr-2">
               <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Forum faolligi</div>
               <div class="h5 mb-0 font-weight-bold text-gray-800">{{ forum_comments }} ta izoh</div>
+              {% if forum_posts %}<div class="small text-muted">{{ forum_posts }} ta forum</div>{% endif %}
             </div>
             <div class="col-auto"><i class="fas fa-comments fa-2x text-gray-300"></i></div>
           </div>
@@ -121,26 +108,29 @@
 
           <!-- Avatar + name -->
           <div class="d-flex align-items-center mb-4 pb-3" style="border-bottom:1px solid #f0f0f4;">
-            <img class="rounded-circle border shadow-sm mr-3"
-              src="{% if viewed_profile.profile_image %}{{ viewed_profile.profile_image.url }}{% else %}{% static 'img/avatar.png' %}{% endif %}"
+            <img class="rounded-circle border shadow-sm mr-3" alt=""
+              src="{{ viewed_profile|avatar_url }}"
               style="width:72px; height:72px; object-fit:cover;">
             <div>
               <h5 class="mb-0 font-weight-bold">
-                {{ viewed_user.first_name }} {{ viewed_user.last_name }}
+                {{ viewed_user.get_full_name|default:viewed_user.username }}
               </h5>
               <span class="badge badge-pill mt-1"
                 style="background:#ebf4ff;color:#2b4fa0;font-size:0.75rem;">
-                {{ viewed_profile.get_role_display }}
+                {{ viewed_profile.get_role_display|default:"—" }}
               </span>
             </div>
           </div>
 
           <!-- Info rows -->
-          <div class="info-row"><i class="fas fa-envelope text-primary"></i><span>{{ viewed_user.email }}</span></div>
-          {% if viewed_profile.date_of_birth %}
+          <div class="info-row"><i class="fas fa-envelope text-primary"></i><span>{{ viewed_user.email|default:"—" }}</span></div>
+          {% if viewed_profile.phone %}
+          <div class="info-row"><i class="fas fa-phone text-success"></i><span>{{ viewed_profile.phone }}</span></div>
+          {% endif %}
+          {% if age is not None %}
           <div class="info-row"><i class="fas fa-birthday-cake text-warning"></i><span>{{ age }} yosh</span></div>
           {% endif %}
-          {% if viewed_profile.gender %}
+          {% if viewed_profile.gender is not None %}
           <div class="info-row"><i class="fas fa-venus-mars text-info"></i><span>{{ viewed_profile.get_gender_display }}</span></div>
           {% endif %}
           {% if viewed_profile.region %}
@@ -152,6 +142,11 @@
           <div class="info-row"><i class="fas fa-calendar-alt text-secondary"></i>
             <span>Ro'yxatdan o'tgan: {{ viewed_user.date_joined|date:"j/m/Y" }}</span>
           </div>
+          {% if not is_own_profile %}
+          <div class="info-row"><i class="fas fa-sign-in-alt text-secondary"></i>
+            <span>So'nggi kirish: {% if viewed_user.last_login %}{{ viewed_user.last_login|date:"j/m/Y, H:i" }}{% else %}—{% endif %}</span>
+          </div>
+          {% endif %}
 
           <!-- Overall progress bar -->
           {% if total_topics > 0 %}
@@ -168,32 +163,114 @@
 
         </div>
       </div>
+
+      {% if not is_own_profile and is_admin %}
+      <!-- Admin tools -->
+      <div class="card shadow mb-4" style="border-radius:14px; border-left:4px solid #e74a3b;" id="admin-tools">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-danger">
+            <i class="fas fa-user-shield mr-2"></i>Administrator amallari
+          </h6>
+        </div>
+        <div class="card-body">
+          <form method="post" action="{% url 'user:change_role' viewed_user.id %}" class="mb-3">
+            {% csrf_token %}
+            <label class="small font-weight-bold text-gray-700" for="roleSelect">Rol</label>
+            <div class="input-group input-group-sm">
+              <select name="role" id="roleSelect" class="form-control">
+                {% for value, label in role_choices %}
+                <option value="{{ value }}" {% if viewed_profile.role == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+              <div class="input-group-append">
+                <button type="submit" class="btn btn-primary">Saqlash</button>
+              </div>
+            </div>
+            <small class="text-muted">O'qituvchi — yozma javoblarni tekshiradi; Moder — forumni boshqaradi.</small>
+          </form>
+
+          {% if reset_requests %}
+          <div class="alert alert-warning small py-2 mb-2">
+            <i class="fas fa-key mr-1"></i>
+            Parolni tiklash so'rovi: {{ reset_requests|length }} ta
+            (so'nggisi {{ reset_requests.0.requested_at|date:"j/m/Y, H:i" }}, «{{ reset_requests.0.contact_input }}»)
+          </div>
+          {% endif %}
+
+          {% if temp_password %}
+          <div class="alert alert-success small mb-2">
+            <div class="font-weight-bold mb-1"><i class="fas fa-check-circle mr-1"></i>Yangi vaqtinchalik parol:</div>
+            <code class="d-inline-block px-2 py-1 bg-white rounded" style="font-size:1rem; user-select:all;" id="tempPassword">{{ temp_password }}</code>
+            <button type="button" class="btn btn-sm btn-link p-0 ml-2" onclick="navigator.clipboard && navigator.clipboard.writeText(document.getElementById('tempPassword').textContent)">Nusxalash</button>
+            <div class="mt-1">Parol faqat hozir ko'rinadi. Foydalanuvchi kirgach uni «Sozlamalar»da o'zgartirishi mumkin.</div>
+          </div>
+          {% endif %}
+
+          <form method="post" action="{% url 'user:reset_password' viewed_user.id %}"
+            onsubmit="return confirm('Foydalanuvchi uchun yangi parol yaratilsinmi? Eski parol ishlamay qoladi.');">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-outline-warning btn-sm btn-block">
+              <i class="fas fa-key mr-1"></i>Parolni tiklash (vaqtinchalik parol)
+            </button>
+          </form>
+        </div>
+      </div>
+      {% endif %}
     </div>
 
     <!-- AI Evaluation + Radar -->
     <div class="col-lg-7">
 
       <!-- AI Card -->
-      <div class="card shadow mb-4" style="border-radius:14px; border-left:4px solid #1cc88a;">
+      <div class="card shadow mb-4" style="border-radius:14px; border-left:4px solid #1cc88a;" id="ai">
         <div class="card-header py-3 d-flex justify-content-between align-items-center">
           <h6 class="m-0 font-weight-bold text-success">
             <i class="fas fa-robot mr-2"></i>AI orqali baholash
           </h6>
           <!-- Claude AI logo as SVG icon -->
-          <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
             <rect width="36" height="36" rx="10" fill="#CC9B7A"/>
             <path d="M22.5 10.5C20.8 10.5 19.3 11.4 18.5 12.8C17.7 11.4 16.2 10.5 14.5 10.5C11.7 10.5 9.5 12.7 9.5 15.5C9.5 19.5 14 23.5 18.5 26.5C23 23.5 27.5 19.5 27.5 15.5C27.5 12.7 25.3 10.5 22.5 10.5Z" fill="white" opacity="0.9"/>
           </svg>
         </div>
         <div class="card-body">
+          {% if viewed_profile.ai_analysis %}
+          <div class="ai-text mb-3">{{ viewed_profile.ai_analysis|linebreaksbr }}</div>
+          <p class="small text-muted mb-3">
+            <i class="fas fa-clock mr-1"></i>Tahlil vaqti: {{ viewed_profile.ai_analysis_at|date:"j/m/Y, H:i" }}
+          </p>
+          {% else %}
           <p class="text-muted small mb-3">
             Talaba faoliyati (test natijalari, mavzu o'zlashtirish, forum faolligi) asosida
             Claude AI yordamida kuchli va zaif tomonlarni aniqlang.
           </p>
-          <button class="btn btn-success btn-block" style="border-radius:8px;" disabled>
+          {% endif %}
+
+          {% if ai_enabled and is_own_profile or ai_enabled and is_admin %}
+            {% if not total_responses %}
+            <button type="button" class="btn btn-success btn-block" style="border-radius:8px;" disabled>
+              <i class="fas fa-robot mr-2"></i>Tahlil uchun avval test topshiring
+            </button>
+            {% elif ai_next_at and not is_admin %}
+            <button type="button" class="btn btn-success btn-block" style="border-radius:8px;" disabled>
+              <i class="fas fa-robot mr-2"></i>Qayta tahlil {{ ai_next_at|date:"H:i" }} dan keyin
+            </button>
+            {% else %}
+            <form method="post" action="{% if is_own_profile %}{% url 'user:ai_analysis' %}{% else %}{% url 'user:user_ai_analysis' viewed_user.id %}{% endif %}"
+              onsubmit="this.querySelector('button').disabled = true; this.querySelector('.ai-label').textContent = 'Tahlil qilinmoqda...';">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-success btn-block" style="border-radius:8px;">
+                <i class="fas fa-robot mr-2"></i><span class="ai-label">{% if viewed_profile.ai_analysis %}Tahlilni yangilash{% else %}AI tahlilini boshlash{% endif %}</span>
+              </button>
+            </form>
+            <p class="small text-muted mt-2 mb-0"><i class="fas fa-lock mr-1"></i>Faqat test natijalari statistikasi yuboriladi — ism, email va telefon yuborilmaydi.</p>
+            {% endif %}
+          {% else %}
+          <button type="button" class="btn btn-success btn-block" style="border-radius:8px;" disabled>
             <i class="fas fa-robot mr-2"></i>AI tahlilini boshlash
             <span class="badge badge-light ml-2" style="font-size:0.7rem;">Tez kunda</span>
           </button>
+          {% endif %}
         </div>
       </div>
 
@@ -205,13 +282,20 @@
           </h6>
         </div>
         <div class="card-body">
-          <div style="height:220px;">
-            <canvas id="radarChart"></canvas>
+          {% if chart_data.labels %}
+          <div style="height:260px;">
+            <canvas id="radarChart" aria-label="Mavzular bo'yicha natijalar" role="img"></canvas>
           </div>
           <p class="small text-muted text-center mt-2 mb-0">
             <i class="fas fa-info-circle mr-1"></i>
-            AI tahlilidan so'ng to'liq ma'lumot ko'rsatiladi
+            Mavzular bo'yicha o'rtacha ball, platformadagi o'rtacha natija bilan solishtirilgan
           </p>
+          {% else %}
+          <div class="text-center py-4 text-muted">
+            <i class="fas fa-chart-area fa-2x d-block mb-2 text-gray-300"></i>
+            <p class="small mb-0">Hali testli mavzular yo'q</p>
+          </div>
+          {% endif %}
         </div>
       </div>
 
@@ -226,6 +310,9 @@
           <h6 class="m-0 font-weight-bold text-primary">
             <i class="fas fa-history mr-1"></i>So'nggi topshirilgan testlar
           </h6>
+          {% if is_own_profile %}
+          <a href="{% url 'courses:quizzes' %}" class="small">Barcha topshiriqlar</a>
+          {% endif %}
         </div>
         <div class="card-body">
           <div class="table-responsive">
@@ -244,12 +331,17 @@
               <tbody>
                 {% for response in responses %}
                 <tr>
-                  <td class="px-4 align-middle">{{ response.quiz.title }}</td>
+                  <td class="px-4 align-middle">
+                    {{ response.quiz.title|default:"O'chirilgan test" }}
+                    {% if response.violation_count and not is_own_profile %}
+                    <i class="fas fa-exclamation-triangle text-warning ml-1" title="{{ response.violation_count }} ta qoidabuzarlik"></i>
+                    {% endif %}
+                  </td>
                   <td class="align-middle">
                     {% if response.quiz.topic %}{{ response.quiz.topic.title }}
                     {% else %}<span class="text-muted">Umumiy</span>{% endif %}
                   </td>
-                  <td class="align-middle">
+                  <td class="align-middle" data-order="{{ response.score }}">
                     {% if response.score >= 90 %}
                     <span class="score-badge success">{{ response.score|floatformat:0 }}%</span>
                     {% elif response.score >= 70 %}
@@ -262,26 +354,13 @@
                   </td>
                   <td class="align-middle" style="color:#1cc88a;font-weight:600;">{{ response.correct_count }}</td>
                   <td class="align-middle" style="color:#e74a3b;font-weight:600;">{{ response.incorrect_count }}</td>
-                  <td class="align-middle" style="color:#a0aec0;font-size:0.82rem;">{{ response.created_date_time|date:"j/m/y, H:i" }}</td>
+                  <td class="align-middle" style="color:#a0aec0;font-size:0.82rem;" data-order="{{ response.created_date_time|date:'U' }}">{{ response.created_date_time|date:"j/m/y, H:i" }}</td>
                   <td class="align-middle">
-                    <a href="{% url 'courses:score_details' response.id %}?user={% if not is_own_profile %}{{ viewed_user.id }}{% endif %}" 
+                    <a href="{% url 'courses:score_details' response.id %}"
                     class="btn btn-sm btn-outline-primary" style="border-radius:20px;">
                       Ko'rish
                     </a>
                   </td>
-                </tr>
-                {% empty %}
-                <tr>
-                  <td> </td>
-                  <td> </td>
-                  <td> </td>
-                  <td class="text-center py-4 text-muted">
-                    <i class="fas fa-clipboard fa-2x d-block mb-2 text-gray-300"></i>
-                    Hali testlar topshirilmagan
-                  </td>
-                  <td> </td>
-                  <td> </td>
-                  <td> </td>
                 </tr>
                 {% endfor %}
               </tbody>
@@ -299,11 +378,11 @@
 
         <!-- Tab headers -->
         <div class="card-header py-0 px-0" style="border-bottom:1px solid #e3e6f0; overflow-x:auto; border-radius:14px 14px 0 0;">
-          <div class="d-flex" style="white-space:nowrap;">
-            <button class="chart-tab active" onclick="switchTab('mavzular', this)">
+          <div class="d-flex" style="white-space:nowrap;" role="tablist">
+            <button type="button" class="chart-tab active" role="tab" onclick="switchTab('mavzular', this)">
               <i class="fas fa-layer-group mr-2"></i>Mavzular bo'yicha o'zlashtirish
             </button>
-            <button class="chart-tab" onclick="switchTab('quizstats', this)">
+            <button type="button" class="chart-tab" role="tab" onclick="switchTab('quizstats', this)">
               <i class="fas fa-chart-pie mr-2"></i>Test statistikasi
             </button>
           </div>
@@ -317,7 +396,7 @@
               {% for item in topic_progress_data %}
               <div class="mb-3">
                 <div class="d-flex justify-content-between align-items-center mb-1">
-                  <span class="small font-weight-bold text-gray-700" style="max-width:70%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                  <span class="small font-weight-bold text-gray-700" style="max-width:70%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="{{ item.title }}">
                     {{ forloop.counter }}. {{ item.title }}
                   </span>
                   <span class="small font-weight-bold
@@ -326,7 +405,7 @@
                     {% elif item.pct >= 30 %}text-warning
                     {% else %}text-muted{% endif %}">
                     {% if item.status == 'completed' %}Tugatilgan
-                    {% elif item.status == 'in_progress' %}Jarayonda
+                    {% elif item.status == 'in_progress' %}Jarayonda · {{ item.pct }}%
                     {% else %}Boshlanmagan{% endif %}
                   </span>
                 </div>
@@ -355,7 +434,7 @@
             <div class="row align-items-center">
               <div class="col-md-5">
                 <div style="height:260px;">
-                  <canvas id="quizDonutChart"></canvas>
+                  <canvas id="quizDonutChart" aria-label="Test natijalari taqsimoti" role="img"></canvas>
                 </div>
               </div>
               <div class="col-md-7">
@@ -365,28 +444,28 @@
                     <span class="small font-weight-bold text-success">{{ score_a }} ta</span>
                   </div>
                   <div class="progress mb-2" style="height:8px;border-radius:10px;">
-                    <div class="progress-bar bg-success" style="width:{% if total_responses %}{% widthratio score_a total_responses 100 %}{% else %}0{% endif %}%;border-radius:10px;"></div>
+                    <div class="progress-bar bg-success" style="width:{% widthratio score_a total_responses 100 %}%;border-radius:10px;"></div>
                   </div>
                   <div class="d-flex justify-content-between mb-1">
                     <span class="small font-weight-bold"><span class="status-dot bg-primary"></span>Yaxshi (70–89%)</span>
                     <span class="small font-weight-bold text-primary">{{ score_b }} ta</span>
                   </div>
                   <div class="progress mb-2" style="height:8px;border-radius:10px;">
-                    <div class="progress-bar bg-primary" style="width:{% if total_responses %}{% widthratio score_b total_responses 100 %}{% else %}0{% endif %}%;border-radius:10px;"></div>
+                    <div class="progress-bar bg-primary" style="width:{% widthratio score_b total_responses 100 %}%;border-radius:10px;"></div>
                   </div>
                   <div class="d-flex justify-content-between mb-1">
                     <span class="small font-weight-bold"><span class="status-dot bg-warning"></span>Qoniqarli (50–69%)</span>
                     <span class="small font-weight-bold text-warning">{{ score_c }} ta</span>
                   </div>
                   <div class="progress mb-2" style="height:8px;border-radius:10px;">
-                    <div class="progress-bar bg-warning" style="width:{% if total_responses %}{% widthratio score_c total_responses 100 %}{% else %}0{% endif %}%;border-radius:10px;"></div>
+                    <div class="progress-bar bg-warning" style="width:{% widthratio score_c total_responses 100 %}%;border-radius:10px;"></div>
                   </div>
                   <div class="d-flex justify-content-between mb-1">
                     <span class="small font-weight-bold"><span class="status-dot bg-danger"></span>Qoniqarsiz (0–49%)</span>
                     <span class="small font-weight-bold text-danger">{{ score_d }} ta</span>
                   </div>
                   <div class="progress" style="height:8px;border-radius:10px;">
-                    <div class="progress-bar bg-danger" style="width:{% if total_responses %}{% widthratio score_d total_responses 100 %}{% else %}0{% endif %}%;border-radius:10px;"></div>
+                    <div class="progress-bar bg-danger" style="width:{% widthratio score_d total_responses 100 %}%;border-radius:10px;"></div>
                   </div>
                 </div>
                 <div class="text-center mt-3 p-3 rounded" style="background:#f8f9fc;">
@@ -417,25 +496,29 @@
 </div>
 
 <!-- Delete User Modal (admin only) -->
-{% if not is_own_profile and user_profile.role == 'superadmin' %}
-<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog">
+{% if not is_own_profile and is_admin %}
+<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalTitle">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content" style="border-radius:12px; border:none;">
       <div class="modal-header border-0 pb-0">
-        <h5 class="modal-title font-weight-bold text-danger">
+        <h5 class="modal-title font-weight-bold text-danger" id="deleteModalTitle">
           <i class="fas fa-exclamation-triangle mr-2"></i>Foydalanuvchini o'chirish
         </h5>
-        <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Yopish"><span>&times;</span></button>
       </div>
       <div class="modal-body pt-2">
         <p class="text-gray-700 mb-1">Quyidagi foydalanuvchini o'chirishni tasdiqlaysizmi?</p>
         <div class="p-3 rounded mt-2" style="background:#fde8e6; border-left:3px solid #e74a3b;">
-          <span class="font-weight-bold text-danger" id="deleteUserName"></span>
+          <span class="font-weight-bold text-danger">{{ viewed_user.get_full_name|default:viewed_user.username }}</span>
         </div>
+        <p class="small text-muted mt-2 mb-0">
+          <i class="fas fa-info-circle mr-1"></i>
+          Bu amal qaytarib bo'lmaydi. Foydalanuvchining barcha natijalari va izohlari ham o'chadi.
+        </p>
       </div>
       <div class="modal-footer border-0 pt-0">
         <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">Bekor qilish</button>
-        <form id="deleteForm" method="POST" action="" style="display:inline;">
+        <form method="POST" action="{% url 'user:delete_user' viewed_user.id %}" style="display:inline;">
           {% csrf_token %}
           <button type="submit" class="btn btn-danger">
             <i class="fas fa-trash mr-1"></i>O'chirish
@@ -450,16 +533,11 @@
 {% endblock main %}
 
 {% block extra_js %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap4.min.css">
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap4.min.js"></script>
 
 <style>
-  @keyframes slideIn {
-    from { opacity:0; transform:translateX(40px); }
-    to   { opacity:1; transform:translateX(0); }
-  }
   .chart-tab {
     padding: 14px 20px; border: none; background: transparent;
     font-size: 0.85rem; font-weight: 600; color: #a0aec0;
@@ -477,6 +555,7 @@
   }
   .info-row:last-child { border-bottom: none; }
   .info-row i { width: 18px; text-align: center; flex-shrink: 0; }
+  .info-row span { word-break: break-word; }
   .score-badge {
     padding: 3px 10px; border-radius: 20px;
     font-weight: 700; font-size: 0.8rem;
@@ -489,85 +568,82 @@
     width: 8px; height: 8px; border-radius: 50%;
     display: inline-block; margin-right: 5px;
   }
+  .ai-text {
+    font-size: 0.9rem; line-height: 1.7; color: #2d3748;
+    background: #f6fffb; border-radius: 10px; padding: 14px 16px;
+  }
 </style>
 
+{{ chart_data|json_script:"chart-data" }}
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-  // Radar chart
+  // Strong / weak areas: student's average per topic vs. the platform average
+  const chartData = JSON.parse(document.getElementById('chart-data').textContent);
   const radarCtx = document.getElementById('radarChart');
-  if (radarCtx) {
+  if (radarCtx && window.Chart && chartData.labels.length) {
+    const useRadar = chartData.labels.length >= 3;   // a radar needs at least 3 axes
     new Chart(radarCtx, {
-      type: 'radar',
+      type: useRadar ? 'radar' : 'bar',
       data: {
-        labels: [
-          'Hamshiralik tarixi', 'Bioetika', 'LEMON dasturi',
-          'Salomatlik', 'Profilaktika', 'Tibbiy himoya'
-        ],
+        labels: chartData.labels,
         datasets: [
           {
-            label: " {% if is_own_profile %} Sizning natijangiz {% else %} Natijalar {% endif %}",
-            data: [
-                  {{ topic_scores.0|default:0 }}, 
-                  {{ topic_scores.1|default:0 }}, 
-                  {{ topic_scores.2|default:0 }},
-                  {{ topic_scores.3|default:0 }}, 
-                  {{ topic_scores.4|default:0 }}, 
-                  {{ topic_scores.5|default:0 }}
-                ],
-            backgroundColor: 'rgba(78, 115, 223, 0.15)',
+            label: "{% if is_own_profile %}Sizning natijangiz{% else %}Talaba natijasi{% endif %}",
+            data: chartData.user,
+            backgroundColor: useRadar ? 'rgba(78, 115, 223, 0.15)' : 'rgba(78, 115, 223, 0.8)',
             borderColor: 'rgba(78, 115, 223, 1)',
             pointBackgroundColor: 'rgba(78, 115, 223, 1)',
             pointRadius: 4,
+            borderRadius: 6,
           },
           {
-            label: "O'rtacha daraja",
-            data: [70, 70, 70, 70, 70, 70],
-            backgroundColor: 'rgba(28, 200, 138, 0.05)',
-            borderColor: 'rgba(28, 200, 138, 0.6)',
-            borderDash: [5, 5],
+            label: "Platforma o'rtachasi",
+            data: chartData.platform,
+            backgroundColor: useRadar ? 'rgba(28, 200, 138, 0.05)' : 'rgba(28, 200, 138, 0.5)',
+            borderColor: 'rgba(28, 200, 138, 0.8)',
+            borderDash: useRadar ? [5, 5] : [],
             pointRadius: 0,
+            borderRadius: 6,
           }
         ]
       },
       options: {
         maintainAspectRatio: false,
-        scales: {
+        scales: useRadar ? {
           r: {
             min: 0, max: 100,
             ticks: { stepSize: 25, font: { size: 10 } },
             pointLabels: { font: { size: 11 } },
             grid: { color: 'rgba(0,0,0,0.05)' }
           }
+        } : {
+          y: { beginAtZero: true, max: 100, ticks: { callback: v => v + '%' } },
+          x: { grid: { display: false } }
         },
         plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } }
       }
     });
   }
-  // DataTable
-  $('#examsTable').DataTable({
-    pageLength: 5,
-    lengthMenu: [5, 10, 25],
-    order: [[5, 'desc']],
-    language: {
-      search: "Qidirish:",
-      lengthMenu: "_MENU_ ta ko'rsatish",
-      info: "_TOTAL_ tadan _START_ – _END_ ko'rsatilmoqda",
-      infoEmpty: "Testlar mavjud emas",
-      infoFiltered: "(jami _MAX_ tadan filtr qilindi)",
-      paginate: { first: "Birinchi", last: "Oxirgi", next: "Keyingi", previous: "Oldingi" },
-      zeroRecords: "Natija topilmadi"
-    },
-    columnDefs: [{ orderable: false, targets: [6] }]
-  });
 
-  // Auto-dismiss toasts
-  document.querySelectorAll('.alert-toast').forEach(el => {
-    setTimeout(() => {
-      el.style.transition = 'opacity 0.4s';
-      el.style.opacity = '0';
-      setTimeout(() => el.remove(), 400);
-    }, 5000);
-  });
+  // DataTable (only when the CDN script loaded)
+  if ($.fn.DataTable) {
+    $('#examsTable').DataTable({
+      pageLength: 5,
+      lengthMenu: [5, 10, 25],
+      order: [[5, 'desc']],
+      language: {
+        search: "Qidirish:",
+        lengthMenu: "_MENU_ ta ko'rsatish",
+        info: "_TOTAL_ tadan _START_ – _END_ ko'rsatilmoqda",
+        infoEmpty: "Testlar mavjud emas",
+        infoFiltered: "(jami _MAX_ tadan filtr qilindi)",
+        emptyTable: "Hali testlar topshirilmagan",
+        paginate: { first: "Birinchi", last: "Oxirgi", next: "Keyingi", previous: "Oldingi" },
+        zeroRecords: "Natija topilmadi"
+      },
+      columnDefs: [{ orderable: false, targets: [6] }]
+    });
+  }
 });
 
 // Tab switcher
@@ -578,7 +654,7 @@ function switchTab(tab, btn) {
   document.getElementById('tab-' + tab).style.display = 'block';
   btn.classList.add('active');
 
-  if (tab === 'quizstats' && !donutInit) {
+  if (tab === 'quizstats' && !donutInit && window.Chart) {
     donutInit = true;
     const ctx = document.getElementById('quizDonutChart');
     if (ctx) {
@@ -602,13 +678,6 @@ function switchTab(tab, btn) {
       });
     }
   }
-}
-
-// Delete modal
-function confirmDelete(userId, userName) {
-  document.getElementById('deleteUserName').textContent = userName;
-  document.getElementById('deleteForm').action = `/user/delete/${userId}/`;
-  $('#deleteModal').modal('show');
 }
 </script>
 {% endblock extra_js %}

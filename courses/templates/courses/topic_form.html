@@ -23,36 +23,14 @@
       <a href="{% url 'courses:topic' topic.id %}" class="btn btn-outline-primary btn-sm">
         <i class="fas fa-eye mr-1"></i>Ko'rish
       </a>
-      <button class="btn btn-outline-danger btn-sm"
-        onclick="confirmDeleteTopic({{ topic.id }}, '{{ topic.title|escapejs }}')">
+      <button type="button" class="btn btn-outline-danger btn-sm"
+        onclick="confirmDeleteTopic('{{ topic.title|escapejs }}')">
         <i class="fas fa-trash mr-1"></i>O'chirish
       </button>
     </div>
     {% endif %}
   </div>
 
-  <!-- Toast Messages -->
-  {% if messages %}
-  <div id="msg-container" style="position:fixed;top:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:8px;max-width:360px;">
-    {% for message in messages %}
-    <div class="alert-toast" style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;
-      padding:14px 16px;border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,0.12);font-size:0.9rem;font-weight:500;animation:slideIn 0.3s ease;
-      {% if message.tags == 'success' %}background:#d4f5e9;color:#1a7a56;border-left:4px solid #1cc88a;
-      {% elif message.tags == 'error' %}background:#fde8e6;color:#a02020;border-left:4px solid #e74a3b;
-      {% else %}background:#ebf4ff;color:#2b4fa0;border-left:4px solid #4e73df;{% endif %}">
-      <div style="display:flex;align-items:center;gap:8px;">
-        {% if message.tags == 'success' %}<i class="fas fa-check-circle"></i>
-        {% elif message.tags == 'error' %}<i class="fas fa-times-circle"></i>
-        {% else %}<i class="fas fa-info-circle"></i>{% endif %}
-        <span>{{ message }}</span>
-      </div>
-      <button onclick="this.parentElement.remove()" style="background:none;border:none;cursor:pointer;font-size:1rem;opacity:0.6;padding:0;color:inherit;">
-        <i class="fas fa-times"></i>
-      </button>
-    </div>
-    {% endfor %}
-  </div>
-  {% endif %}
 
   <form id="topicForm" method="POST"
     action="{% if topic %}{% url 'courses:edit_topic' topic.id %}{% else %}{% url 'courses:create_topic' %}{% endif %}">
@@ -237,7 +215,7 @@
       </div>
       <div class="modal-footer border-0 pt-0">
         <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">Bekor qilish</button>
-        <form id="deleteTopicForm" method="POST" action="" style="display:inline;">
+        <form id="deleteTopicForm" method="POST" action="{% if topic %}{% url 'courses:delete_topic' topic.id %}{% endif %}" style="display:inline;">
           {% csrf_token %}
           <button type="submit" class="btn btn-danger">
             <i class="fas fa-trash mr-1"></i>O'chirish
@@ -351,10 +329,12 @@
   .preview-item { font-size: 0.78rem; color: #718096; line-height: 1.5; }
 </style>
 
+{{ sections_data|json_script:"sections-data" }}
 <script>
 // ── State ─────────────────────────────────────────────────
 let sections = [];
 let sectionIdCounter = 0;
+let itemIdCounter = 0;   // unique ids for items (Date.now() could repeat)
 
 const TYPE_CONFIG = {
   text:      { label: 'Matn',         icon: 'fa-align-left',    color: 'text',      titleLabel: 'Sarlavha (ixtiyoriy)', hasTitle: true,  itemFields: ['text'] },
@@ -373,19 +353,10 @@ const ITEM_FIELD_CONFIG = {
 
 // ── Pre-load existing sections (edit mode) ─────────────────
 document.addEventListener('DOMContentLoaded', () => {
-  const existing = {{ sections_data|safe }};
+  const existing = JSON.parse(document.getElementById('sections-data').textContent);
   existing.forEach(s => loadSection(s));
   updateSectionCount();
   renderPreview();
-
-  // Toast auto-dismiss
-  document.querySelectorAll('.alert-toast').forEach(el => {
-    setTimeout(() => {
-      el.style.transition = 'opacity 0.4s';
-      el.style.opacity = '0';
-      setTimeout(() => el.remove(), 400);
-    }, 5000);
-  });
 
   // Icon preview on load
   previewIcon(document.getElementById('iconInput').value);
@@ -393,11 +364,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // ── Add a brand-new section ───────────────────────────────
 function addSection(type) {
+  formDirty = true;
   const section = {
     id: ++sectionIdCounter,
     type,
     title: '',
-    items: [{ id: Date.now(), text: '', sub_text: '', label: '' }],
+    items: [{ id: ++itemIdCounter, text: '', sub_text: '', label: '' }],
   };
   sections.push(section);
   renderSection(section);
@@ -412,10 +384,10 @@ function loadSection(data) {
     id: ++sectionIdCounter,
     type: data.type,
     title: data.title || '',
-    items: data.items.map(it => ({ id: Date.now() + Math.random(), ...it })),
+    items: (data.items || []).map(it => ({ ...it, id: ++itemIdCounter })),
   };
   if (section.items.length === 0) {
-    section.items.push({ id: Date.now(), text: '', sub_text: '', label: '' });
+    section.items.push({ id: ++itemIdCounter, text: '', sub_text: '', label: '' });
   }
   sections.push(section);
   renderSection(section);
@@ -439,7 +411,7 @@ function renderSection(section) {
         <i class="fas ${cfg.icon} mr-1"></i>${cfg.label}
       </span>
       <span class="section-preview-title text-muted small" id="header-title-${section.id}" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
-        ${section.title || '...'}
+        ${escHtml(section.title) || '...'}
       </span>
       <div class="section-controls">
         <button type="button" class="section-ctrl-btn" onclick="moveSectionUp(${section.id})" title="Yuqoriga">
@@ -525,6 +497,7 @@ function updateSectionTitle(sectionId, value) {
 }
 
 function removeSection(sectionId) {
+  formDirty = true;
   sections = sections.filter(x => x.id !== sectionId);
   const el = document.getElementById(`section-${sectionId}`);
   if (el) el.remove();
@@ -550,6 +523,7 @@ function moveSectionDown(sectionId) {
 }
 
 function reRenderAllSections() {
+  formDirty = true;
   const container = document.getElementById('sectionsContainer');
   // remove all section blocks but keep emptySections
   container.querySelectorAll('.section-block').forEach(el => el.remove());
@@ -560,7 +534,8 @@ function reRenderAllSections() {
 function addItem(sectionId) {
   const s = sections.find(x => x.id === sectionId);
   if (!s) return;
-  const item = { id: Date.now(), text: '', sub_text: '', label: '' };
+  formDirty = true;
+  const item = { id: ++itemIdCounter, text: '', sub_text: '', label: '' };
   s.items.push(item);
   const container = document.getElementById(`items-${sectionId}`);
   container.insertAdjacentHTML('beforeend', renderItemHTML(s.type, item));
@@ -606,17 +581,18 @@ function renderPreview() {
   container.innerHTML = sections.map(s => {
     const cfg = TYPE_CONFIG[s.type];
     const itemPreviews = s.items.map(it => {
-      if (s.type === 'timeline') return `<div class="preview-item"><strong>${it.label || '—'}</strong>: ${it.text || ''}</div>`;
-      if (s.type === 'person')   return `<div class="preview-item"><strong>${it.label || '—'}</strong> — ${it.text || ''}</div>`;
-      if (s.type === 'quote')    return `<div class="preview-item fst-italic">"${it.text || ''}"</div>`;
-      if (s.type === 'info')     return `<div class="preview-item">${it.label ? '<strong>'+it.label+'</strong>: ' : ''}${it.text || ''}</div>`;
-      return `<div class="preview-item">${it.text || ''}</div>`;
+      const label = escHtml(it.label || ''), text = escHtml(it.text || '');
+      if (s.type === 'timeline') return `<div class="preview-item"><strong>${label || '—'}</strong>: ${text}</div>`;
+      if (s.type === 'person')   return `<div class="preview-item"><strong>${label || '—'}</strong> — ${text}</div>`;
+      if (s.type === 'quote')    return `<div class="preview-item font-italic">"${text}"</div>`;
+      if (s.type === 'info')     return `<div class="preview-item">${label ? '<strong>' + label + '</strong>: ' : ''}${text}</div>`;
+      return `<div class="preview-item">${text}</div>`;
     }).join('');
     return `
       <div class="preview-section">
         <div class="d-flex align-items-center mb-1" style="gap:6px;">
           <span class="preview-type-badge">${cfg.label}</span>
-          ${s.title ? `<span class="preview-title">${s.title}</span>` : ''}
+          ${s.title ? `<span class="preview-title">${escHtml(s.title)}</span>` : ''}
         </div>
         ${itemPreviews}
       </div>`;
@@ -631,8 +607,16 @@ function previewIcon(val) {
   }
 }
 
+// ── Unsaved-changes warning ───────────────────────────────
+let formDirty = false, submitting = false;
+document.getElementById('topicForm').addEventListener('input', () => { formDirty = true; });
+window.addEventListener('beforeunload', e => {
+  if (formDirty && !submitting) { e.preventDefault(); e.returnValue = ''; }
+});
+
 // ── Form submit — serialize sections to JSON ──────────────
 document.getElementById('topicForm').addEventListener('submit', function(e) {
+  submitting = true;
   const payload = sections.map((s, idx) => ({
     type:  s.type,
     title: s.title,
@@ -648,9 +632,8 @@ document.getElementById('topicForm').addEventListener('submit', function(e) {
 });
 
 // ── Delete topic ──────────────────────────────────────────
-function confirmDeleteTopic(topicId, title) {
+function confirmDeleteTopic(title) {
   document.getElementById('deleteTopicTitle').textContent = title;
-  document.getElementById('deleteTopicForm').action = `/courses/delete-topic/${topicId}/`;
   $('#deleteTopicModal').modal('show');
 }
 

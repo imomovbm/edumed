@@ -2,3 +2,5 @@ Django
 PyMySQL
 python-decouple
 python-dateutil
+# Optional: Claude AI analysis on the profile page (only used when ANTHROPIC_API_KEY is set)
+anthropic

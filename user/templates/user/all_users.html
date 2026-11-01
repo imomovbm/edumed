@@ -1,5 +1,7 @@
 {% extends "courses/layout.html" %}
-{% load static %}
+{% load static course_extras %}
+
+{% block title %}Foydalanuvchilar — EDUMED.UZ{% endblock title %}
 {% block main %}
 
 <div class="container-fluid">
@@ -9,33 +11,10 @@
       <i class="fas fa-users mr-2 text-primary"></i>Barcha foydalanuvchilar
     </h1>
     <span class="badge badge-primary px-3 py-2" style="font-size:0.9rem;">
-      Jami: {{ users|length }} ta
+      Jami: {{ total_users }} ta
     </span>
   </div>
 
-  {% if messages %}
-  <div id="messages-container" style="position:fixed; top:20px; right:20px; z-index:9999; display:flex; flex-direction:column; gap:8px; max-width:360px;">
-    {% for message in messages %}
-    <div class="alert-toast" style="
-      display:flex; align-items:flex-start; justify-content:space-between; gap:12px;
-      padding:14px 16px; border-radius:10px; box-shadow:0 4px 16px rgba(0,0,0,0.12);
-      font-size:0.9rem; font-weight:500; animation: slideIn 0.3s ease;
-      {% if message.tags == 'success' %}background:#d4f5e9; color:#1a7a56; border-left:4px solid #1cc88a;
-      {% elif message.tags == 'error' %}background:#fde8e6; color:#a02020; border-left:4px solid #e74a3b;
-      {% else %}background:#ebf4ff; color:#2b4fa0; border-left:4px solid #4e73df;{% endif %}">
-      <div style="display:flex; align-items:center; gap:8px;">
-        {% if message.tags == 'success' %}<i class="fas fa-check-circle"></i>
-        {% elif message.tags == 'error' %}<i class="fas fa-times-circle"></i>
-        {% else %}<i class="fas fa-info-circle"></i>{% endif %}
-        <span>{{ message }}</span>
-      </div>
-      <button onclick="this.parentElement.remove()" style="background:none;border:none;cursor:pointer;font-size:1rem;opacity:0.6;padding:0;line-height:1;color:inherit;">
-        <i class="fas fa-times"></i>
-      </button>
-    </div>
-    {% endfor %}
-  </div>
-  {% endif %}
 
   <!-- Stats row -->
   <div class="row mb-4">
@@ -93,6 +72,42 @@
     </div>
   </div>
 
+  {% if reset_requests %}
+  <!-- Password reset requests -->
+  <div class="card shadow mb-4" style="border-left:4px solid #f6c23e;">
+    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+      <h6 class="m-0 font-weight-bold text-warning">
+        <i class="fas fa-key mr-1"></i> Parolni tiklash so'rovlari
+      </h6>
+      <span class="badge badge-warning badge-pill">{{ reset_requests|length }} ta</span>
+    </div>
+    <div class="card-body p-0">
+      {% for rr in reset_requests %}
+      <div class="d-flex align-items-center flex-wrap px-3 py-2 border-bottom" style="gap:10px;">
+        <div class="flex-grow-1">
+          <div class="font-weight-bold small">{{ rr.contact_input }}</div>
+          <div class="text-muted" style="font-size:0.75rem;">
+            {{ rr.requested_at|date:"j/m/Y, H:i" }} ·
+            {% if rr.linked_user %}{{ rr.linked_user.get_full_name|default:rr.linked_user.username }}{% else %}foydalanuvchi topilmadi{% endif %}
+          </div>
+        </div>
+        {% if rr.linked_user %}
+        <a href="{% url 'user:user_detail' rr.linked_user.id %}#admin-tools" class="btn btn-sm btn-warning">
+          <i class="fas fa-key mr-1"></i>Parolni tiklash
+        </a>
+        {% endif %}
+        <form method="post" action="{% url 'user:resolve_reset_request' rr.id %}">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-sm btn-outline-secondary" title="So'rovni yopish">
+            <i class="fas fa-check"></i>
+          </button>
+        </form>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
   <!-- Users Table -->
   <div class="card shadow mb-4">
     <div class="card-header py-3">
@@ -120,13 +135,13 @@
             <tr id="user-row-{{ u.id }}">
               <td class="px-4 text-muted align-middle">{{ forloop.counter }}</td>
               <td class="align-middle">
-                <img src="{% if u.userprofile.profile_image %}{{ u.userprofile.profile_image.url }}{% else %}{% static 'img/avatar.png' %}{% endif %}"
+                <img src="{{ u.userprofile|avatar_url }}" alt=""
                   class="rounded-circle border"
                   style="width:38px;height:38px;object-fit:cover;">
               </td>
               <td class="align-middle font-weight-bold">
-                {{ u.first_name }} {{ u.last_name }}
-                {% if u.is_staff %}
+                {{ u.get_full_name|default:u.username }}
+                {% if u.is_superuser or u.is_staff %}
                 <span class="badge badge-danger ml-1" style="font-size:0.65rem;">Admin</span>
                 {% endif %}
               </td>
@@ -140,11 +155,11 @@
                 <span class="text-muted small">—</span>
                 {% endif %}
               </td>
-              <td class="align-middle" style="color:#a0aec0; font-size:0.82rem;">
+              <td class="align-middle" style="color:#a0aec0; font-size:0.82rem;" data-order="{{ u.date_joined|date:'U' }}">
                 {{ u.date_joined|date:"j/m/Y" }}
               </td>
-              <td class="align-middle text-center">
-                <span class="font-weight-bold text-primary">{{ u.response_set.count }}</span>
+              <td class="align-middle text-center" data-order="{{ u.response_count }}">
+                <span class="font-weight-bold text-primary">{{ u.response_count }}</span>
                 <span class="text-muted small"> ta</span>
               </td>
               <td class="align-middle text-center">
@@ -153,19 +168,14 @@
                     class="btn btn-sm btn-outline-primary" title="Ko'rish">
                     <i class="fas fa-eye"></i>
                   </a>
-                  <button
+                  {% if u != request.user %}
+                  <button type="button"
                     class="btn btn-sm btn-outline-danger" title="O'chirish"
-                    onclick="confirmDelete({{ u.id }}, '{{ u.first_name|escapejs }} {{ u.last_name|escapejs }}')">
+                    onclick="confirmDelete({{ u.id }}, '{{ u.get_full_name|default:u.username|escapejs }}')">
                     <i class="fas fa-trash"></i>
                   </button>
+                  {% endif %}
                 </div>
-              </td>
-            </tr>
-            {% empty %}
-            <tr>
-              <td colspan="8" class="text-center py-5 text-muted">
-                <i class="fas fa-inbox fa-2x d-block mb-2"></i>
-                Foydalanuvchilar topilmadi
               </td>
             </tr>
             {% endfor %}
@@ -200,7 +210,7 @@
         <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">
           <i class="fas fa-times mr-1"></i>Bekor qilish
         </button>
-        <form id="deleteForm" method="POST" action="" style="display:inline;">
+        <form id="deleteForm" method="POST" action="" style="display:inline;" data-url-template="{% url 'user:delete_user' 0 %}">
           {% csrf_token %}
           <button type="submit" class="btn btn-danger">
             <i class="fas fa-trash mr-1"></i>O'chirish
@@ -229,9 +239,10 @@
     padding: 3px 10px; border-radius: 20px;
     white-space: nowrap;
   }
-  .role-badge.student  { background:#ebf4ff; color:#2b4fa0; }
-  .role-badge.teacher  { background:#d4f5e9; color:#1a7a56; }
-  .role-badge.admin    { background:#fde8e6; color:#a02020; }
+  .role-badge.student    { background:#ebf4ff; color:#2b4fa0; }
+  .role-badge.teacher    { background:#d4f5e9; color:#1a7a56; }
+  .role-badge.superadmin { background:#fde8e6; color:#a02020; }
+  .role-badge.moder      { background:#fef9e7; color:#8a6200; }
 
   #usersTable tbody tr { transition: background 0.15s; }
   #usersTable tbody tr:hover { background: #f8f9ff; }
@@ -248,6 +259,7 @@
         lengthMenu: "_MENU_ ta ko'rsatish",
         info: "_TOTAL_ tadan _START_ – _END_ ko'rsatilmoqda",
         infoEmpty: "Foydalanuvchilar mavjud emas",
+        emptyTable: "Foydalanuvchilar topilmadi",
         infoFiltered: "(jami _MAX_ tadan filtr qilindi)",
         paginate: { first: "Birinchi", last: "Oxirgi", next: "Keyingi", previous: "Oldingi" },
         zeroRecords: "Natija topilmadi"
@@ -257,18 +269,12 @@
       ]
     });
 
-    document.querySelectorAll('.alert-toast').forEach(el => {
-      setTimeout(() => {
-        el.style.transition = 'opacity 0.4s';
-        el.style.opacity = '0';
-        setTimeout(() => el.remove(), 400);
-      }, 5000);
-    });
   });
 
   function confirmDelete(userId, userName) {
+    const form = document.getElementById('deleteForm');
     document.getElementById('deleteUserName').textContent = userName;
-    document.getElementById('deleteForm').action = `/user/delete/${userId}/`;
+    form.action = form.dataset.urlTemplate.replace('/0/', `/${userId}/`);
     $('#deleteModal').modal('show');
   }
 </script>

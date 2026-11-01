@@ -16,6 +16,8 @@
       user-select: none;           /* disable text selection */
       -webkit-user-select: none;
     }
+    /* Students must still be able to type and edit their own answers (iOS needs this). */
+    textarea, input { user-select: text; -webkit-user-select: text; }
 
     /* ── Fullscreen warning overlay ── */
     #fullscreen-warning {
@@ -29,6 +31,7 @@
       color: #fff;
       text-align: center;
       gap: 16px;
+      padding: 16px;
     }
     #fullscreen-warning.show { display: flex; }
     #fullscreen-warning h2 { font-size: 1.8rem; color: #f6c23e; }
@@ -46,16 +49,20 @@
       position: sticky; top: 0; z-index: 100;
       background: #4e73df;
       color: #fff;
-      display: flex; align-items: center; justify-content: space-between;
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
       padding: 12px 28px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.15);
     }
-    .quiz-topbar .title { font-size: 1.1rem; font-weight: 600; }
+    .quiz-topbar .title {
+      font-size: 1.1rem; font-weight: 600;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;
+    }
     .quiz-topbar .timer {
-      display: flex; align-items: center; gap: 8px;
+      display: flex; align-items: center; gap: 8px; flex-shrink: 0;
       background: rgba(255,255,255,0.15);
       padding: 6px 16px; border-radius: 20px;
       font-size: 1.1rem; font-weight: 700;
+      font-variant-numeric: tabular-nums;
     }
     .quiz-topbar .timer.danger { background: #e74a3b; animation: pulse 1s infinite; }
     @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.6} }
@@ -65,6 +72,10 @@
       max-width: 780px;
       margin: 32px auto;
       padding: 0 16px 60px;
+    }
+    .quiz-info {
+      display: flex; flex-wrap: wrap; gap: 8px 18px;
+      font-size: 0.85rem; color: #718096; margin-bottom: 14px;
     }
 
     /* ── Question card ── */
@@ -88,6 +99,7 @@
       flex-shrink: 0;
     }
     .q-text { font-size: 1.05rem; font-weight: 600; color: #2d3748; line-height: 1.5; }
+    .q-hint { font-size: 0.78rem; color: #a0aec0; margin-top: 4px; font-weight: 500; }
 
     /* ── Choices ── */
     .choices { display: flex; flex-direction: column; gap: 10px; }
@@ -105,9 +117,12 @@
     }
     .choice-label:hover { border-color: #4e73df; background: #f0f4ff; }
 
-    /* Hide native radio */
+    /* Hide native radio (kept focusable for keyboard users) */
     .choice-label input[type="radio"],
-    .choice-label input[type="checkbox"] { display: none; }
+    .choice-label input[type="checkbox"] {
+      position: absolute; opacity: 0; width: 1px; height: 1px; pointer-events: none;
+    }
+    .choice-label:has(input:focus-visible) { outline: 2px solid #4e73df; outline-offset: 2px; }
 
     /* Custom circle */
     .choice-label .custom-radio {
@@ -128,12 +143,14 @@
       content: ''; width: 8px; height: 8px;
       background: #fff; border-radius: 50%;
     }
+    .choice-label .custom-radio.square { border-radius: 4px; }
+    .choice-label:has(input:checked) .custom-radio.square::after { border-radius: 2px; }
 
     /* Text answer */
     .text-answer {
       width: 100%; padding: 12px 16px;
       border: 2px solid #e2e8f0; border-radius: 10px;
-      font-size: 0.97rem; resize: vertical;
+      font-size: 0.97rem; resize: vertical; font-family: inherit;
       outline: none; transition: border 0.2s;
     }
     .text-answer:focus { border-color: #4e73df; }
@@ -162,6 +179,7 @@
       cursor: pointer; transition: background 0.2s;
     }
     .submit-btn:hover { background: #17a673; }
+    .autosave-note { font-size: 0.78rem; color: #a0aec0; margin-top: 10px; }
 
     /* ── Violation toast ── */
     #violation-toast {
@@ -172,10 +190,11 @@
       z-index: 9998; opacity: 0;
       transition: opacity 0.3s;
       pointer-events: none;
+      max-width: calc(100% - 40px);
     }
     #violation-toast.show { opacity: 1; }
 
-        /* ── Question Navigator ── */
+    /* ── Question Navigator ── */
     .q-navigator {
       position: fixed;
       left: 20px;
@@ -185,8 +204,8 @@
       padding: 12px;
       box-shadow: 0 4px 16px rgba(0,0,0,0.12);
       z-index: 99;
-      /* 5 circles × 36px + 4 gaps × 8px + 24px padding = 228px */
-      width: 228px;
+      /* 5 circles × 36px + 4 gaps × 8px + 24px padding = 236px */
+      width: 236px;
       max-height: calc(100vh - 100px);
       overflow-y: auto;
     }
@@ -228,6 +247,13 @@
     .q-nav-btn.active   { box-shadow: 0 0 0 3px rgba(78,115,223,0.35); }
 
     @media (max-width: 1024px) { .q-navigator { display: none; } }
+    @media (max-width: 576px) {
+      .quiz-topbar { padding: 10px 16px; }
+      .quiz-topbar .title { font-size: 0.95rem; }
+      .quiz-container { margin-top: 20px; }
+      .question-card { padding: 20px 18px; }
+      .submit-btn { width: 100%; padding: 13px 20px; }
+    }
   </style>
 </head>
 <body>
@@ -236,38 +262,44 @@
     <div class="nav-title">Savollar</div>
     <div class="q-nav-grid">
       {% for qq in questions %}
-      <button class="q-nav-btn" id="nav-btn-{{ forloop.counter }}"
-        onclick="scrollToQuestion({{ forloop.counter }})">
+      <button type="button" class="q-nav-btn" id="nav-btn-{{ forloop.counter }}"
+        onclick="scrollToQuestion({{ forloop.counter }})" aria-label="{{ forloop.counter }}-savol">
         {{ forloop.counter }}
       </button>
       {% endfor %}
     </div>
   </div>
-  
+
   <!-- ① Fullscreen warning -->
-  <div id="fullscreen-warning">
+  <div id="fullscreen-warning" role="dialog" aria-modal="true">
     <i class="fas fa-expand fa-3x" style="color:#f6c23e"></i>
     <h2>To'liq ekran rejimi talab qilinadi</h2>
     <p>Test davomida brauzer to'liq ekranda bo'lishi shart.<br>Qoidabuzarlik qayd etiladi.</p>
-    <button onclick="enterFullscreen()">
+    <button type="button" onclick="enterFullscreen()">
       <i class="fas fa-expand"></i> To'liq ekranga o'tish
     </button>
   </div>
 
   <!-- ② Violation toast -->
-  <div id="violation-toast"></div>
+  <div id="violation-toast" role="alert"></div>
 
   <!-- ③ Top bar -->
   <div class="quiz-topbar">
-    <div class="title"><i class="fas fa-pen-alt mr-2"></i>{{ quiz.title }}</div>
-    <div class="timer" id="timer">
+    <div class="title" title="{{ quiz.title }}"><i class="fas fa-pen-alt mr-2"></i> {{ quiz.title }}</div>
+    <div class="timer" id="timer" aria-live="off">
       <i class="fas fa-clock"></i>
-      <span id="time-display">15:00</span>
+      <span id="time-display">--:--</span>
     </div>
   </div>
 
 <!-- ④ Quiz body -->
 <div class="quiz-container">
+
+  <div class="quiz-info">
+    <span><i class="fas fa-question-circle"></i> {{ questions|length }} ta savol</span>
+    <span><i class="fas fa-hourglass-half"></i> {{ quiz_duration }} daqiqa</span>
+    {% if quiz.topic %}<span><i class="fas fa-book-open"></i> {{ quiz.topic.title }}</span>{% endif %}
+  </div>
 
   <div class="progress-wrap">
     <div class="label">
@@ -281,20 +313,24 @@
 
   <form id="quiz-form" method="POST" action="{% url 'courses:submit_quiz' quiz.id %}">
     {% csrf_token %}
-    <input type="hidden" name="quiz_id" value="{{ quiz.id }}">
+    <input type="hidden" name="attempt_token" value="{{ attempt_token }}">
+    <input type="hidden" name="violations" id="violations-input" value="{{ initial_violations }}">
     {% for qq in questions %}
     {% with q=qq.question %}
-    <div class="question-card" id="qcard-{{ forloop.counter }}">
+    <div class="question-card" id="qcard-{{ forloop.counter }}" data-qname="q_{{ q.id }}">
       <div class="question-header">
         <div class="q-number">{{ forloop.counter }}</div>
-        <div class="q-text">{{ q.question_text }}</div>
+        <div>
+          <div class="q-text">{{ q.question_text|linebreaksbr }}</div>
+          {% if q.type == 'ms' %}<div class="q-hint">Bir nechta to'g'ri javob bo'lishi mumkin</div>{% endif %}
+        </div>
       </div>
 
       <div class="choices">
         {% if q.type == 'mc' %}
           {% for choice in q.questionchoice_set.all %}
           <label class="choice-label">
-            <input type="radio" name="q_{{ q.id }}" value="{{ choice.id }}" onchange="updateProgress()">
+            <input type="radio" name="q_{{ q.id }}" value="{{ choice.id }}">
             <span class="custom-radio"></span>
             <span class="choice-text">{{ choice.choice_text }}</span>
           </label>
@@ -303,31 +339,39 @@
         {% elif q.type == 'ms' %}
           {% for choice in q.questionchoice_set.all %}
           <label class="choice-label">
-            <input type="checkbox" name="q_{{ q.id }}" value="{{ choice.id }}" onchange="updateProgress()">
-            <span class="custom-radio" style="border-radius:4px"></span>
+            <input type="checkbox" name="q_{{ q.id }}" value="{{ choice.id }}">
+            <span class="custom-radio square"></span>
             <span class="choice-text">{{ choice.choice_text }}</span>
           </label>
           {% endfor %}
 
         {% elif q.type == 'tf' %}
+          {% for choice in q.questionchoice_set.all %}
           <label class="choice-label">
-            <input type="radio" name="q_{{ q.id }}" value="true" onchange="updateProgress()">
+            <input type="radio" name="q_{{ q.id }}" value="{{ choice.id }}">
+            <span class="custom-radio"></span>
+            <span class="choice-text">{{ choice.choice_text }}</span>
+          </label>
+          {% empty %}
+          <label class="choice-label">
+            <input type="radio" name="q_{{ q.id }}" value="true">
             <span class="custom-radio"></span>
             <span class="choice-text">To'g'ri</span>
           </label>
           <label class="choice-label">
-            <input type="radio" name="q_{{ q.id }}" value="false" onchange="updateProgress()">
+            <input type="radio" name="q_{{ q.id }}" value="false">
             <span class="custom-radio"></span>
             <span class="choice-text">Noto'g'ri</span>
           </label>
+          {% endfor %}
 
         {% elif q.type == 'sha' %}
-          <textarea class="text-answer" name="q_{{ q.id }}" rows="3"
-            placeholder="Javobingizni yozing..." oninput="updateProgress()"></textarea>
+          <textarea class="text-answer" name="q_{{ q.id }}" rows="3" maxlength="5000"
+            placeholder="Javobingizni yozing..." aria-label="Javob"></textarea>
 
         {% elif q.type == 'es' %}
-          <textarea class="text-answer" name="q_{{ q.id }}" rows="6"
-            placeholder="Kengaytirilgan javob yozing..." oninput="updateProgress()"></textarea>
+          <textarea class="text-answer" name="q_{{ q.id }}" rows="6" maxlength="20000"
+            placeholder="Kengaytirilgan javob yozing..." aria-label="Javob"></textarea>
         {% endif %}
       </div>
     </div>
@@ -335,14 +379,15 @@
     {% endfor %}
     <div class="submit-wrap">
       <button type="button" class="submit-btn" onclick="confirmSubmit()">
-        <i class="fas fa-paper-plane mr-2"></i>Testni yakunlash
+        <i class="fas fa-paper-plane mr-2"></i> Testni yakunlash
       </button>
+      <div class="autosave-note"><i class="fas fa-save"></i> Javoblaringiz shu qurilmada avtomatik saqlanib boriladi</div>
     </div>
   </form>
 </div>
 
 <!-- ⑤ Custom Modal -->
-<div id="custom-modal" style="
+<div id="custom-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" style="
   display:none; position:fixed; inset:0; z-index:10000;
   background:rgba(0,0,0,0.5);
   align-items:center; justify-content:center;">
@@ -359,23 +404,38 @@
 
 <script>
   const TOTAL_QUESTIONS = {{ questions|length }};
-  const TIMER_MINUTES   = {{ quiz_duration|default:45 }};
-  let violations = 0;
-  const MAX_VIOLATIONS = 3;
+  const TIMER_MINUTES   = {{ quiz_duration }};
+  const MAX_VIOLATIONS  = 3;
+  const AUTOSAVE_KEY    = "{{ autosave_key|escapejs }}";
+  const AUTOSAVE_PREFIX = AUTOSAVE_KEY.slice(0, AUTOSAVE_KEY.lastIndexOf('-') + 1);
+  const deadline        = Date.now() + {{ remaining_seconds }} * 1000;
+  let violations   = {{ initial_violations }};
   let isSubmitting = false;  // ← prevents false violations on submit
+  let lastViolationAt = 0;
+
+  const form = document.getElementById('quiz-form');
+
+  function submitQuiz() {
+    if (isSubmitting) return;
+    isSubmitting = true;
+    document.getElementById('violations-input').value = violations;
+    form.submit();
+  }
 
   // ── MODAL ────────────────────────────────────────────────
-  function showModal({ icon, title, body, buttons }) {
+  function showModal({ icon, title, body, buttons, autoSubmitIn }) {
     document.getElementById('modal-icon').innerHTML  = icon  || '';
     document.getElementById('modal-title').textContent = title || '';
-    document.getElementById('modal-body').textContent  = body  || '';
+    const bodyEl = document.getElementById('modal-body');
+    bodyEl.textContent = body || '';
 
     const btnContainer = document.getElementById('modal-buttons');
     btnContainer.innerHTML = '';
     buttons.forEach(({ label, style, onClick }) => {
       const btn = document.createElement('button');
+      btn.type = 'button';
       btn.textContent = label;
-      btn.style.cssText = `padding:10px 24px; border:none; border-radius:8px; 
+      btn.style.cssText = `padding:10px 24px; border:none; border-radius:8px;
         font-size:0.95rem; font-weight:600; cursor:pointer; ${style}`;
       btn.onclick = () => {
         document.getElementById('custom-modal').style.display = 'none';
@@ -385,18 +445,34 @@
     });
 
     document.getElementById('custom-modal').style.display = 'flex';
-  }
 
-  function closeModal() {
-    document.getElementById('custom-modal').style.display = 'none';
+    if (autoSubmitIn) {
+      // Submit by itself — the student does not have to press anything.
+      let left = autoSubmitIn;
+      const note = document.createElement('div');
+      note.style.cssText = 'margin-top:10px;font-size:0.85rem;color:#a0aec0;';
+      bodyEl.appendChild(note);
+      const tick = () => {
+        note.textContent = `${left} soniyadan so'ng avtomatik yuboriladi...`;
+        if (left-- <= 0) { submitQuiz(); return; }
+        setTimeout(tick, 1000);
+      };
+      tick();
+    }
   }
 
   // ── FULLSCREEN ───────────────────────────────────────────
+  // iPhone Safari (and some in-app browsers) cannot do fullscreen for a page;
+  // there the rule is skipped instead of locking the student out of the quiz.
+  const FULLSCREEN_SUPPORTED = !!(document.fullscreenEnabled || document.webkitFullscreenEnabled || document.mozFullScreenEnabled);
+
   function enterFullscreen() {
     const el = document.documentElement;
-    if (el.requestFullscreen)            el.requestFullscreen();
-    else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
-    else if (el.mozRequestFullScreen)    el.mozRequestFullScreen();
+    try {
+      const req = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen;
+      const result = req && req.call(el);
+      if (result && typeof result.catch === 'function') result.catch(() => {});
+    } catch (e) { /* ignored: shown again below */ }
   }
 
   function isFullscreen() {
@@ -404,12 +480,9 @@
   }
 
   function checkFullscreen() {
+    if (!FULLSCREEN_SUPPORTED || isSubmitting) return;
     const warning = document.getElementById('fullscreen-warning');
-    if (!isFullscreen()) {
-      warning.classList.add('show');
-    } else {
-      warning.classList.remove('show');
-    }
+    warning.classList.toggle('show', !isFullscreen());
   }
 
   document.addEventListener('fullscreenchange',       checkFullscreen);
@@ -417,6 +490,7 @@
   document.addEventListener('mozfullscreenchange',    checkFullscreen);
 
   window.addEventListener('load', () => {
+    if (!FULLSCREEN_SUPPORTED) return;
     document.getElementById('fullscreen-warning').classList.add('show');
     setTimeout(enterFullscreen, 500);
   });
@@ -426,30 +500,38 @@
     const t = document.getElementById('violation-toast');
     t.textContent = msg;
     t.classList.add('show');
-    setTimeout(() => t.classList.remove('show'), 3000);
+    clearTimeout(showToast._timer);
+    showToast._timer = setTimeout(() => t.classList.remove('show'), 3000);
   }
 
   function logViolation(reason) {
     if (isSubmitting) return;  // ← ignore violations during submit
+    // Leaving the tab fires both "blur" and "visibilitychange": count it once.
+    const now = Date.now();
+    if (now - lastViolationAt < 1500) return;
+    lastViolationAt = now;
+
     violations++;
-    showToast(`⚠️ Qoidabuzarlik (${violations}/${MAX_VIOLATIONS}): ${reason}`);
+    document.getElementById('violations-input').value = violations;
+    showToast(`⚠️ Qoidabuzarlik (${Math.min(violations, MAX_VIOLATIONS)}/${MAX_VIOLATIONS}): ${reason}`);
 
     fetch("{% url 'courses:log_violation' %}", {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
       body: JSON.stringify({ quiz_id: {{ quiz.id }}, reason, count: violations })
-    });
+    }).catch(() => {});
 
     if (violations >= MAX_VIOLATIONS) {
       showModal({
         icon: '🚫',
         title: 'Test yakunlandi',
-        body: 'Siz test qoidalarini 3 marta buzganligi sababli test avtomatik yakunlanmoqda.',
+        body: `Siz test qoidalarini ${MAX_VIOLATIONS} marta buzganligi sababli test avtomatik yakunlanmoqda.`,
         buttons: [{
           label: 'Tasdiqlash',
           style: 'background:#e74a3b; color:#fff;',
-          onClick: () => { isSubmitting = true; document.getElementById('quiz-form').submit(); }
-        }]
+          onClick: submitQuiz
+        }],
+        autoSubmitIn: 3
       });
     }
   }
@@ -463,12 +545,13 @@
   document.addEventListener('cut',  e => { e.preventDefault(); });
 
   document.addEventListener('keydown', e => {
+    const key = (e.key || '').toLowerCase();
     const blocked = [
-      e.key === 'PrintScreen',
-      e.key === 'F12',
-      e.ctrlKey && ['s','u','a','c','p'].includes(e.key.toLowerCase()),
-      e.ctrlKey && e.shiftKey && ['i','j','c'].includes(e.key.toLowerCase()),
-      e.altKey && e.key === 'Tab',
+      key === 'printscreen',
+      key === 'f12',
+      e.ctrlKey && ['s','u','a','c','p'].includes(key),
+      e.ctrlKey && e.shiftKey && ['i','j','c'].includes(key),
+      e.altKey && key === 'tab',
     ];
     if (blocked.some(Boolean)) {
       e.preventDefault();
@@ -486,8 +569,8 @@
   });
 
   // ── TIMER ────────────────────────────────────────────────
-  let remaining = TIMER_MINUTES * 60;
-
+  // Counts down to a fixed deadline (set by the server), so reloading the page
+  // does not give extra time and background tabs do not drift.
   function formatTime(s) {
     const m = Math.floor(s / 60).toString().padStart(2,'0');
     const sec = (s % 60).toString().padStart(2,'0');
@@ -496,11 +579,13 @@
 
   const timerEl  = document.getElementById('timer');
   const timeDisp = document.getElementById('time-display');
+  const DANGER_AT = Math.min(300, Math.ceil(TIMER_MINUTES * 60 * 0.25));
+  let timerInterval = null;
 
-  const timerInterval = setInterval(() => {
-    remaining--;
+  function tickTimer() {
+    const remaining = Math.max(0, Math.round((deadline - Date.now()) / 1000));
     timeDisp.textContent = formatTime(remaining);
-    if (remaining <= 300) timerEl.classList.add('danger');
+    timerEl.classList.toggle('danger', remaining <= DANGER_AT);
     if (remaining <= 0) {
       clearInterval(timerInterval);
       showModal({
@@ -508,101 +593,124 @@
         title: 'Vaqt tugadi!',
         body: 'Test vaqti tugadi. Javoblaringiz avtomatik yuborilmoqda.',
         buttons: [{
-          label: 'OK',
+          label: 'Yuborish',
           style: 'background:#4e73df; color:#fff;',
-          onClick: () => { isSubmitting = true; document.getElementById('quiz-form').submit(); }
-        }]
+          onClick: submitQuiz
+        }],
+        autoSubmitIn: 3
       });
     }
-  }, 1000);
+  }
+  tickTimer();
+  timerInterval = setInterval(tickTimer, 1000);
 
-
-      // ── QUESTION NAVIGATOR ───────────────────────────────────
-    function scrollToQuestion(num) {
-      // Scroll to card
-      const card = document.getElementById(`qcard-${num}`);
-      if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-
-      // Highlight active button
-      document.querySelectorAll('.q-nav-btn').forEach(b => b.classList.remove('active'));
-      const btn = document.getElementById(`nav-btn-${num}`);
-      if (btn) btn.classList.add('active');
-    }
-
-    // Highlight navigator button when question is answered
-    function updateNavigatorBtn(name) {
-      // name is like "q_5" — find which question number this is
-      const card = document.querySelector(`[name="${name}"]`)?.closest('.question-card');
-      if (!card) return;
-      const num = card.id.replace('qcard-', '');
-      const btn = document.getElementById(`nav-btn-${num}`);
-      if (!btn) return;
-
-      const els = document.querySelectorAll(`[name="${name}"]`);
-      const answered = Array.from(els).some(el =>
-        (el.type === 'radio' || el.type === 'checkbox') ? el.checked : el.value.trim() !== ''
-      );
-      btn.classList.toggle('answered', answered);
-    }
-
-    // Highlight which question is currently in view
-    let observerReady = false;
-
-    window.addEventListener('scroll', () => {
-      observerReady = true;
-    }, { once: true });
-
-    const observer = new IntersectionObserver((entries) => {
-      if (!observerReady) return;
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          const num = entry.target.id.replace('qcard-', '');
-          document.querySelectorAll('.q-nav-btn').forEach(b => b.classList.remove('active'));
-          const btn = document.getElementById(`nav-btn-${num}`);
-          if (btn) btn.classList.add('active');
-        }
-      });
-    }, { threshold: 0.5 });
-
-    document.querySelectorAll('.question-card').forEach(card => observer.observe(card));
-
-    // ── HELPER ───────────────────────────────────────────────
-    function getQuestionNames() {
-      const names = new Set();
-      document.querySelectorAll('#quiz-form [name]').forEach(el => {
-        if (el.name !== 'csrfmiddlewaretoken' && el.name !== 'quiz_id') names.add(el.name);
-      });
-      return names;
-    }
-    // ── PROGRESS ─────────────────────────────────────────────
-  function updateProgress() {
-    const names = getQuestionNames();
-    let answered = 0;
-    names.forEach(name => {
-      const els = document.querySelectorAll(`[name="${name}"]`);
-      const done = Array.from(els).some(el =>
-        (el.type === 'radio' || el.type === 'checkbox') ? el.checked : el.value.trim() !== ''
-      );
-      if (done) answered++;
-      updateNavigatorBtn(name);
+  // ── AUTOSAVE (this device only) ──────────────────────────
+  function collectAnswers() {
+    const data = {};
+    getQuestionNames().forEach(name => {
+      const els = Array.from(form.querySelectorAll(`[name="${name}"]`));
+      if (!els.length) return;
+      if (els[0].type === 'checkbox') data[name] = els.filter(el => el.checked).map(el => el.value);
+      else if (els[0].type === 'radio') data[name] = (els.find(el => el.checked) || {}).value || '';
+      else data[name] = els[0].value;
     });
-    const pct = Math.round((answered / TOTAL_QUESTIONS) * 100);
-    document.getElementById('progress-pct').textContent  = `${answered} / ${TOTAL_QUESTIONS}`;
-    document.getElementById('progress-fill').style.width = pct + '%';
+    return data;
   }
 
-  function confirmSubmit() {
-    const names = getQuestionNames();
-    let unanswered = 0;
-    names.forEach(name => {
-      const els = document.querySelectorAll(`[name="${name}"]`);
-      const answered = Array.from(els).some(el =>
-        (el.type === 'radio' || el.type === 'checkbox') ? el.checked : el.value.trim() !== ''
-      );
-      if (!answered) unanswered++;
-    });
+  function saveAnswers() {
+    try { localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(collectAnswers())); } catch (e) {}
+  }
 
-    // ── If you want ALL answers required, block submission ──
+  function restoreAnswers() {
+    let data = null;
+    try {
+      // Drop drafts of earlier attempts of this quiz.
+      for (let i = localStorage.length - 1; i >= 0; i--) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith(AUTOSAVE_PREFIX) && k !== AUTOSAVE_KEY) localStorage.removeItem(k);
+      }
+      data = JSON.parse(localStorage.getItem(AUTOSAVE_KEY) || 'null');
+    } catch (e) { data = null; }
+    if (!data) return;
+    Object.entries(data).forEach(([name, value]) => {
+      const els = form.querySelectorAll(`[name="${name}"]`);
+      els.forEach(el => {
+        if (el.type === 'checkbox') el.checked = Array.isArray(value) && value.includes(el.value);
+        else if (el.type === 'radio') el.checked = el.value === value;
+        else el.value = typeof value === 'string' ? value : '';
+      });
+    });
+  }
+
+  // ── QUESTION NAVIGATOR ───────────────────────────────────
+  function scrollToQuestion(num) {
+    const card = document.getElementById(`qcard-${num}`);
+    if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    document.querySelectorAll('.q-nav-btn').forEach(b => b.classList.remove('active'));
+    const btn = document.getElementById(`nav-btn-${num}`);
+    if (btn) btn.classList.add('active');
+  }
+
+  function isAnswered(name) {
+    const els = form.querySelectorAll(`[name="${name}"]`);
+    return Array.from(els).some(el =>
+      (el.type === 'radio' || el.type === 'checkbox') ? el.checked : el.value.trim() !== ''
+    );
+  }
+
+  // Highlight which question is currently in view
+  let observerReady = false;
+  window.addEventListener('scroll', () => { observerReady = true; }, { once: true, passive: true });
+
+  const observer = new IntersectionObserver((entries) => {
+    if (!observerReady) return;
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const num = entry.target.id.replace('qcard-', '');
+        document.querySelectorAll('.q-nav-btn').forEach(b => b.classList.remove('active'));
+        const btn = document.getElementById(`nav-btn-${num}`);
+        if (btn) btn.classList.add('active');
+      }
+    });
+  }, { threshold: 0.5 });
+
+  document.querySelectorAll('.question-card').forEach(card => observer.observe(card));
+
+  // ── HELPER ───────────────────────────────────────────────
+  function getQuestionNames() {
+    return Array.from(document.querySelectorAll('.question-card')).map(card => card.dataset.qname);
+  }
+
+  // ── PROGRESS ─────────────────────────────────────────────
+  function updateProgress() {
+    let answered = 0;
+    document.querySelectorAll('.question-card').forEach(card => {
+      const done = isAnswered(card.dataset.qname);
+      if (done) answered++;
+      const btn = document.getElementById('nav-btn-' + card.id.replace('qcard-', ''));
+      if (btn) btn.classList.toggle('answered', done);
+    });
+    const pct = TOTAL_QUESTIONS ? Math.round((answered / TOTAL_QUESTIONS) * 100) : 0;
+    document.getElementById('progress-pct').textContent  = `${answered} / ${TOTAL_QUESTIONS}`;
+    document.getElementById('progress-fill').style.width = pct + '%';
+    return answered;
+  }
+
+  let saveTimer = null;
+  form.addEventListener('input', () => {
+    updateProgress();
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(saveAnswers, 400);
+  });
+  form.addEventListener('change', () => { updateProgress(); saveAnswers(); });
+
+  restoreAnswers();
+  updateProgress();
+
+  function confirmSubmit() {
+    const unanswered = TOTAL_QUESTIONS - updateProgress();
+
+    // ── All answers are required before finishing early ──
     if (unanswered > 0) {
       showModal({
         icon: '⚠️',
@@ -611,7 +719,10 @@
         buttons: [{
           label: 'Davom etish',
           style: 'background:#4e73df; color:#fff;',
-          onClick: null
+          onClick: () => {
+            const first = getQuestionNames().findIndex(name => !isAnswered(name));
+            if (first >= 0) scrollToQuestion(first + 1);
+          }
         }]
       });
       return;  // ← blocks submission entirely
@@ -630,7 +741,7 @@
         {
           label: 'Yuborish',
           style: 'background:#1cc88a; color:#fff;',
-          onClick: () => { isSubmitting = true; document.getElementById('quiz-form').submit(); }
+          onClick: submitQuiz
         }
       ]
     });
