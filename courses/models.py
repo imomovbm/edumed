@@ -8,6 +8,9 @@ class Topic(models.Model):
     created_by  = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     created_at  = models.DateTimeField(auto_now_add=True)
 
+    def __str__(self):
+        return self.title
+
 class TopicSection(models.Model):
     TYPE_CHOICES = [
         ('text',      'Matn bloki'),
@@ -24,6 +27,9 @@ class TopicSection(models.Model):
 
     class Meta:
         ordering = ['order']
+
+    def __str__(self):
+        return f"{self.topic_id}: {self.get_type_display()} {self.title}".strip()
 
 class TopicSectionItem(models.Model):
     section   = models.ForeignKey(TopicSection, on_delete=models.CASCADE, related_name='items')
@@ -46,6 +52,9 @@ class TopicProgress(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     status = models.CharField(max_length=32, choices=STATUS_CHOICES)
     enrolled_date = models.DateField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user} - {self.topic_id}: {self.status}"
 
 class TopicComment(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -79,10 +88,17 @@ class Question(models.Model):
     audio = models.CharField(max_length=255, null=True, blank=True)
     video = models.CharField(max_length=255, null=True, blank=True)
 
+    def __str__(self):
+        text = self.question_text or ''
+        return text if len(text) <= 80 else text[:77] + '...'
+
 class QuestionChoice(models.Model):
     question = models.ForeignKey(Question, on_delete=models.CASCADE)
     choice_text = models.TextField(blank=True, null=True)
     is_correct = models.BooleanField()
+
+    def __str__(self):
+        return self.choice_text or ''
 
 class Quiz(models.Model):
     title = models.TextField()
@@ -93,42 +109,45 @@ class Quiz(models.Model):
     type = models.CharField(max_length=50, choices=TYPE_CHOICES)     
     topic = models.ForeignKey(Topic, on_delete=models.SET_NULL, null=True, blank=True)
     description = models.TextField(blank=True)
+    duration = models.PositiveIntegerField(default=15, verbose_name="Davomiyligi (daqiqa)")
     created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.title
 
 class QuizQuestion(models.Model):
     quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE)
     question = models.ForeignKey(Question, on_delete=models.CASCADE)
     order = models.IntegerField()
 
-# ── Model on_delete fixes needed ──────────────────────────────────────────────
-#
-# PROBLEM 1: Response.quiz = CASCADE
-#   Deleting a quiz deletes ALL student results for that quiz — data loss!
-#   Fix: SET_NULL so results are preserved even if quiz is removed.
-#
-# PROBLEM 2: ResponseDetails.question = CASCADE
-#   Deleting a question deletes the response detail row — history is lost.
-#   Fix: SET_NULL so we keep the answer record even if question is deleted.
-#
-# PROBLEM 3: ResponseDetails.question_choice = CASCADE (already nullable)
-#   Same issue — if a choice is deleted, the detail row vanishes.
-#   Fix: SET_NULL.
-#
+    def __str__(self):
+        return f"{self.quiz_id} #{self.order}"
+
+# Results are kept when a quiz, question or choice is deleted (SET_NULL), so a
+# student's history never disappears.
 class Response(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    quiz = models.ForeignKey(Quiz, on_delete=models.SET_NULL, null=True, blank=True)  # ← was CASCADE
+    quiz = models.ForeignKey(Quiz, on_delete=models.SET_NULL, null=True, blank=True)
     score = models.FloatField()
     correct_count = models.IntegerField(default=0)
     incorrect_count = models.IntegerField(default=0)
     skipped_count = models.IntegerField(default=0)
+    # How many anti-cheat rule violations the browser reported during the attempt.
+    violation_count = models.PositiveIntegerField(default=0)
     created_date_time = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user} - {self.quiz_id}: {self.score}%"
 
 class ResponseDetails(models.Model):
     response = models.ForeignKey(Response, on_delete=models.CASCADE)
-    question = models.ForeignKey(Question, on_delete=models.SET_NULL, null=True, blank=True)  # ← was CASCADE
-    question_choice = models.ForeignKey(QuestionChoice, on_delete=models.SET_NULL, null=True, blank=True)  # ← was CASCADE
+    question = models.ForeignKey(Question, on_delete=models.SET_NULL, null=True, blank=True)
+    question_choice = models.ForeignKey(QuestionChoice, on_delete=models.SET_NULL, null=True, blank=True)
+    # True/False = graded; None = skipped, or a short/essay answer not checked yet.
     is_correct = models.BooleanField(default=None, null=True)
     user_text_answer = models.TextField(blank=True, null=True)
+    # Teacher's comment on a short/essay answer.
+    feedback = models.TextField(blank=True, default='')
 
 class Forum(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -144,6 +163,9 @@ class Forum(models.Model):
     
     def total_dislikes(self):
         return self.dislikes.count()
+
+    def __str__(self):
+        return self.title
 
 class ForumComment(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -165,3 +187,6 @@ class ForumComment(models.Model):
     
     def total_dislikes(self):
         return self.dislikes.count()
+
+    def __str__(self):
+        return f"{self.user} - forum {self.forum_id}"

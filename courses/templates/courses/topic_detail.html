@@ -1,5 +1,5 @@
 {% extends "courses/layout.html" %}
-{% load static %}
+{% load static course_extras %}
 
 {% block extra_css %}
 <style>
@@ -197,6 +197,30 @@
   .quiz-done .quiz-title {
     color: #2d3748;
   }
+
+  /* ── Like / dislike ── */
+  .vote-btn {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: none; border: 1px solid #e3e6f0;
+    border-radius: 20px; padding: 2px 10px;
+    font-size: 0.75rem; color: #a0aec0;
+    cursor: pointer; transition: all 0.18s;
+  }
+  .vote-btn:hover { border-color: #4e73df; color: #4e73df; }
+  .vote-btn.like-btn.active    { background:#ebf4ff; border-color:#4e73df; color:#4e73df; }
+  .vote-btn.dislike-btn.active { background:#fde8e6; border-color:#e74a3b; color:#e74a3b; }
+  .comment-delete {
+    background: none; border: none; color: #c0c4d0; font-size: 0.75rem;
+    padding: 2px 6px; border-radius: 6px; cursor: pointer;
+  }
+  .comment-delete:hover { color: #e74a3b; background: #fde8e6; }
+
+  @media print {
+    #reading-progress, .topic-sidebar, .comments-card, .breadcrumb { display: none !important; }
+    .topic-main { flex: 0 0 100% !important; max-width: 100% !important; }
+    .section-card { box-shadow: none !important; border: 1px solid #e3e6f0 !important; break-inside: avoid; }
+    .topic-hero { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
 </style>
 
 {% endblock extra_css %}
@@ -220,7 +244,7 @@
   <div class="row">
 
     <!-- ── MAIN COLUMN ── -->
-    <div class="col-lg-8">
+    <div class="col-lg-8 topic-main">
 
       <!-- Hero -->
       <div class="topic-hero">
@@ -229,16 +253,17 @@
         </div>
         <h4>{{ topic.title }}</h4>
         {% if topic.description %}
-        <p>{{ topic.description }}</p>
+        <p>{{ topic.description|linebreaksbr }}</p>
         {% endif %}
         <div class="hero-meta">
-          <span><i class="fas fa-clock mr-1"></i>~10 daqiqa o'qish</span>
-          <span><i class="fas fa-comment mr-1"></i>{{ comments.count }} ta izoh</span>
+          <span><i class="fas fa-clock mr-1"></i>~{{ reading_minutes }} daqiqa o'qish</span>
+          <span><i class="fas fa-comment mr-1"></i>{{ comments|length }} ta izoh</span>
+          {% if quiz_data %}<span><i class="fas fa-clipboard-list mr-1"></i>{{ quiz_data|length }} ta test</span>{% endif %}
         </div>
       </div>
 
       <!-- Dynamic Sections -->
-      {% for section in topic.sections.all %}
+      {% for section in sections %}
 
         {% if section.type == 'text' %}
         <div class="card section-card" id="section-{{ forloop.counter }}">
@@ -251,7 +276,7 @@
           {% endif %}
           <div class="card-body text-section">
             {% for item in section.items.all %}
-            <p class="{% if not forloop.last %}mb-3{% else %}mb-0{% endif %}">{{ item.text }}</p>
+            <p class="{% if not forloop.last %}mb-3{% else %}mb-0{% endif %}">{{ item.text|linebreaksbr }}</p>
             {% endfor %}
           </div>
         </div>
@@ -260,7 +285,7 @@
         <div class="mb-4" id="section-{{ forloop.counter }}">
           {% for item in section.items.all %}
           <blockquote class="topic-quote {% if not forloop.last %}mb-3{% endif %}">
-            {{ item.text }}
+            {{ item.text|linebreaksbr }}
             {% if item.label %}
             <div class="quote-footer"><i class="fas fa-quote-right mr-1"></i>{{ item.label }}</div>
             {% endif %}
@@ -281,9 +306,9 @@
               <li class="keypoint-item">
                 <div class="kp-icon"><i class="fas fa-check"></i></div>
                 <div>
-                  <div class="kp-text">{{ item.text }}</div>
+                  <div class="kp-text">{{ item.text|linebreaksbr }}</div>
                   {% if item.sub_text %}
-                  <div class="kp-sub">{{ item.sub_text }}</div>
+                  <div class="kp-sub">{{ item.sub_text|linebreaksbr }}</div>
                   {% endif %}
                 </div>
               </li>
@@ -306,7 +331,7 @@
                 {% if item.label %}
                 <div class="timeline-label">{{ item.label }}</div>
                 {% endif %}
-                <div class="timeline-text">{{ item.text }}</div>
+                <div class="timeline-text">{{ item.text|linebreaksbr }}</div>
                 {% if item.sub_text %}
                 <div class="timeline-sub">
                   {% for line in item.sub_text.splitlines %}
@@ -330,14 +355,14 @@
           <div class="card-body">
             {% for item in section.items.all %}
             <div class="person-card">
-              <div class="d-flex align-items-start gap-3 mb-3" style="gap:14px;">
+              <div class="d-flex align-items-start mb-3" style="gap:14px;">
                 <div class="person-avatar"><i class="fas fa-user-md"></i></div>
                 <div>
                   <div class="person-name">{{ item.label }}</div>
                   {% if item.sub_text %}<div class="person-years">{{ item.sub_text }}</div>{% endif %}
                 </div>
               </div>
-              <p class="person-text">{{ item.text }}</p>
+              <p class="person-text">{{ item.text|linebreaksbr }}</p>
             </div>
             {% endfor %}
           </div>
@@ -356,7 +381,7 @@
             {% for item in section.items.all %}
             <div class="info-item">
               {% if item.label %}<div class="info-label">{{ item.label }}</div>{% endif %}
-              <p class="info-text">{{ item.text }}</p>
+              <p class="info-text">{{ item.text|linebreaksbr }}</p>
             </div>
             {% endfor %}
           </div>
@@ -368,7 +393,7 @@
           <div class="card-body text-center py-5 text-muted">
             <i class="fas fa-book-open fa-3x d-block mb-3 text-gray-300"></i>
             <h6>Mavzu kontenti hali qo'shilmagan</h6>
-            {% if user_profile.role == 'superadmin' %}
+            {% if is_admin %}
             <a href="{% url 'courses:edit_topic' topic.id %}" class="btn btn-primary btn-sm mt-2">
               <i class="fas fa-plus mr-1"></i>Kontent qo'shish
             </a>
@@ -378,12 +403,12 @@
       {% endfor %}
 
       <!-- Comments -->
-      <div class="card section-card">
+      <div class="card section-card comments-card" id="comments">
         <div class="card-header py-3 bg-white d-flex align-items-center justify-content-between">
           <h6 class="m-0 font-weight-bold text-primary">
             <i class="fas fa-comments mr-2"></i>Muhokama
           </h6>
-          <span class="badge badge-primary badge-pill">{{ comments.count }} ta</span>
+          <span class="badge badge-primary badge-pill">{{ comments|length }} ta</span>
         </div>
         <div class="card-body">
 
@@ -391,12 +416,12 @@
           <form method="POST" class="mb-4">
             {% csrf_token %}
             <div class="d-flex align-items-start" style="gap:12px;">
-              <img src="{% if user_profile.profile_image %}{{ user_profile.profile_image.url }}{% else %}{% static 'img/avatar.png' %}{% endif %}"
+              <img src="{{ user_profile|avatar_url }}" alt=""
                 class="rounded-circle border" style="width:40px;height:40px;object-fit:cover;flex-shrink:0;margin-top:2px;">
               <div class="flex-grow-1">
-                <textarea class="form-control" name="comment_text" rows="2"
-                  placeholder="Savol yoki fikringizni yozing..."
-                  required style="border-radius:10px; resize:none; font-size:0.9rem;"></textarea>
+                <textarea class="form-control" name="comment_text" rows="2" maxlength="5000"
+                  placeholder="Savol yoki fikringizni yozing..." aria-label="Izoh"
+                  required style="border-radius:10px; resize:vertical; font-size:0.9rem;"></textarea>
                 <div class="text-right mt-2">
                   <button type="submit" class="btn btn-primary btn-sm px-4" style="border-radius:20px;">
                     <i class="fas fa-paper-plane mr-1"></i>Yuborish
@@ -407,38 +432,38 @@
           </form>
           {% endif %}
 
-          {% if messages %}
-            {% for message in messages %}
-            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-              {{ message }}
-              <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
-            </div>
-            {% endfor %}
-          {% endif %}
-
           {% for comment in comments %}
-          <div class="comment-item">
+          <div class="comment-item" id="comment-{{ comment.id }}">
             <div class="comment-avatar">
-              <img src="{% if comment.user.userprofile.profile_image %}{{ comment.user.userprofile.profile_image.url }}{% else %}{% static 'img/avatar.png' %}{% endif %}"
+              <img src="{{ comment.user.userprofile|avatar_url }}" alt=""
                 class="rounded-circle border" style="width:40px;height:40px;object-fit:cover;">
             </div>
             <div class="flex-grow-1">
-              <div class="d-flex align-items-center" style="gap:8px;">
-                <span class="comment-name">{{ comment.user.get_full_name }}</span>
+              <div class="d-flex align-items-center flex-wrap" style="gap:8px;">
+                <span class="comment-name">{{ comment.user.get_full_name|default:comment.user.username }}</span>
                 <span class="comment-time">· {{ comment.created_at|timesince }} oldin</span>
+                {% if comment.user_id == request.user.id or can_moderate %}
+                <form method="post" action="{% url 'courses:delete_topic_comment' comment.id %}" class="ml-auto"
+                  onsubmit="return confirm('Izohni o\'chirishni tasdiqlaysizmi?');">
+                  {% csrf_token %}
+                  <button type="submit" class="comment-delete" title="O'chirish" aria-label="Izohni o'chirish">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </form>
+                {% endif %}
               </div>
-              <p class="comment-text">{{ comment.text }}</p>
+              <p class="comment-text">{{ comment.text|linebreaksbr }}</p>
               <div class="comment-actions">
-                <a href="{% url 'courses:like_comment' comment.id %}?action=like"
-                  class="btn btn-sm {% if request.user in comment.likes.all %}btn-primary{% else %}btn-outline-primary{% endif %} py-0 px-2"
-                  style="font-size:0.75rem; border-radius:20px;">
-                  <i class="fas fa-thumbs-up mr-1"></i>{{ comment.total_likes }}
-                </a>
-                <a href="{% url 'courses:like_comment' comment.id %}?action=dislike"
-                  class="btn btn-sm {% if request.user in comment.dislikes.all %}btn-danger{% else %}btn-outline-danger{% endif %} py-0 px-2"
-                  style="font-size:0.75rem; border-radius:20px;">
-                  <i class="fas fa-thumbs-down mr-1"></i>{{ comment.total_dislikes }}
-                </a>
+                <button type="button" class="vote-btn like-btn {% if comment.id in liked_ids %}active{% endif %}"
+                  data-id="tcomment-{{ comment.id }}" data-type="like" aria-label="Yoqdi">
+                  <i class="fas fa-thumbs-up"></i>
+                  <span class="vote-count">{{ comment.n_likes }}</span>
+                </button>
+                <button type="button" class="vote-btn dislike-btn {% if comment.id in disliked_ids %}active{% endif %}"
+                  data-id="tcomment-{{ comment.id }}" data-type="dislike" aria-label="Yoqmadi">
+                  <i class="fas fa-thumbs-down"></i>
+                  <span class="vote-count">{{ comment.n_dislikes }}</span>
+                </button>
               </div>
             </div>
           </div>
@@ -455,10 +480,10 @@
     </div>
 
     <!-- ── SIDEBAR ── -->
-    <div class="col-lg-4">
+    <div class="col-lg-4 topic-sidebar">
 
       <!-- Table of Contents -->
-      {% if topic.sections.count > 2 %}
+      {% if toc|length > 1 %}
       <div class="card section-card mb-4">
         <div class="card-header py-3 bg-white">
           <h6 class="m-0 font-weight-bold text-primary">
@@ -466,13 +491,11 @@
           </h6>
         </div>
         <div class="card-body py-2 px-2">
-          {% for section in topic.sections.all %}
-          {% if section.title %}
-          <a href="#section-{{ forloop.counter }}" class="toc-item d-flex">
+          {% for anchor, title in toc %}
+          <a href="#section-{{ anchor }}" class="toc-item d-flex">
             <span class="toc-num">{{ forloop.counter }}</span>
-            <span>{{ section.title }}</span>
+            <span>{{ title }}</span>
           </a>
-          {% endif %}
           {% endfor %}
         </div>
       </div>
@@ -491,30 +514,29 @@
               <div class="quiz-card {% if item.attempted %}quiz-done{% endif %}">
                 <div class="flex-grow-1">
                   <div class="quiz-title d-flex align-items-center" style="gap:6px;">
-                    {% if item.attempted %}
-                    <i class="fas fa-check-circle text-success" style="font-size:0.8rem;"></i>
+                    {% if item.passed %}
+                    <i class="fas fa-check-circle text-success" style="font-size:0.8rem;" title="O'tilgan"></i>
+                    {% elif item.attempted %}
+                    <i class="fas fa-exclamation-circle text-warning" style="font-size:0.8rem;" title="Hali o'tilmagan"></i>
                     {% else %}
-                    <i class="fas fa-circle text-gray-300" style="font-size:0.8rem; color:#d1d5db;"></i>
+                    <i class="fas fa-circle" style="font-size:0.8rem; color:#d1d5db;"></i>
                     {% endif %}
                     {{ item.quiz.title }}
                   </div>
                   <div class="quiz-meta mt-1">
                     <i class="fas fa-question-circle mr-1"></i>{{ item.question_count }} ta savol
+                    · <i class="fas fa-clock mr-1"></i>{{ item.quiz.duration }} daq
                     {% if item.attempted %}
                     · <span style="color:#718096;">
                         eng yaxshi:
-                        <strong class="
-                          {% if item.best.score >= 90 %}text-success
-                          {% elif item.best.score >= 70 %}text-primary
-                          {% elif item.best.score >= 50 %}text-warning
-                          {% else %}text-danger{% endif %}">
-                          {{ item.best.score|floatformat:0 }}%
-                        </strong>
+                        <strong class="text-{{ item.best.score|score_color }}">{{ item.best.score|floatformat:0 }}%</strong>
+                        ({{ item.attempts }} marta)
                       </span>
                     {% endif %}
                   </div>
                 </div>
                 <div class="d-flex flex-column align-items-end" style="gap:4px;">
+                  {% if item.question_count %}
                   <a href="{% url 'courses:quiz_attempt' item.quiz.id %}"
                     class="btn btn-sm {% if item.attempted %}btn-outline-success{% else %}btn-success{% endif %} px-2"
                     style="border-radius:16px; font-size:0.75rem; white-space:nowrap;">
@@ -524,6 +546,9 @@
                       <i class="fas fa-play mr-1"></i>Boshlash
                     {% endif %}
                   </a>
+                  {% else %}
+                  <span class="badge badge-light" title="Testga hali savol qo'shilmagan">Savollar yo'q</span>
+                  {% endif %}
                   {% if item.attempted %}
                   <a href="{% url 'courses:score_details' item.best.id %}"
                     class="btn btn-sm btn-outline-primary px-2"
@@ -534,6 +559,9 @@
                 </div>
               </div>
               {% endfor %}
+              <div class="px-3 py-2 small text-muted" style="background:#f8f9fc;">
+                <i class="fas fa-info-circle mr-1"></i>Mavzu barcha testlardan kamida {{ pass_score }}% olinganda tugatiladi.
+              </div>
             </div>
           </div>
           {% endif %}
@@ -547,20 +575,19 @@
         </div>
         <div class="card-body">
           {% if progress %}
-          {% with pct=progress.progress|default:0|add:0 %}
           <div class="d-flex justify-content-between align-items-center mb-1">
             <span class="small text-muted">O'zlashtirish</span>
             <span class="font-weight-bold small
-              {% if pct == 100 %}text-success
-              {% elif pct >= 50 %}text-warning
-              {% elif pct > 0 %}text-info
+              {% if progress_pct == 100 %}text-success
+              {% elif progress_pct >= 50 %}text-warning
+              {% elif progress_pct > 0 %}text-info
               {% else %}text-muted{% endif %}">
-              {{ pct }}%
+              {{ progress_pct }}%
             </span>
           </div>
-          <div class="progress mb-2" style="height: 12px; background-color: #eaecf4; overflow: visible;">
-            <div class="progress-bar {% if pct >= 100 %}bg-success{% elif pct >= 50 %}bg-warning{% else %}bg-info{% endif %}"
-              style="width: {{ pct|default:0 }}%; border-radius: 10px;">
+          <div class="progress mb-2" style="height: 12px; background-color: #eaecf4;">
+            <div class="progress-bar {% if progress_pct >= 100 %}bg-success{% elif progress_pct >= 50 %}bg-warning{% else %}bg-info{% endif %}"
+              style="width: {{ progress_pct }}%; border-radius: 10px;">
             </div>
           </div>
           <div class="text-center mt-2">
@@ -578,12 +605,28 @@
             </span>
             {% endif %}
           </div>
-          {% endwith %}
-          {% else %}
+          {% elif has_quizzes %}
           <div class="text-center py-2 text-muted">
             <i class="fas fa-play-circle d-block fa-2x mb-2 text-gray-300"></i>
             <p class="small mb-0">Testlarni bajaring, progress ko'rsatiladi</p>
           </div>
+          {% endif %}
+
+          {% if not has_quizzes %}
+          <form method="post" action="{% url 'courses:update_progress' topic.id %}" class="mt-3">
+            {% csrf_token %}
+            {% if progress.status == 'completed' %}
+            <input type="hidden" name="status" value="not_started">
+            <button type="submit" class="btn btn-outline-secondary btn-sm btn-block" style="border-radius:8px;">
+              <i class="fas fa-undo mr-1"></i>Belgini olib tashlash
+            </button>
+            {% else %}
+            <input type="hidden" name="status" value="completed">
+            <button type="submit" class="btn btn-success btn-sm btn-block" style="border-radius:8px;">
+              <i class="fas fa-check mr-1"></i>Mavzuni o'qib chiqdim
+            </button>
+            {% endif %}
+          </form>
           {% endif %}
         </div>
       </div>
@@ -595,16 +638,19 @@
           <h6 class="font-weight-bold text-gray-800 mb-3">
             <i class="fas fa-download mr-2 text-primary"></i>Qo'shimcha materiallar
           </h6>
-          <button class="btn btn-primary btn-block btn-sm mb-2" style="border-radius:8px;">
+          <button type="button" class="btn btn-primary btn-block btn-sm mb-2" style="border-radius:8px;" disabled
+            title="Tez kunda">
             <i class="fas fa-volume-up mr-2"></i>Audio versiya
+            <span class="badge badge-light ml-1" style="font-size:0.65rem;">Tez kunda</span>
           </button>
-          <a href="#" class="btn btn-outline-danger btn-block btn-sm" style="border-radius:8px;">
-            <i class="fas fa-file-pdf mr-1"></i>PDF yuklab olish
-          </a>
+          <button type="button" class="btn btn-outline-danger btn-block btn-sm" style="border-radius:8px;"
+            onclick="window.print()" title="Brauzerning chop etish oynasida «PDF sifatida saqlash»ni tanlang">
+            <i class="fas fa-file-pdf mr-1"></i>PDF yuklab olish / chop etish
+          </button>
         </div>
       </div>
 
-      {% if user_profile.role == 'superadmin' %}
+      {% if is_admin %}
       <a href="{% url 'courses:edit_topic' topic.id %}" class="btn btn-warning btn-block mb-4"
         style="border-radius:8px;">
         <i class="fas fa-pen mr-2"></i>Mavzuni tahrirlash
@@ -626,7 +672,7 @@
     const total = doc.scrollHeight - doc.clientHeight;
     const pct = total > 0 ? (scrolled / total) * 100 : 0;
     document.getElementById('reading-progress').style.width = pct + '%';
-  });
+  }, { passive: true });
 
   // ── Smooth scroll for TOC ─────────────────────────────
   document.querySelectorAll('a.toc-item').forEach(link => {
@@ -637,4 +683,5 @@
     });
   });
 </script>
+{% include "courses/partials/vote_script.html" %}
 {% endblock extra_js %}

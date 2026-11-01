@@ -1,0 +1,53 @@
+{# Django messages as toasts. Self-contained (no jQuery) so standalone pages can include it too. #}
+{% if messages %}
+<div class="edm-toasts" role="status" aria-live="polite">
+  {% for message in messages %}
+  {% if 'error' in message.tags %}{% with kind='error' icon='fa-times-circle' %}{% include "courses/partials/toast.html" %}{% endwith %}
+  {% elif 'success' in message.tags %}{% with kind='success' icon='fa-check-circle' %}{% include "courses/partials/toast.html" %}{% endwith %}
+  {% elif 'warning' in message.tags %}{% with kind='warning' icon='fa-exclamation-triangle' %}{% include "courses/partials/toast.html" %}{% endwith %}
+  {% else %}{% with kind='info' icon='fa-info-circle' %}{% include "courses/partials/toast.html" %}{% endwith %}
+  {% endif %}
+  {% endfor %}
+</div>
+<style>
+  .edm-toasts {
+    position: fixed; top: 20px; right: 20px; z-index: 10050;
+    display: flex; flex-direction: column; gap: 8px;
+    max-width: 380px; width: calc(100% - 32px);
+  }
+  .edm-toast {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 14px 16px; border-radius: 10px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+    font-size: 0.9rem; font-weight: 500; line-height: 1.45;
+    animation: edmToastIn 0.3s ease; transition: opacity 0.4s;
+  }
+  .edm-toast-text { flex: 1; word-break: break-word; }
+  .edm-toast-close {
+    background: none; border: none; cursor: pointer; padding: 0 0 0 4px;
+    font-size: 1rem; line-height: 1; opacity: 0.6; color: inherit;
+  }
+  .edm-toast-close:hover { opacity: 1; }
+  .edm-toast-success { background: #d4f5e9; color: #1a7a56; border-left: 4px solid #1cc88a; }
+  .edm-toast-error   { background: #fde8e6; color: #a02020; border-left: 4px solid #e74a3b; }
+  .edm-toast-warning { background: #fef9e7; color: #8a6200; border-left: 4px solid #f6c23e; }
+  .edm-toast-info    { background: #ebf4ff; color: #2b4fa0; border-left: 4px solid #4e73df; }
+  @keyframes edmToastIn {
+    from { opacity: 0; transform: translateX(20px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+  @media (max-width: 576px) { .edm-toasts { top: 12px; right: 16px; } }
+</style>
+<script>
+  (function () {
+    document.querySelectorAll('.edm-toast').forEach(function (el) {
+      // Errors stay a bit longer so they can be read.
+      var delay = el.classList.contains('edm-toast-error') ? 8000 : 5000;
+      setTimeout(function () {
+        el.style.opacity = '0';
+        setTimeout(function () { el.remove(); }, 400);
+      }, delay);
+    });
+  })();
+</script>
+{% endif %}

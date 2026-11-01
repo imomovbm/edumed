@@ -1,0 +1,80 @@
+{# Like / dislike buttons: <button class="vote-btn like-btn" data-id="forum-12" data-type="like"> #}
+<script>
+(function () {
+  var IS_AUTH = {{ user.is_authenticated|yesno:"true,false" }};
+  var VOTE_URL = "{% url 'courses:toggle_vote' %}";
+  var LOGIN_URL = "{% url 'user:login' %}";
+  var CSRF = "{{ csrf_token }}";
+
+  function goLogin() {
+    window.location.href = LOGIN_URL + '?next=' + encodeURIComponent(location.pathname + location.search);
+  }
+
+  function setCount(btn, value) {
+    var el = btn.querySelector('.vote-count');
+    if (el) el.textContent = value;
+  }
+
+  function apply(id, state) {
+    document.querySelectorAll('.vote-btn[data-id="' + id + '"]').forEach(function (b) {
+      var isLike = b.dataset.type === 'like';
+      setCount(b, isLike ? state.likes : state.dislikes);
+      b.classList.toggle('active', isLike ? !!state.liked : !!state.disliked);
+      b.setAttribute('aria-pressed', b.classList.contains('active') ? 'true' : 'false');
+    });
+  }
+
+  function snapshot(id) {
+    var like = document.querySelector('.vote-btn.like-btn[data-id="' + id + '"]');
+    var dislike = document.querySelector('.vote-btn.dislike-btn[data-id="' + id + '"]');
+    var num = function (b) { return b ? parseInt(b.querySelector('.vote-count').textContent, 10) || 0 : 0; };
+    return {
+      likes: num(like), dislikes: num(dislike),
+      liked: !!(like && like.classList.contains('active')),
+      disliked: !!(dislike && dislike.classList.contains('active'))
+    };
+  }
+
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest('.vote-btn');
+    if (!btn) return;
+    e.preventDefault();
+    if (!IS_AUTH) { goLogin(); return; }
+
+    var id = btn.dataset.id;               // "<kind>-<pk>"
+    if (btn.dataset.busy === '1') return;
+    var cut = id.lastIndexOf('-');
+    var kind = id.slice(0, cut), pk = parseInt(id.slice(cut + 1), 10);
+    var before = snapshot(id);
+
+    // Optimistic update, corrected by the server answer.
+    var next = Object.assign({}, before);
+    if (btn.dataset.type === 'like') {
+      if (before.liked) { next.liked = false; next.likes--; }
+      else { next.liked = true; next.likes++; if (before.disliked) { next.disliked = false; next.dislikes--; } }
+    } else {
+      if (before.disliked) { next.disliked = false; next.dislikes--; }
+      else { next.disliked = true; next.dislikes++; if (before.liked) { next.liked = false; next.likes--; } }
+    }
+    apply(id, next);
+
+    document.querySelectorAll('.vote-btn[data-id="' + id + '"]').forEach(function (b) { b.dataset.busy = '1'; });
+    fetch(VOTE_URL, {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF, 'X-Requested-With': 'XMLHttpRequest' },
+      body: JSON.stringify({ type: kind, id: pk, action: btn.dataset.type })
+    })
+      .then(function (res) {
+        if (res.redirected || res.status === 401) { goLogin(); throw new Error('auth'); }
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return res.json();
+      })
+      .then(function (data) { apply(id, data); })
+      .catch(function () { apply(id, before); })
+      .finally(function () {
+        document.querySelectorAll('.vote-btn[data-id="' + id + '"]').forEach(function (b) { delete b.dataset.busy; });
+      });
+  });
+})();
+</script>

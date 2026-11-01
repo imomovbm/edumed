@@ -1,19 +1,19 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="uz">
 
 <head>
 
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-  <meta name="description" content="">
-  <meta name="author" content="">
-  
+  <meta name="description" content="EDUMED.UZ — hamshiralik ta'limi uchun interaktiv o'quv platformasi">
+  <meta name="author" content="edumed.uz">
+
   <link rel="manifest" href="{% static 'manifest.json' %}">
   <meta name="theme-color" content="#000000">
-  
-  <title>EDUMED.UZ</title>
+
+  <title>{% block title %}EDUMED.UZ{% endblock title %}</title>
 
   <!-- Custom fonts for this template-->
   <link href="{% static 'vendor/fontawesome-free/css/all.min.css' %}" rel="stylesheet" type="text/css">
@@ -21,13 +21,29 @@
 
   <!-- Custom styles for this template-->
   <link href="{% static 'css/sb-admin-2.min.css' %}" rel="stylesheet">
-  
+
+  <style>
+    /* Highlight the current page in the sidebar */
+    .sidebar .nav-item.active > .nav-link { background: rgba(255,255,255,0.12); border-radius: 8px; }
+    .sidebar .collapse-item.active { font-weight: 700; color: #4e73df !important; }
+    .sidebar .nav-link .badge-counter-side {
+      font-size: 0.65rem; vertical-align: middle; margin-left: 4px;
+    }
+    @media print {
+      #accordionSidebar, .topbar, .sticky-footer, .scroll-to-top, .no-print, .edm-toasts { display: none !important; }
+      #content-wrapper { margin: 0 !important; }
+      body { background: #fff !important; }
+    }
+  </style>
+
 {% block extra_css %}
   <!-- child templates will override this -->
 {% endblock extra_css %}
 </head>
 
 <body id="page-top" class="sidebar-toggled">
+
+{% include "courses/partials/messages.html" %}
 
   <!-- Page Wrapper -->
   <div id="wrapper">
@@ -64,28 +80,10 @@
   <!-- End of Page Wrapper -->
 
   <!-- Scroll to Top Button-->
-  <a class="scroll-to-top rounded" href="#page-top">
+  <a class="scroll-to-top rounded" href="#page-top" aria-label="Yuqoriga">
     <i class="fas fa-angle-up"></i>
   </a>
 
-  <!-- Logout Modal-->
-  <div class="modal fade" id="logoutModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="exampleModalLabel">Ready to Leave?</h5>
-          <button class="close" type="button" data-dismiss="modal" aria-label="Close">
-            <span aria-hidden="true">×</span>
-          </button>
-        </div>
-        <div class="modal-body">Select "Logout" below if you are ready to end your current session.</div>
-        <div class="modal-footer">
-          <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
-          <a class="btn btn-primary" href="login.html">Logout</a>
-        </div>
-      </div>
-    </div>
-  </div>
   <!-- Bootstrap core JavaScript-->
   <script src="{% static 'vendor/jquery/jquery.min.js' %}"></script>
   <script src="{% static 'vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
@@ -96,26 +94,34 @@
   <!-- Custom scripts for all pages-->
   <script src="{% static 'js/sb-admin-2.min.js' %}"></script>
   <script>
-      $(document).ready(function() {
-        function checkWidth() {
-          var windowSize = $(window).width();
-          if (windowSize < 768) {
-            // Mobil qurilmalarda sidebar-ni yopish
-            $("#accordionSidebar").addClass("toggled");
-          }
+    // SB Admin 2 closes the sidebar on *every* "resize" event on narrow screens.
+    // Phones fire "resize" while scrolling (the address bar hides/shows), so an
+    // opened sidebar snapped shut immediately. Replace that handler with one that
+    // only reacts when the width really changes.
+    $(window).off('resize');
+    $(function () {
+      var BREAKPOINT = 768;
+      var lastWidth = null;
+      function onWidthChange() {
+        var width = $(window).width();
+        if (width === lastWidth) return;            // height-only change: ignore
+        var wasMobile = lastWidth !== null && lastWidth < BREAKPOINT;
+        lastWidth = width;
+        if (width < BREAKPOINT) {
+          $('.sidebar .collapse').collapse('hide');
+          // Hide the sidebar on phones (first load, or when crossing into mobile width)
+          if (!wasMobile) $("#accordionSidebar").addClass("toggled");
         }
-        // Yuklanganda tekshirish
-        checkWidth();
-        
-        // Ekran o'lchami o'zgarganda (rotate qilinganda) ham tekshirish
-        $(window).resize(checkWidth);
-      });
-    </script>
-  <!-- Page level plugins -->
-  <script src="{% static 'vendor/chart.js/Chart.min.js' %}"></script>
+      }
+      onWidthChange();
+      $(window).on('resize orientationchange', onWidthChange);
+    });
+  </script>
+  <!-- Page level plugins (charts use the Chart.js 4 API) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
   <script>
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('{% static "service-worker.js" %}');
+    navigator.serviceWorker.register('{% static "service-worker.js" %}').catch(function () {});
   }
   </script>
 

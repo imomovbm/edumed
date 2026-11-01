@@ -1,14 +1,17 @@
 from django.urls import path
-from django.contrib.auth.decorators import login_required
 from . import views
 
 app_name = "courses"
 
 urlpatterns = [
-    path("", views.index, name="index"), 
-    path("topics/", views.topics_view, name="topics"), 
-    path("topic/<int:topic_id>/", views.topic_detail, name="topic"), 
+    path("", views.index, name="index"),
+    path("search/", views.search_view, name="search"),
+    path("report.csv", views.report_csv_view, name="report_csv"),
+
+    path("topics/", views.topics_view, name="topics"),
+    path("topic/<int:topic_id>/", views.topic_detail, name="topic"),
     path("comment/<int:comment_id>/like/", views.like_comment, name="like_comment"),
+    path("comment/<int:comment_id>/delete/", views.delete_topic_comment_view, name="delete_topic_comment"),
     path('topic/<int:topic_id>/progress/', views.update_progress_view, name='update_progress'),
     path('create-topic/',                views.create_topic_view, name='create_topic'),
     path('edit-topic/<int:topic_id>/',   views.edit_topic_view,   name='edit_topic'),
@@ -26,16 +29,23 @@ urlpatterns = [
     path("save-quiz/", views.save_quiz_view, name="save_quiz"),
     path("edit-quiz/<int:quiz_id>/", views.edit_quiz_view, name="edit_quiz"),
     path('delete-quiz/<int:quiz_id>/', views.delete_quiz_view, name='delete_quiz'),
-    
+
+    # students
+    path('quizzes/', views.quizzes_view, name='quizzes'),
     path('quiz/<int:quiz_id>/', views.quiz_attempt, name='quiz_attempt'),
     path('quiz/violation/', views.log_violation, name='log_violation'),
     path('quiz/submit/<int:quiz_id>/', views.submit_quiz, name='submit_quiz'),
     path('quiz/answer/<int:response_id>/', views.score_view, name='score_view'),
     path('quiz/details/<int:response_id>/', views.score_details_view, name='score_details'),
 
+    # teachers: short / essay answers
+    path('grading/', views.grading_view, name='grading'),
+    path('grade/<int:detail_id>/', views.grade_answer_view, name='grade_answer'),
 
     path('forums/', views.all_forum_view, name='forums'),
     path('forum/<int:forum_id>/', views.forum_view, name='forum'),
+    path('forum/<int:forum_id>/delete/', views.delete_forum_view, name='delete_forum'),
     path('post-comment/<int:forum_id>/', views.post_comment_view, name='post_comment'),
+    path('forum-comment/<int:comment_id>/delete/', views.delete_forum_comment_view, name='delete_forum_comment'),
     path('toggle-vote/', views.toggle_vote_view, name='toggle_vote'),
 ]

@@ -35,8 +35,9 @@ class UserProfileAdmin(admin.ModelAdmin):
         'otm', 
     )
     
-    # Read-only fields in the detail view
-    
+    readonly_fields = ('ai_analysis_at',)
+    list_select_related = ('user',)
+
     # Ordering the list by role and then by join date (newest first)
     ordering = ('role', 'user__date_joined') 
 
@@ -60,4 +61,10 @@ class UserProfileAdmin(admin.ModelAdmin):
 admin.site.register(UserProfile, UserProfileAdmin)
 
 
-admin.site.register(PasswordResetRequest)
+@admin.register(PasswordResetRequest)
+class PasswordResetRequestAdmin(admin.ModelAdmin):
+    list_display = ('contact_input', 'linked_user', 'requested_at', 'is_resolved')
+    list_filter = ('is_resolved', 'requested_at')
+    search_fields = ('contact_input', 'linked_user__username', 'linked_user__email')
+    list_editable = ('is_resolved',)
+    raw_id_fields = ('linked_user',)

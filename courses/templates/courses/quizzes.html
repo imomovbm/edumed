@@ -1,0 +1,128 @@
+{% extends "courses/layout.html" %}
+{% load course_extras %}
+
+{% block title %}Topshiriqlar — EDUMED.UZ{% endblock title %}
+
+{% block extra_css %}
+<style>
+  .quiz-row {
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 18px; border-bottom: 1px solid #f0f0f4;
+  }
+  .quiz-row:last-child { border-bottom: none; }
+  .quiz-row:hover { background: #f8f9ff; }
+  .quiz-icon {
+    width: 40px; height: 40px; border-radius: 10px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(78,115,223,0.1); color: #4e73df;
+  }
+  .quiz-icon.passed { background: #d4f5e9; color: #1cc88a; }
+  .quiz-icon.tried  { background: #fef9e7; color: #f6c23e; }
+  .quiz-name { font-weight: 700; color: #2d3748; font-size: 0.92rem; }
+  .quiz-sub  { font-size: 0.76rem; color: #a0aec0; margin-top: 2px; }
+  .filter-pills .btn { border-radius: 20px; }
+  @media (max-width: 576px) {
+    .quiz-row { flex-wrap: wrap; }
+    .quiz-actions { width: 100%; display: flex; gap: 6px; }
+    .quiz-actions .btn { flex: 1; }
+  }
+</style>
+{% endblock extra_css %}
+
+{% block main %}
+<div class="container-fluid">
+
+  <div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <div>
+      <h1 class="h3 mb-0 text-gray-800">
+        <i class="fas fa-tasks mr-2 text-primary"></i>Topshiriqlar
+      </h1>
+      <p class="text-muted small mb-0 mt-1">Barcha testlar va sizning eng yaxshi natijalaringiz</p>
+    </div>
+    <div class="filter-pills d-flex mt-3 mt-sm-0" style="gap:6px;">
+      <a href="{% url 'courses:quizzes' %}" class="btn btn-sm {% if status != 'new' and status != 'done' %}btn-primary{% else %}btn-outline-secondary{% endif %}">Barchasi</a>
+      <a href="?status=new" class="btn btn-sm {% if status == 'new' %}btn-primary{% else %}btn-outline-secondary{% endif %}">Ochiq</a>
+      <a href="?status=done" class="btn btn-sm {% if status == 'done' %}btn-primary{% else %}btn-outline-secondary{% endif %}">Topshirilgan</a>
+    </div>
+  </div>
+
+  <!-- Summary -->
+  <div class="row">
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-primary shadow h-100 py-2">
+        <div class="card-body">
+          <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Jami testlar</div>
+          <div class="h5 mb-0 font-weight-bold text-gray-800">{{ summary.total }} ta</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-info shadow h-100 py-2">
+        <div class="card-body">
+          <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Topshirilgan</div>
+          <div class="h5 mb-0 font-weight-bold text-gray-800">{{ summary.attempted }} / {{ summary.total }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-success shadow h-100 py-2">
+        <div class="card-body">
+          <div class="text-xs font-weight-bold text-success text-uppercase mb-1">O'tilgan ({{ pass_score }}%+)</div>
+          <div class="h5 mb-0 font-weight-bold text-gray-800">{{ summary.passed }} ta</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-warning shadow h-100 py-2">
+        <div class="card-body">
+          <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Eng yaxshi natijalar o'rtachasi</div>
+          <div class="h5 mb-0 font-weight-bold text-gray-800">{{ summary.avg_best }}%</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {% if not has_items %}
+  <div class="card shadow mb-4" style="border-radius:14px;">
+    <div class="card-body text-center py-5 text-muted">
+      <i class="fas fa-clipboard-check fa-3x d-block mb-3 text-gray-300"></i>
+      {% if status == 'new' %}
+      <h6>Barcha testlarni topshirgansiz. Ajoyib!</h6>
+      {% elif status == 'done' %}
+      <h6>Hali birorta test topshirmagansiz</h6>
+      {% else %}
+      <h6>Hali testlar qo'shilmagan</h6>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+  {% if general %}
+  <div class="card shadow mb-4" style="border-radius:14px;">
+    <div class="card-header py-3 d-flex align-items-center justify-content-between">
+      <h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-globe mr-2"></i>Umumiy topshiriqlar</h6>
+      <span class="badge badge-primary badge-pill">{{ general|length }} ta</span>
+    </div>
+    <div class="card-body p-0">
+      {% for item in general %}{% include "courses/partials/quiz_row.html" %}{% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {% for topic, items in topic_groups %}
+  <div class="card shadow mb-4" style="border-radius:14px;">
+    <div class="card-header py-3 d-flex align-items-center justify-content-between">
+      <h6 class="m-0 font-weight-bold text-primary">
+        <i class="fas {{ topic.icon|default:'fa-book' }} mr-2"></i>
+        <a href="{% url 'courses:topic' topic.id %}">{{ topic.title }}</a>
+      </h6>
+      <span class="badge badge-primary badge-pill">{{ items|length }} ta</span>
+    </div>
+    <div class="card-body p-0">
+      {% for item in items %}{% include "courses/partials/quiz_row.html" %}{% endfor %}
+    </div>
+  </div>
+  {% endfor %}
+
+</div>
+{% endblock main %}

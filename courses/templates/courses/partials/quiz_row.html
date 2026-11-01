@@ -1,0 +1,27 @@
+{% load course_extras %}
+<div class="quiz-row">
+  <div class="quiz-icon {% if item.passed %}passed{% elif item.best %}tried{% endif %}">
+    <i class="fas {% if item.passed %}fa-check{% elif item.best %}fa-redo{% else %}fa-clipboard-list{% endif %}"></i>
+  </div>
+  <div class="flex-grow-1" style="min-width:0;">
+    <div class="quiz-name">{{ item.quiz.title }}</div>
+    <div class="quiz-sub">
+      <i class="fas fa-question-circle mr-1"></i>{{ item.question_count }} ta savol
+      · <i class="fas fa-clock mr-1"></i>{{ item.quiz.duration }} daqiqa
+      {% if item.best %}
+      · eng yaxshi: <strong class="text-{{ item.best.score|score_color }}">{{ item.best.score|floatformat:0 }}%</strong>
+      ({{ item.attempts }} marta)
+      {% endif %}
+    </div>
+  </div>
+  <div class="quiz-actions">
+    {% if item.best %}
+    <a href="{% url 'courses:score_details' item.best.id %}" class="btn btn-sm btn-outline-primary" style="border-radius:16px;">
+      <i class="fas fa-eye mr-1"></i>Natija
+    </a>
+    {% endif %}
+    <a href="{% url 'courses:quiz_attempt' item.quiz.id %}" class="btn btn-sm {% if item.best %}btn-outline-success{% else %}btn-success{% endif %}" style="border-radius:16px;">
+      {% if item.best %}<i class="fas fa-redo mr-1"></i>Qayta{% else %}<i class="fas fa-play mr-1"></i>Boshlash{% endif %}
+    </a>
+  </div>
+</div>

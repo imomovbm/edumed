@@ -1,6 +1,5 @@
 from django.contrib.auth.models import User
 from django.db import models
-from datetime import date # Import date for validation/defaults
 
 # Create your models here.
 class UserProfile(models.Model):
@@ -31,6 +30,10 @@ class UserProfile(models.Model):
     # --- dates ---
     date_of_birth = models.DateField(verbose_name="Tug'ilgan sana", null=True, blank=True)
 
+    # Latest Claude AI analysis shown on the profile ("AI orqali baholash").
+    ai_analysis = models.TextField(blank=True, default='')
+    ai_analysis_at = models.DateTimeField(null=True, blank=True)
+
     class Meta:
         verbose_name = 'User Profile'
         verbose_name_plural = 'User Profiles'
@@ -56,6 +59,9 @@ class PasswordResetRequest(models.Model):
     
     # Timestamp of when the request was made
     requested_at = models.DateTimeField(auto_now_add=True)
+
+    # Set once an administrator has reset the password.
+    is_resolved = models.BooleanField(default=False, verbose_name="Hal qilingan")
 
     def __str__(self):
         return f"Qayta tiklashga so'rov: {self.contact_input} ({self.requested_at.strftime('%Y-%m-%d %H:%M')})"

@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Natija — {{ quiz.title }}</title>
+  <title>Natija — {{ quiz.title|default:"Test" }}</title>
   <link href="{% static 'vendor/fontawesome-free/css/all.min.css' %}" rel="stylesheet">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -107,9 +107,22 @@
       font-size: 0.82rem; color: #a0aec0;
       margin-bottom: 20px;
     }
+    .result-note {
+      display: flex; align-items: flex-start; gap: 10px; text-align: left;
+      border-radius: 10px; padding: 12px 14px; margin: -16px 0 24px;
+      font-size: 0.85rem; line-height: 1.5;
+    }
+    .result-note.info    { background: #ebf4ff; color: #2b4fa0; }
+    .result-note.warning { background: #fef9e7; color: #8a6200; }
+    .result-note + .result-note { margin-top: -14px; }
+    @media (max-width: 480px) {
+      .result-card { padding: 32px 20px; }
+      .stats { gap: 8px; }
+    }
   </style>
 </head>
 <body>
+{% include "courses/partials/messages.html" %}
 
 <div class="result-card">
 
@@ -128,7 +141,8 @@
   </div>
 
   <div class="quiz-title-small">
-    <i class="fas fa-file-alt mr-1"></i> {{ quiz.title }}
+    <i class="fas fa-file-alt mr-1"></i> {{ quiz.title|default:"O'chirilgan test" }}
+    {% if not is_owner %}· <i class="fas fa-user"></i> {{ response.user.get_full_name|default:response.user.username }}{% endif %}
   </div>
 
   <!-- Title based on score -->
@@ -162,6 +176,19 @@
     </div>
   </div>
 
+  {% if pending_count %}
+  <div class="result-note info">
+    <i class="fas fa-hourglass-half" style="margin-top:2px;"></i>
+    <span>{{ pending_count }} ta yozma javob o'qituvchi tomonidan tekshiriladi. Ball tekshiruvdan so'ng yangilanadi.</span>
+  </div>
+  {% endif %}
+  {% if response.violation_count %}
+  <div class="result-note warning">
+    <i class="fas fa-exclamation-triangle" style="margin-top:2px;"></i>
+    <span>Test davomida {{ response.violation_count }} ta qoidabuzarlik qayd etildi.</span>
+  </div>
+  {% endif %}
+
   <!-- Buttons -->
   <div class="btn-group">
     {% if quiz.topic %}
@@ -171,6 +198,9 @@
     {% endif %}
     <a href="{% url 'courses:score_details' response_id %}" class="btn btn-success">
       <i class="fas fa-desktop"></i> Umumiy javoblarni ko'rish
+    </a>
+    <a href="{% url 'courses:quizzes' %}" class="btn btn-outline">
+      <i class="fas fa-tasks"></i> Boshqa testlar
     </a>
     <a href="{% url 'courses:index' %}" class="btn btn-outline">
       <i class="fas fa-home"></i> Bosh sahifaga qaytish

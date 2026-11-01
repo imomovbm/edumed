@@ -1,3 +1,4 @@
+{% with vn=request.resolver_match.view_name %}
     <!-- Sidebar -->
     <ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion {% if not user.is_authenticated %}toggled{% endif %}" id="accordionSidebar">
 
@@ -12,7 +13,7 @@
       <hr class="sidebar-divider my-0">
 
       <!-- ── Dashboard ── -->
-      <li class="nav-item">
+      <li class="nav-item {% if vn == 'courses:index' %}active{% endif %}">
         <a class="nav-link" href="{% url 'courses:index' %}">
           <i class="fas fa-fw fa-tachometer-alt"></i>
           <span>Bosh sahifa</span>
@@ -20,14 +21,14 @@
       </li>
 
       <!-- ── Admin Panel ── -->
-      {% if user_profile.role == 'superadmin' %}
+      {% if is_admin %}
       <hr class="sidebar-divider">
       <div class="sidebar-heading">
         <i class="fas fa-shield-alt mr-1"></i> Admin panel
       </div>
 
       <!-- Users -->
-      <li class="nav-item">
+      <li class="nav-item {% if vn == 'user:all_users' or vn == 'user:user_detail' %}active{% endif %}">
         <a class="nav-link" href="{% url 'user:all_users' %}">
           <i class="fas fa-fw fa-users"></i>
           <span>Foydalanuvchilar</span>
@@ -35,7 +36,7 @@
       </li>
 
       <!-- Questions -->
-      <li class="nav-item">
+      <li class="nav-item {% if vn == 'courses:all_questions' or vn == 'courses:add_question' or vn == 'courses:edit_question' %}active{% endif %}">
         <a class="nav-link collapsed" href="#"
           data-toggle="collapse" data-target="#sideQuestions"
           aria-expanded="false" aria-controls="sideQuestions">
@@ -44,10 +45,10 @@
         </a>
         <div id="sideQuestions" class="collapse" data-parent="#accordionSidebar">
           <div class="bg-white py-2 collapse-inner rounded">
-            <a class="collapse-item" href="{% url 'courses:all_questions' %}">
+            <a class="collapse-item {% if vn == 'courses:all_questions' %}active{% endif %}" href="{% url 'courses:all_questions' %}">
               <i class="fas fa-list fa-xs mr-2 text-muted"></i>Barcha savollar
             </a>
-            <a class="collapse-item" href="{% url 'courses:add_question' %}">
+            <a class="collapse-item {% if vn == 'courses:add_question' %}active{% endif %}" href="{% url 'courses:add_question' %}">
               <i class="fas fa-plus fa-xs mr-2 text-muted"></i>Yangi savol
             </a>
           </div>
@@ -55,7 +56,7 @@
       </li>
 
       <!-- Quizzes -->
-      <li class="nav-item">
+      <li class="nav-item {% if vn == 'courses:all_quizzes' or vn == 'courses:add_quiz' or vn == 'courses:edit_quiz' %}active{% endif %}">
         <a class="nav-link collapsed" href="#"
           data-toggle="collapse" data-target="#sideQuizzes"
           aria-expanded="false" aria-controls="sideQuizzes">
@@ -64,14 +65,33 @@
         </a>
         <div id="sideQuizzes" class="collapse" data-parent="#accordionSidebar">
           <div class="bg-white py-2 collapse-inner rounded">
-            <a class="collapse-item" href="{% url 'courses:all_quizzes' %}">
+            <a class="collapse-item {% if vn == 'courses:all_quizzes' %}active{% endif %}" href="{% url 'courses:all_quizzes' %}">
               <i class="fas fa-list fa-xs mr-2 text-muted"></i>Barcha testlar
             </a>
-            <a class="collapse-item" href="{% url 'courses:add_quiz' %}">
+            <a class="collapse-item {% if vn == 'courses:add_quiz' %}active{% endif %}" href="{% url 'courses:add_quiz' %}">
               <i class="fas fa-plus fa-xs mr-2 text-muted"></i>Yangi test
             </a>
           </div>
         </div>
+      </li>
+      {% endif %}
+
+      <!-- ── Teacher: check written answers ── -->
+      {% if can_grade %}
+      {% if not is_admin %}
+      <hr class="sidebar-divider">
+      <div class="sidebar-heading">
+        <i class="fas fa-chalkboard-teacher mr-1"></i> O'qituvchi
+      </div>
+      {% endif %}
+      <li class="nav-item {% if vn == 'courses:grading' %}active{% endif %}">
+        <a class="nav-link" href="{% url 'courses:grading' %}">
+          <i class="fas fa-fw fa-pen-nib"></i>
+          <span>Javoblarni tekshirish</span>
+          {% if pending_grading_count %}
+          <span class="badge badge-warning badge-pill badge-counter-side">{{ pending_grading_count }}</span>
+          {% endif %}
+        </a>
       </li>
       {% endif %}
 
@@ -81,8 +101,8 @@
         <i class="fas fa-book-open mr-1"></i> O'quv jarayon
       </div>
 
-      <!-- Modules -->
-      <li class="nav-item">
+      <!-- Topics -->
+      <li class="nav-item {% if vn == 'courses:topics' or vn == 'courses:topic' %}active{% endif %}">
         <a class="nav-link" href="{% url 'courses:topics' %}">
           <i class="fas fa-fw fa-layer-group"></i>
           <span>Mavzular</span>
@@ -90,7 +110,7 @@
       </li>
 
       <!-- My Progress -->
-      <li class="nav-item">
+      <li class="nav-item {% if vn == 'user:index' %}active{% endif %}">
         <a class="nav-link" href="{% url 'user:index' %}">
           <i class="fas fa-fw fa-chart-line"></i>
           <span>Mening progressim</span>
@@ -98,7 +118,7 @@
       </li>
 
       <!-- Assignments collapse -->
-      <li class="nav-item">
+      <li class="nav-item {% if vn == 'courses:quizzes' %}active{% endif %}">
         <a class="nav-link collapsed" href="#"
           data-toggle="collapse" data-target="#sideAssign"
           aria-expanded="false" aria-controls="sideAssign">
@@ -107,11 +127,11 @@
         </a>
         <div id="sideAssign" class="collapse" data-parent="#accordionSidebar">
           <div class="bg-white py-2 collapse-inner rounded">
-            <a class="collapse-item" href="{% url 'courses:index' %}">
-              <i class="fas fa-list-check fa-xs mr-2 text-muted"></i>Barcha testlar
+            <a class="collapse-item {% if vn == 'courses:quizzes' and request.GET.status != 'new' %}active{% endif %}" href="{% url 'courses:quizzes' %}">
+              <i class="fas fa-list-ul fa-xs mr-2 text-muted"></i>Barcha testlar
             </a>
-            <a class="collapse-item" href="{% url 'courses:index' %}">
-              <i class="fas fa-pen-to-square fa-xs mr-2 text-muted"></i>Ochiq testlar
+            <a class="collapse-item {% if vn == 'courses:quizzes' and request.GET.status == 'new' %}active{% endif %}" href="{% url 'courses:quizzes' %}?status=new">
+              <i class="fas fa-pen fa-xs mr-2 text-muted"></i>Ochiq testlar
             </a>
           </div>
         </div>
@@ -124,7 +144,7 @@
       </div>
 
       <!-- Forums -->
-      <li class="nav-item">
+      <li class="nav-item {% if vn == 'courses:forums' or vn == 'courses:forum' %}active{% endif %}">
         <a class="nav-link" href="{% url 'courses:forums' %}">
           <i class="fas fa-fw fa-comments"></i>
           <span>Forumlar</span>
@@ -134,8 +154,9 @@
       <!-- ── Toggler ── -->
       <hr class="sidebar-divider d-none d-md-block">
       <div class="text-center d-none d-md-inline">
-        <button class="rounded-circle border-0" id="sidebarToggle"></button>
+        <button class="rounded-circle border-0" id="sidebarToggle" aria-label="Menyuni yig'ish"></button>
       </div>
 
     </ul>
     <!-- End of Sidebar -->
+{% endwith %}
