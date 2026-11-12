@@ -19,3 +19,6 @@ env/
 
 # OS
 .DS_Store
+
+# Student passwords written by `manage.py setup_oraliq_nazorat`
+oraliq_nazorat_parollar*.csv

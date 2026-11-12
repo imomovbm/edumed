@@ -42,6 +42,7 @@ CSRF_TRUSTED_ORIGINS = config(
 INSTALLED_APPS = [
     'courses',
     'user',
+    'oraliq_nazorat',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -92,6 +93,9 @@ if DB_ENGINE == 'sqlite':
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
             'NAME': BASE_DIR / 'db.sqlite3',
+            # Concurrent writers (e.g. several students taking the exam) wait for
+            # each other instead of failing with "database is locked".
+            'OPTIONS': {'transaction_mode': 'IMMEDIATE', 'timeout': 20},
         }
     }
 else:
