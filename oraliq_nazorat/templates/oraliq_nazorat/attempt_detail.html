@@ -1,0 +1,183 @@
+{% extends "oraliq_nazorat/base.html" %}
+{% block title %}{{ attempt.user.email|default:attempt.user.username }} — Oraliq nazorat{% endblock %}
+
+{% block style %}
+  .topbar { background: #14213d; color: #fff; padding: 12px 22px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .topbar a { color: #dbe3f7; font-size: 14px; }
+  .wrap { max-width: 1200px; margin: 0 auto; padding: 20px 18px 50px; }
+  .head { padding: 20px 22px; margin-bottom: 16px; }
+  .head-top { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; align-items: flex-start; }
+  .head h1 { font-size: 21px; margin-bottom: 4px; }
+  .big-score { font-size: 34px; font-weight: 800; line-height: 1; text-align: right; }
+  .big-score small { font-size: 16px; color: var(--muted); }
+  .facts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 16px; }
+  .fact { border: 1px solid var(--line); border-radius: 10px; padding: 9px 12px; background: #fafbfd; min-width: 0; }
+  .fact span { display: block; font-size: 12px; color: var(--muted); }
+  .fact b { font-size: 14px; word-break: break-word; }
+  .actions { padding: 16px 20px; margin-bottom: 16px; }
+  .actions h2, .section h2 { font-size: 16px; margin-bottom: 12px; }
+  .action-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .action-row form { display: flex; gap: 6px; align-items: center; }
+  .action-row input[type=number] { width: 76px; padding: 7px 8px; }
+  .help { font-size: 12.5px; color: var(--muted); margin-top: 10px; }
+  .cols { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+  .section { padding: 18px 20px; }
+  .q { border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; margin-bottom: 10px; }
+  .q.ok { border-left: 4px solid var(--success); }
+  .q.bad { border-left: 4px solid var(--danger); }
+  .q.none { border-left: 4px solid #c3cad7; }
+  .q-top { display: flex; justify-content: space-between; gap: 10px; font-size: 12.5px; color: var(--muted); margin-bottom: 6px; }
+  .q-text { font-weight: 600; margin-bottom: 8px; }
+  .q pre { background: #0f172a; color: #e2e8f0; border-radius: 8px; padding: 10px 12px; font: 13px/1.5 var(--mono); overflow-x: auto; margin: 0 0 8px; }
+  .opt { display: flex; gap: 8px; font-size: 14px; padding: 4px 8px; border-radius: 6px; }
+  .opt.correct { background: var(--success-soft); }
+  .opt.chosen:not(.correct) { background: var(--danger-soft); }
+  .opt b { width: 18px; flex-shrink: 0; }
+  .events { max-height: 1100px; overflow-y: auto; }
+  .ev { display: grid; grid-template-columns: 70px 1fr; gap: 10px; padding: 8px 4px; border-bottom: 1px solid #eef1f6; font-size: 13.5px; }
+  .ev time { font-variant-numeric: tabular-nums; color: var(--muted); }
+  .ev.warning { background: #fffbf2; }
+  .ev.danger { background: #fff5f4; }
+  .ev.danger .msg { color: #9b2a17; font-weight: 600; }
+  .ev .ip { font-size: 11.5px; color: #98a2b3; }
+  .ev-filter { display: flex; gap: 8px; margin-bottom: 8px; font-size: 13px; }
+  @media (max-width: 960px) { .cols { grid-template-columns: 1fr; } .facts { grid-template-columns: repeat(2, 1fr); } }
+{% endblock %}
+
+{% block body %}
+<header class="topbar">
+  <a href="{% url 'oraliq_nazorat:dashboard' %}?exam={{ exam.pk }}">← Nazorat paneliga qaytish</a>
+  <span style="font-size:14px;color:#c4cde3">{{ exam.title }}</span>
+</header>
+
+<div class="wrap">
+  {% for message in messages %}
+    <div class="alert {% if message.tags == 'error' %}alert-error{% elif message.tags == 'success' %}alert-success{% else %}alert-info{% endif %}">{{ message }}</div>
+  {% endfor %}
+
+  <section class="card head">
+    <div class="head-top">
+      <div>
+        <h1>{{ attempt.user.get_full_name|default:attempt.user.username }}</h1>
+        <div class="muted">{{ attempt.user.email|default:attempt.user.username }} · {{ attempt.variant.number }}-variant</div>
+        <div style="margin-top:8px">
+          <span class="badge {% if attempt.status == 'running' %}badge-blue{% elif attempt.status == 'finished' %}badge-green{% endif %}">{{ attempt.get_status_display }}</span>
+          {% if attempt.finish_reason %}<span class="badge {% if attempt.finish_reason == 'violations' %}badge-red{% endif %}">{{ attempt.get_finish_reason_display }}</span>{% endif %}
+          {% if danger_count %}<span class="badge badge-red">{{ danger_count }} ta qoidabuzarlik</span>{% endif %}
+          {% if warning_count %}<span class="badge badge-yellow">{{ warning_count }} ta ogohlantirish</span>{% endif %}
+        </div>
+      </div>
+      {% if attempt.score is not None %}
+        <div class="big-score">{{ attempt.correct_count }} <small>/ {{ attempt.question_count }}</small><div style="font-size:16px;color:var(--primary-dark);margin-top:6px">{{ attempt.score }}%</div></div>
+      {% endif %}
+    </div>
+    <div class="facts">
+      <div class="fact"><span>Boshlangan</span><b>{{ attempt.started_at|date:"d.m.Y H:i:s"|default:"—" }}</b></div>
+      <div class="fact"><span>Yakunlangan</span><b>{{ attempt.finished_at|date:"d.m.Y H:i:s"|default:"—" }}</b></div>
+      <div class="fact"><span>Muddat</span><b>{{ attempt.deadline|date:"H:i:s"|default:"—" }}{% if attempt.extra_minutes %} (+{{ attempt.extra_minutes }} daq){% endif %}</b></div>
+      <div class="fact"><span>Oxirgi faollik</span><b>{{ attempt.last_seen_at|date:"H:i:s"|default:"—" }}</b></div>
+      <div class="fact"><span>Oynadan chiqishlar</span><b>{{ attempt.leave_count }} / {{ exam.max_leaves }}</b></div>
+      <div class="fact"><span>Toʻliq ekrandan chiqishlar</span><b>{{ attempt.fullscreen_exits }}</b></div>
+      <div class="fact"><span>IP manzil</span><b>{{ attempt.ip_address|default:"—" }}</b></div>
+      <div class="fact"><span>Brauzer</span><b style="font-weight:500;font-size:12px">{{ attempt.user_agent|default:"—"|truncatechars:90 }}</b></div>
+    </div>
+  </section>
+
+  <section class="card actions">
+    <h2>Nazoratchi amallari</h2>
+    <div class="action-row">
+      {% if attempt.status == 'running' %}
+        <form method="post" action="{% url 'oraliq_nazorat:attempt_action' attempt.pk %}">{% csrf_token %}
+          <input type="hidden" name="action" value="extra">
+          <label class="sr-only" for="minutes">Daqiqa</label>
+          <input type="number" id="minutes" name="minutes" min="1" max="120" value="5">
+          <button class="btn btn-sm" type="submit">Qoʻshimcha vaqt berish</button>
+        </form>
+        <form method="post" action="{% url 'oraliq_nazorat:attempt_action' attempt.pk %}" onsubmit="return confirm('Testni hozir yakunlaysizmi? Belgilangan javoblar baholanadi.')">{% csrf_token %}
+          <input type="hidden" name="action" value="finish">
+          <button class="btn btn-sm btn-danger" type="submit">Testni yakunlash</button>
+        </form>
+      {% endif %}
+      {% if attempt.leave_count %}
+        <form method="post" action="{% url 'oraliq_nazorat:attempt_action' attempt.pk %}" onsubmit="return confirm('Bitta chiqishni hisobdan chiqarasizmi (masalan, texnik nosozlik boʻlgan boʻlsa)?')">{% csrf_token %}
+          <input type="hidden" name="action" value="forgive">
+          <button class="btn btn-sm" type="submit">Bitta chiqishni kechirish</button>
+        </form>
+      {% endif %}
+      {% if attempt.status == 'running' %}
+        <form method="post" action="{% url 'oraliq_nazorat:attempt_action' attempt.pk %}" onsubmit="return confirm('Talabaga boshqa kompyuter/brauzerda davom etishga ruxsat berasizmi? (Kompyuter buzilganda ishlatiladi.)')">{% csrf_token %}
+          <input type="hidden" name="action" value="unlock">
+          <button class="btn btn-sm" type="submit">Boshqa kompyuterga ruxsat</button>
+        </form>
+      {% endif %}
+      {% if attempt.status == 'finished' %}
+        <form method="post" action="{% url 'oraliq_nazorat:attempt_action' attempt.pk %}" onsubmit="return confirm('Yakunlangan testni qayta ochasizmi? Talaba qolgan vaqti bilan davom etadi.')">{% csrf_token %}
+          <input type="hidden" name="action" value="reopen">
+          <button class="btn btn-sm" type="submit">Testni qayta ochish</button>
+        </form>
+      {% endif %}
+      {% if attempt.status != 'assigned' %}
+        <form method="post" action="{% url 'oraliq_nazorat:attempt_action' attempt.pk %}" onsubmit="return confirm('DIQQAT: talabaning javoblari oʻchiriladi va u testni boshidan (imkon boʻlsa, zaxira variant bilan) topshiradi. Davom etasizmi?')">{% csrf_token %}
+          <input type="hidden" name="action" value="reset">
+          <button class="btn btn-sm btn-ghost" type="submit" style="color:var(--danger)">Qayta topshirishga ruxsat</button>
+        </form>
+      {% endif %}
+    </div>
+    <div class="help">
+      Barcha amallar hodisalar jurnaliga yoziladi. «Qayta topshirish» talabaga boʻsh zaxira variantni beradi (boʻlsa).
+    </div>
+  </section>
+
+  <div class="cols">
+    <section class="card section">
+      <h2>Javoblar ({{ rows|length }} ta savol)</h2>
+      {% for row in rows %}
+        <div class="q {% if row.chosen and row.is_correct %}ok{% elif row.chosen %}bad{% else %}none{% endif %}">
+          <div class="q-top">
+            <span><b>{{ row.n }}-savol</b> · {{ row.question.ref }} · {{ row.topic }}</span>
+            <span>{% if row.chosen %}{% if row.is_correct %}✓ toʻgʻri{% else %}✗ notoʻgʻri{% endif %}{% else %}javob yoʻq{% endif %}{% if row.changes %} · {{ row.changes }} marta oʻzgartirgan{% endif %}</span>
+          </div>
+          <div class="q-text">{{ row.question.text }}</div>
+          {% if row.question.code %}<pre>{{ row.question.code }}</pre>{% endif %}
+          {% for opt in row.options %}
+            <div class="opt {% if opt.correct %}correct{% endif %} {% if opt.letter == row.chosen %}chosen{% endif %}">
+              <b>{{ opt.letter }}</b>
+              <span>{{ opt.text }}{% if opt.letter == row.chosen %} <em class="muted">← talaba javobi</em>{% endif %}</span>
+            </div>
+          {% endfor %}
+        </div>
+      {% empty %}
+        <p class="muted">Talaba testni hali boshlamagan.</p>
+      {% endfor %}
+    </section>
+
+    <section class="card section">
+      <h2>Hodisalar jurnali ({{ events|length }})</h2>
+      <div class="ev-filter">
+        <label><input type="checkbox" id="only-important"> Faqat ogohlantirish va qoidabuzarliklar</label>
+      </div>
+      <div class="events" id="events">
+        {% for e in events %}
+          <div class="ev {{ e.level }}" data-level="{{ e.level }}">
+            <time datetime="{{ e.created_at|date:'c' }}">{{ e.created_at|date:"H:i:s" }}</time>
+            <div><span class="msg">{{ e.message }}</span>{% if e.ip_address %} <span class="ip">· {{ e.ip_address }}</span>{% endif %}</div>
+          </div>
+        {% empty %}
+          <p class="muted">Hodisalar yoʻq.</p>
+        {% endfor %}
+      </div>
+    </section>
+  </div>
+</div>
+<script>
+  (function () {
+    var box = document.getElementById('only-important');
+    if (!box) return;
+    box.addEventListener('change', function () {
+      document.querySelectorAll('#events .ev').forEach(function (el) {
+        el.hidden = box.checked && el.getAttribute('data-level') === 'info';
+      });
+    });
+  })();
+</script>
+{% endblock %}

@@ -29,4 +29,5 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('courses/', include('courses.urls')),
     path('user/', include('user.urls')),
+    path('oraliq-nazorat/', include('oraliq_nazorat.urls')),
 ]

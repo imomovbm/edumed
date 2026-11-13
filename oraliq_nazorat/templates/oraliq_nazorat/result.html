@@ -1,0 +1,79 @@
+{% extends "oraliq_nazorat/base.html" %}
+{% block title %}Natija — {{ exam.title }}{% endblock %}
+
+{% block style %}
+  body { min-height: 100vh; display: grid; place-items: center; padding: 24px 16px; }
+  .result { width: 100%; max-width: 560px; padding: 32px 30px; text-align: center; }
+  .result-icon { width: 64px; height: 64px; border-radius: 50%; margin: 0 auto 14px; display: grid; place-items: center;
+                 background: var(--success-soft); color: var(--success); }
+  .result-icon.warn { background: var(--warning-soft); color: var(--warning); }
+  .result-icon.bad { background: var(--danger-soft); color: var(--danger); }
+  .result h1 { font-size: 24px; margin-bottom: 6px; }
+  .score { margin: 22px 0 6px; font-size: 54px; font-weight: 800; line-height: 1; letter-spacing: -.02em; }
+  .score small { font-size: 22px; color: var(--muted); font-weight: 700; }
+  .percent { font-size: 18px; font-weight: 700; color: var(--primary-dark); }
+  .facts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; text-align: left; margin: 24px 0 20px; }
+  .fact { border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px; background: #fafbfd; }
+  .fact span { display: block; font-size: 12.5px; color: var(--muted); }
+  .fact b { font-size: 15px; }
+  .note { font-size: 13px; color: var(--muted); margin-top: 14px; }
+  @media (max-width: 480px) { .facts { grid-template-columns: 1fr; } }
+{% endblock %}
+
+{% block body %}
+<main class="card result">
+  {% if attempt.finish_reason == 'violations' %}
+    <div class="result-icon bad" aria-hidden="true"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/></svg></div>
+  {% elif attempt.finish_reason == 'time_up' %}
+    <div class="result-icon warn" aria-hidden="true"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M9 2h6"/></svg></div>
+  {% else %}
+    <div class="result-icon" aria-hidden="true"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg></div>
+  {% endif %}
+
+  <h1>Imtihon yakunlandi</h1>
+  <div class="muted">{{ student_name }} · {{ request.user.email|default:request.user.username }}</div>
+
+  {% if attempt.finish_reason == 'violations' %}
+    <div class="alert alert-error" style="margin-top:18px">
+      Siz imtihon oynasini {{ exam.max_leaves }} marta tark etdingiz, shuning uchun test avtomatik yakunlandi.
+      Shu paytgacha belgilangan javoblaringiz baholandi.
+    </div>
+  {% elif attempt.finish_reason == 'time_up' %}
+    <div class="alert alert-warning" style="margin-top:18px">Vaqt tugadi — belgilangan javoblaringiz avtomatik yuborildi.</div>
+  {% elif attempt.finish_reason == 'teacher' %}
+    <div class="alert alert-warning" style="margin-top:18px">Testni nazoratchi yakunladi.</div>
+  {% endif %}
+
+  {% if exam.show_score %}
+    <div class="score">{{ attempt.correct_count|default:0 }} <small>/ {{ attempt.question_count }}</small></div>
+    <div class="percent">{{ attempt.score|default:0 }}%</div>
+  {% else %}
+    <div class="alert alert-info" style="margin-top:20px">Javoblaringiz qabul qilindi. Natija oʻqituvchi tomonidan eʼlon qilinadi.</div>
+  {% endif %}
+
+  <div class="facts">
+    <div class="fact"><span>Variant</span><b>{{ attempt.variant.number }}</b></div>
+    <div class="fact"><span>Javob berilgan savollar</span><b>{{ answered }} / {{ attempt.question_count }}</b></div>
+    <div class="fact"><span>Boshlangan</span><b>{{ attempt.started_at|date:"H:i:s" }}</b></div>
+    <div class="fact"><span>Yakunlangan</span><b>{{ attempt.finished_at|date:"H:i:s" }}</b></div>
+    <div class="fact"><span>Oynadan chiqishlar</span><b>{{ attempt.leave_count }} / {{ exam.max_leaves }}</b></div>
+    <div class="fact"><span>Yakunlanish sababi</span><b>{{ attempt.get_finish_reason_display }}</b></div>
+  </div>
+
+  <form method="post" action="{% url 'oraliq_nazorat:logout' %}" id="logout-form">{% csrf_token %}
+    <button class="btn btn-primary btn-lg" type="submit">Tizimdan chiqish</button>
+  </form>
+  <div class="note">Xavfsizlik uchun <span id="auto-left">120</span> soniyadan soʻng tizimdan avtomatik chiqasiz.</div>
+</main>
+<script>
+  (function () {
+    var left = 120, el = document.getElementById('auto-left');
+    var timer = setInterval(function () {
+      left -= 1;
+      if (el) el.textContent = left;
+      if (left <= 0) { clearInterval(timer); document.getElementById('logout-form').submit(); }
+    }, 1000);
+    try { history.replaceState(null, '', location.href); } catch (e) {}
+  })();
+</script>
+{% endblock %}

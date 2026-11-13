@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="uz" translate="no">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>{% block title %}Oraliq nazorat{% endblock %}</title>
+  {% block head %}{% endblock %}
+  <style>
+    :root {
+      --bg: #f3f5fa;
+      --card: #ffffff;
+      --text: #1b2333;
+      --muted: #667085;
+      --line: #e3e7ef;
+      --primary: #2b59e3;
+      --primary-dark: #1f45b8;
+      --primary-soft: #eaf0ff;
+      --success: #12924b;
+      --success-soft: #e6f6ed;
+      --warning: #b7791f;
+      --warning-soft: #fdf3e1;
+      --danger: #d1361f;
+      --danger-soft: #fdecea;
+      --radius: 14px;
+      --shadow: 0 1px 2px rgba(16, 24, 40, .05), 0 6px 24px rgba(16, 24, 40, .06);
+      --font: "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+      --mono: Consolas, "SFMono-Regular", Menlo, "Liberation Mono", monospace;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; }
+    body {
+      font-family: var(--font); color: var(--text); background: var(--bg);
+      font-size: 15px; line-height: 1.5; -webkit-font-smoothing: antialiased;
+    }
+    a { color: var(--primary); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    h1, h2, h3 { line-height: 1.25; margin: 0; }
+    .card { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); border: 1px solid var(--line); }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      border: 1px solid transparent; border-radius: 10px; padding: 10px 18px;
+      font: 600 15px/1.2 var(--font); cursor: pointer; text-decoration: none;
+      transition: background .15s, border-color .15s, color .15s, opacity .15s;
+      background: var(--card); color: var(--text); border-color: var(--line);
+    }
+    .btn:hover { text-decoration: none; background: #f7f8fb; }
+    .btn:focus-visible { outline: 3px solid rgba(43, 89, 227, .35); outline-offset: 2px; }
+    .btn[disabled] { opacity: .5; cursor: not-allowed; }
+    .btn-primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .btn-primary:hover { background: var(--primary-dark); }
+    .btn-success { background: var(--success); color: #fff; border-color: var(--success); }
+    .btn-success:hover { background: #0e7a3e; }
+    .btn-danger { background: var(--danger); color: #fff; border-color: var(--danger); }
+    .btn-danger:hover { background: #b02d19; }
+    .btn-ghost { background: transparent; border-color: transparent; color: var(--muted); }
+    .btn-sm { padding: 6px 12px; font-size: 13px; border-radius: 8px; }
+    .btn-lg { padding: 14px 26px; font-size: 16px; }
+    .muted { color: var(--muted); }
+    .badge {
+      display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; border-radius: 999px;
+      font-size: 12px; font-weight: 700; white-space: nowrap; background: #eef0f4; color: #475467;
+    }
+    .badge-blue { background: var(--primary-soft); color: var(--primary-dark); }
+    .badge-green { background: var(--success-soft); color: var(--success); }
+    .badge-red { background: var(--danger-soft); color: var(--danger); }
+    .badge-yellow { background: var(--warning-soft); color: var(--warning); }
+    .alert { border-radius: 10px; padding: 12px 14px; font-size: 14px; margin: 0 0 14px; }
+    .alert-error { background: var(--danger-soft); color: #8f2414; border: 1px solid #f6c7c0; }
+    .alert-success { background: var(--success-soft); color: #0c6634; border: 1px solid #bfe7cf; }
+    .alert-info { background: var(--primary-soft); color: #1f3c8f; border: 1px solid #cdd9fb; }
+    .alert-warning { background: var(--warning-soft); color: #7a4f10; border: 1px solid #f3dcae; }
+    .brand-mark {
+      width: 40px; height: 40px; border-radius: 11px; flex-shrink: 0;
+      display: grid; place-items: center; background: var(--primary); color: #fff;
+    }
+    .brand-mark svg { width: 22px; height: 22px; }
+    input[type=email], input[type=password], input[type=text], input[type=number], input[type=search], select {
+      width: 100%; padding: 11px 14px; border: 1px solid #cfd5e1; border-radius: 10px;
+      font: 15px var(--font); color: var(--text); background: #fff; transition: border-color .15s, box-shadow .15s;
+    }
+    input:focus, select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(43, 89, 227, .15); }
+    label { font-weight: 600; font-size: 14px; display: block; margin-bottom: 6px; }
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+    {% block style %}{% endblock %}
+  </style>
+</head>
+<body class="{% block body_class %}{% endblock %}">
+{% block body %}{% endblock %}
+</body>
+</html>
