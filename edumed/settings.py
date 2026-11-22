@@ -43,9 +43,6 @@ INSTALLED_APPS = [
     'courses',
     'user',
     'imtihon',
-    # Kept only until its last migration has run: it exports the finished exam
-    # and drops its tables. Remove it (and the folder) once production is migrated.
-    'oraliq_nazorat',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
