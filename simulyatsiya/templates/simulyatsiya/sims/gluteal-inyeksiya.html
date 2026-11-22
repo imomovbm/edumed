@@ -1,0 +1,59 @@
+{% extends "simulyatsiya/frame_base.html" %}
+{% block instruction %}<strong>Vazifa:</strong> gluteal mushakka inyeksiya qilish uchun to'g'ri kvadrantni toping va bosing (I, II, III yoki IV).{% endblock %}
+{% block picture_label %}Dumba sohasi to'rt kvadrantga bo'lingan: I, II, III, IV{% endblock %}
+{% block hint %}Dumba 4 ta kvadrantga bo'linadi. Faqat yuqori-tashqi kvadrant xavfsiz. Boshqa uchta kvadrantda quymich (sciatic) nervi va qon tomirlar joylashgan.{% endblock %}
+{% block simulation %}
+<script nonce="{{ nonce }}">
+/* Drawing and correct area: inyeksiya_simulyatsiya_v3.html (unchanged). */
+var ZONE_FILL = 'rgba(180,178,169,0.18)', ZONE_STROKE = '#888780', ZONE_TEXT = '#444441';
+function zoneLabel(ctx, letter, x, y) { ctx.font = 'bold 13px sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = ZONE_TEXT; ctx.fillText(letter, x, y); }
+function outline(ctx, cx, cy) {
+  ctx.beginPath();
+  ctx.moveTo(cx - 155, 80);
+  ctx.bezierCurveTo(cx - 160, cy - 20, cx - 130, cy + 80, cx - 60, cy + 120);
+  ctx.lineTo(cx + 60, cy + 120);
+  ctx.bezierCurveTo(cx + 130, cy + 80, cx + 160, cy - 20, cx + 155, 80);
+  ctx.bezierCurveTo(cx + 140, 30, cx + 80, 20, cx, 25);
+  ctx.bezierCurveTo(cx - 80, 20, cx - 140, 30, cx - 155, 80);
+  ctx.closePath();
+}
+
+Simulation.start({
+  draw: function (ctx) {
+    var cx = W / 2, cy = H / 2;
+    ctx.fillStyle = '#F5C9A8';
+    outline(ctx, cx, cy); ctx.fill();
+    ctx.strokeStyle = '#D4956A'; ctx.lineWidth = 1.5; ctx.stroke();
+    // Gluteal fold
+    ctx.strokeStyle = '#C8855A'; ctx.lineWidth = 1; ctx.setLineDash([3, 3]);
+    ctx.beginPath(); ctx.moveTo(cx - 120, cy + 80); ctx.bezierCurveTo(cx - 60, cy + 110, cx + 60, cy + 110, cx + 120, cy + 80); ctx.stroke();
+    ctx.setLineDash([]);
+    // Iliac crest
+    ctx.strokeStyle = '#B0927A'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(cx - 155, 80); ctx.bezierCurveTo(cx - 80, 60, cx + 80, 60, cx + 155, 80); ctx.stroke();
+    // Four quadrants
+    [{ id: 'I', bx: cx - 155, by: 80, bw: 155, bh: cy - 80 + 10 }, { id: 'II', bx: cx, by: 80, bw: 155, bh: cy - 80 + 10 },
+     { id: 'III', bx: cx - 155, by: cy + 10, bw: 155, bh: 110 }, { id: 'IV', bx: cx, by: cy + 10, bw: 155, bh: 110 }].forEach(function (q) {
+      ctx.save(); outline(ctx, cx, cy); ctx.clip();
+      ctx.fillStyle = ZONE_FILL; ctx.fillRect(q.bx, q.by, q.bw, q.bh);
+      ctx.restore();
+      ctx.save(); ctx.strokeStyle = ZONE_STROKE; ctx.lineWidth = 1; ctx.setLineDash([4, 3]);
+      outline(ctx, cx, cy); ctx.clip();
+      ctx.strokeRect(q.bx, q.by, q.bw, q.bh);
+      ctx.restore(); ctx.setLineDash([]);
+      zoneLabel(ctx, q.id, q.bx + q.bw / 2, q.by + q.bh / 2 + 5);
+    });
+    // Dividers
+    ctx.strokeStyle = ZONE_STROKE; ctx.lineWidth = 1; ctx.setLineDash([5, 4]);
+    ctx.beginPath(); ctx.moveTo(cx, 80); ctx.lineTo(cx, cy + 120); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx - 155, cy + 10); ctx.lineTo(cx + 155, cy + 10); ctx.stroke();
+    ctx.setLineDash([]);
+  },
+  check: function (x, y) { return x < W / 2 && y < H / 2 + 10; },
+  zones: [{ id: 'I', x: W / 2 - 77.5, y: 125 }, { id: 'II', x: W / 2 + 77.5, y: 125 },
+          { id: 'III', x: W / 2 - 77.5, y: H / 2 + 65 }, { id: 'IV', x: W / 2 + 77.5, y: H / 2 + 65 }],
+  right: "Yuqori-tashqi kvadrant — quymich nervidan va yirik tomirlardan uzoq, xavfsiz zona.",
+  wrong: "Bu zona quymich (sciatic) nerviga yoki yirik tomirlarga yaqin! Faqat yuqori-tashqi kvadrant xavfsiz."
+});
+</script>
+{% endblock %}

@@ -1,0 +1,42 @@
+{% extends "courses/layout.html" %}
+{% block title %}{{ simulation.title }} — Simulyatsiya{% endblock title %}
+{% block extra_css %}
+<style>
+  .sim-back { min-height: 48px; display: inline-flex; align-items: center; font-weight: 700; }
+  .sim-frame-card { border-radius: 12px; overflow: hidden; }
+  .sim-frame { display: block; width: 100%; height: 640px; border: 0; background: #fff; }
+</style>
+{% endblock extra_css %}
+
+{% block main %}
+<div class="container-fluid">
+  <div class="d-flex flex-wrap align-items-center justify-content-between mb-3">
+    <h1 class="h3 mb-2 mr-3 text-gray-800"><i class="fas {{ simulation.icon }} mr-2 text-primary" aria-hidden="true"></i>{{ simulation.title }}</h1>
+    <a class="btn btn-outline-primary sim-back mb-2" href="{% url 'simulyatsiya:index' %}">
+      <i class="fas fa-arrow-left mr-2" aria-hidden="true"></i>Simulyatsiyalarga qaytish
+    </a>
+  </div>
+  <div class="card shadow sim-frame-card mb-4">
+    {# Sandboxed: the simulation may run its scripts, but cannot read this site's cookies or storage and cannot navigate this page. #}
+    <iframe class="sim-frame" id="sim-frame" src="{% url 'simulyatsiya:frame' simulation.id %}"
+            title="Simulyatsiya: {{ simulation.title }}" sandbox="allow-scripts" loading="lazy"
+            referrerpolicy="no-referrer"></iframe>
+  </div>
+</div>
+<script>
+  (function () {
+    var frame = document.getElementById('sim-frame');
+    function tellViewport() {
+      var top = frame.getBoundingClientRect().top + window.scrollY;
+      if (frame.contentWindow) frame.contentWindow.postMessage({ type: 'sim-viewport', height: window.innerHeight, top: top }, '*');
+    }
+    window.addEventListener('message', function (e) {
+      if (e.source !== frame.contentWindow || !e.data || e.data.type !== 'sim-height') return;
+      var height = Math.max(200, Math.min(3000, Math.ceil(Number(e.data.height) || 0)));
+      frame.style.height = height + 'px';
+    });
+    frame.addEventListener('load', tellViewport);
+    window.addEventListener('resize', tellViewport);
+  })();
+</script>
+{% endblock main %}

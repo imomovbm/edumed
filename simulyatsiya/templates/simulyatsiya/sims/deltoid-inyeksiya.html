@@ -1,0 +1,61 @@
+{% extends "simulyatsiya/frame_base.html" %}
+{% block instruction %}<strong>Vazifa:</strong> deltasimon (deltoid) mushakka inyeksiya qilish uchun to'g'ri zonani toping va bosing (A, B yoki C).{% endblock %}
+{% block picture_label %}Yelka va yelka suyagining yuqori qismi: akromion ostida A, B, C zonalari{% endblock %}
+{% block hint %}Yelkaning uchi (akromion) bilan qo'ltiq orasining o'rta qismi. Akromiondan 2–3 barmoq pastda. Bu zona taxminan 1 kaft kengligida.{% endblock %}
+{% block simulation %}
+<script nonce="{{ nonce }}">
+/* Drawing and correct area: inyeksiya_simulyatsiya_v3.html (unchanged). */
+var ZONE_FILL = 'rgba(180,178,169,0.18)', ZONE_STROKE = '#888780', ZONE_TEXT = '#444441';
+function zoneLabel(ctx, letter, x, y) { ctx.font = 'bold 13px sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = ZONE_TEXT; ctx.fillText(letter, x, y); }
+function outline(ctx, cx, cy) {
+  ctx.beginPath();
+  ctx.moveTo(cx - 50, 20);
+  ctx.bezierCurveTo(cx - 120, 30, cx - 130, 80, cx - 120, cy);
+  ctx.bezierCurveTo(cx - 115, cy + 80, cx - 90, cy + 130, cx - 60, cy + 140);
+  ctx.lineTo(cx + 60, cy + 140);
+  ctx.bezierCurveTo(cx + 90, cy + 130, cx + 115, cy + 80, cx + 120, cy);
+  ctx.bezierCurveTo(cx + 130, 80, cx + 120, 30, cx + 50, 20);
+  ctx.bezierCurveTo(cx + 20, 10, cx - 20, 10, cx - 50, 20);
+  ctx.closePath();
+}
+
+Simulation.start({
+  draw: function (ctx) {
+    var cx = W / 2, cy = H / 2;
+    ctx.fillStyle = '#F5C9A8';
+    outline(ctx, cx, cy); ctx.fill();
+    ctx.strokeStyle = '#D4956A'; ctx.lineWidth = 1.5; ctx.stroke();
+    // Acromion
+    ctx.fillStyle = '#D4B896';
+    ctx.beginPath(); ctx.ellipse(cx, 22, 55, 14, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#B09070'; ctx.lineWidth = 1; ctx.stroke();
+    // Axillary fold
+    ctx.strokeStyle = '#C8855A'; ctx.lineWidth = 1; ctx.setLineDash([3, 3]);
+    ctx.beginPath(); ctx.moveTo(cx - 118, cy + 55); ctx.bezierCurveTo(cx - 60, cy + 40, cx + 60, cy + 40, cx + 118, cy + 55); ctx.stroke();
+    ctx.setLineDash([]);
+    // Three zones
+    [{ id: 'A', y1: 22, y2: cy - 30 }, { id: 'B', y1: cy - 30, y2: cy + 55 }, { id: 'C', y1: cy + 55, y2: cy + 140 }].forEach(function (z) {
+      ctx.save(); outline(ctx, cx, cy); ctx.clip();
+      ctx.fillStyle = ZONE_FILL; ctx.fillRect(cx - 130, z.y1, 260, z.y2 - z.y1);
+      ctx.strokeStyle = ZONE_STROKE; ctx.lineWidth = 1; ctx.setLineDash([4, 3]);
+      ctx.strokeRect(cx - 130, z.y1, 260, z.y2 - z.y1);
+      ctx.restore(); ctx.setLineDash([]);
+      zoneLabel(ctx, z.id, cx, (z.y1 + z.y2) / 2 + 5);
+    });
+    // Dividers
+    ctx.strokeStyle = ZONE_STROKE; ctx.lineWidth = 1; ctx.setLineDash([5, 4]);
+    ctx.beginPath(); ctx.moveTo(cx - 120, cy - 30); ctx.lineTo(cx + 120, cy - 30); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx - 118, cy + 55); ctx.lineTo(cx + 118, cy + 55); ctx.stroke();
+    ctx.setLineDash([]);
+    // Acromion label last, so the zone border does not cross it
+    ctx.fillStyle = '#D4B896'; ctx.fillRect(cx - 28, 15, 56, 13);
+    ctx.fillStyle = '#4a4944'; ctx.font = '10px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText('Akromion', cx, 25);
+  },
+  check: function (x, y) { return y > H / 2 - 30 && y < H / 2 + 55; },
+  zones: [{ id: 'A', x: W / 2, y: 76 }, { id: 'B', x: W / 2, y: H / 2 + 12.5 }, { id: 'C', x: W / 2, y: H / 2 + 97.5 }],
+  right: "Deltasimon mushakning qalin qismi — inyeksiya uchun to'g'ri zona.",
+  wrong: "Bu zona noto'g'ri: yuqorida — akromion (suyak), pastda — bilak (radial) nervi xavfi. Akromiondan 2–3 barmoq pastda bo'ling."
+});
+</script>
+{% endblock %}

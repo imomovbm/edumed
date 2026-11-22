@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'courses',
     'user',
     'imtihon',
+    'simulyatsiya',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
