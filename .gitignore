@@ -20,6 +20,6 @@ env/
 # OS
 .DS_Store
 
-# The old oraliq exam's password list and its exported results (personal data)
+# Exported personal data (password lists, exported results): never commit
 oraliq_nazorat_parollar*.csv
 oraliq_eksport_*/
