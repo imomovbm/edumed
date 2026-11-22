@@ -1,15 +1,11 @@
-"""Oraliq nazorat — a separate, proctored midterm exam app.
+"""Removed: the one-off "oraliq" midterm exam.
 
-Flow
-----
-1. ``python manage.py setup_oraliq_nazorat`` loads the question bank, builds the
-   variants (41 by default, 15 questions each), creates the student accounts
-   (student1@mail.uz ... student40@mail.uz) with numeric passwords and gives every
-   student a different variant.
-2. A student signs in on ``/oraliq-nazorat/``, reads the rules and presses
-   "Testni boshlash"; the 20-minute deadline is kept on the server.
-3. Every answer is saved on the server the moment it is clicked and every action
-   is written to the event log. Leaving the exam window 3 times, or the deadline,
-   finishes the attempt with the answers selected so far.
-4. Teachers watch everything live on ``/oraliq-nazorat/nazorat/``.
+Only what is needed to retire it safely is left here:
+
+* ``export_oraliq_results`` — saves the old results and student data to CSV;
+* migration 0002 — runs that export automatically, deletes the exam's student
+  accounts (student<N>@mail.uz) and drops the old tables.
+
+Once ``manage.py migrate`` has run on every database, remove this app from
+INSTALLED_APPS and delete the folder. The reusable exam platform is ``imtihon``.
 """

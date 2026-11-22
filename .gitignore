@@ -20,7 +20,6 @@ env/
 # OS
 .DS_Store
 
-# Student passwords written by `manage.py setup_oraliq_nazorat`
+# The old oraliq exam's password list and its exported results (personal data)
 oraliq_nazorat_parollar*.csv
-# Results and student data saved by `manage.py export_oraliq_results`
 oraliq_eksport_*/

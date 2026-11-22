@@ -77,51 +77,30 @@ were always marked wrong) and recomputes every student's topic progress.
 If you enable the AI analysis, the request can take 10–30 seconds: give the WSGI
 server enough time (e.g. `gunicorn --timeout 90`).
 
-## Oraliq nazorat (proctored midterm exam)
+## Retiring the old "oraliq" exam (one-time, on the server)
 
-A separate app at **`/oraliq-nazorat/`** with its own login page, a waiting room
-with the exam rules, and a 20-minute, 15-question test built from lectures 2–6 of
-"Big Data tahlili" plus JSON and Python questions. Teachers watch it live at
-**`/oraliq-nazorat/nazorat/`** (also linked from the main sidebar for teachers).
+The one-off midterm exam has been removed. Only a small shell (`oraliq_nazorat/`)
+is left so its data can be retired safely, in this order:
 
-```bash
-python manage.py migrate
-python manage.py setup_oraliq_nazorat          # exam + 41 variants + student1..student40@mail.uz
-```
+1. Back up the database:
+   ```bash
+   mysqldump -u edumed -p --single-transaction edumed > edumed_backup_$(date +%Y%m%d).sql
+   ```
+2. Export the old exam's results and student data (CSV files that open in Excel,
+   saved to `oraliq_eksport_<date>/` next to `manage.py`; git-ignored):
+   ```bash
+   python manage.py export_oraliq_results
+   ```
+3. Migrate. `oraliq_nazorat.0002` runs the same export again automatically, then
+   deletes the exam's student accounts (`student<N>@mail.uz`) and drops the old tables:
+   ```bash
+   python manage.py migrate
+   ```
 
-The command prints every student's e-mail, numeric password and variant and saves
-them to `oraliq_nazorat_parollar.csv` (git-ignored — keep it away from students).
-Running it again changes nothing; useful options:
-
-| Option | Effect |
-|---|---|
-| `--students 41` | create one more account (`student41@mail.uz`) |
-| `--reset-passwords` | give every student a new password (new CSV) |
-| `--closed` | create the exam closed; open it from the dashboard when the room is ready |
-| `--duration 25`, `--max-leaves 3` | change the time limit / leave limit |
-| `--rebuild` | rebuild questions and variants (refused once anyone started; `--force` deletes results) |
-
-**Fairness.** The question bank (`oraliq_nazorat/bank/`, 296 questions) is tagged by
-topic and difficulty; every variant takes one question from each of 15 topic/difficulty
-slots, so all variants cover the same topics at the same difficulty. Questions that
-would give each other away never share a variant, and any two variants share at most
-one question. Every student gets a different variant; the 41st is kept as a spare for
-a retake. Choice order is shuffled for every student, and the browser never receives
-the correct answers or database ids.
-
-**Anti-cheat.** Fullscreen is required (questions are hidden outside it); leaving the
-exam window — another tab, window or app, an extension panel, closing the page —
-is counted on the server, and the **3rd time finishes the test** with the answers
-selected so far (every answer is saved the moment it is clicked). Copy/paste, right
-click, DevTools/print/tab shortcuts are blocked, injected extension panels are removed,
-and the attempt is bound to the browser that started it. The 20-minute deadline is
-enforced by the server. Every action is written to the event log shown on the
-dashboard. Proctor actions: extra time, finish, forgive one leave, allow another
-computer, reopen, or reset (retake with the spare variant).
-
-Serve the site over HTTPS if possible: Chrome then also captures Esc, Alt+Tab and
-the Windows key while the test is fullscreen (Keyboard Lock API). A browser cannot
-see a phone on the desk — keep proctoring the room as usual.
+Set `ORALIQ_EXPORT_DIR=/some/folder` if the project folder is not writable. Once every
+database is migrated, remove `'oraliq_nazorat'` from `INSTALLED_APPS` and delete the
+folder. To undo: restore the backup (`mysql -u edumed -p edumed < edumed_backup_<date>.sql`)
+and revert the removal commit.
 
 ## Tests
 
