@@ -22,3 +22,5 @@ env/
 
 # Student passwords written by `manage.py setup_oraliq_nazorat`
 oraliq_nazorat_parollar*.csv
+# Results and student data saved by `manage.py export_oraliq_results`
+oraliq_eksport_*/

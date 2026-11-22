@@ -511,3 +511,34 @@ class ProctorTests(TestCase):
         content = response.content.decode('utf-8-sig')
         self.assertIn('student1@mail.uz', content)
         self.assertIn('Oynadan chiqish', content)
+
+
+@FAST_HASHER
+class ExportTests(TestCase):
+    """The export that has to run before the old exam is removed."""
+
+    def test_export_writes_results_answers_events_and_accounts(self):
+        from django.db import connection
+
+        from .export import export_oraliq, migration_state_apps
+
+        exam, (student, other) = make_exam()
+        client = self.client_class()
+        client.force_login(student)
+        post_json(client, 'api_start', {'accept': True})
+        post_json(client, 'api_answer', {'q': 0, 'o': 1})
+        post_json(client, 'api_finish', {})
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / 'eksport'
+            counts = export_oraliq(migration_state_apps(connection), out)
+            self.assertEqual(counts['natijalar.csv'], 2)
+            self.assertEqual(counts['javoblar.csv'], 15)
+            self.assertEqual(counts['talabalar.csv'], 2)
+            with open(out / 'natijalar.csv', encoding='utf-8-sig') as handle:
+                rows = list(csv.DictReader(handle))
+            self.assertEqual([r['Login'] for r in rows], ['student1@mail.uz', 'student2@mail.uz'])
+            self.assertEqual(rows[0]['Holat'], 'Yakunlangan')
+            self.assertEqual(rows[1]['Holat'], 'Boshlanmagan')
+            accounts = (out / 'talabalar.csv').read_text(encoding='utf-8-sig')
+            self.assertNotIn('pbkdf2', accounts)
+            self.assertNotIn('md5', accounts)
