@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="uz" translate="no">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ simulation.title }}</title>
+<style nonce="{{ nonce }}">
+  :root {
+    --primary: #4e73df; --primary-dark: #2e59d9; --text: #3a3b45; --muted: #5a5c69; --line: #e3e6f0;
+    --ok: #0f7a57; --ok-bg: #e1f5ee; --bad: #b42318; --bad-bg: #fcebeb; --hint-bg: #eef1fd; --tap: 48px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { font-family: Nunito, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+         color: var(--text); background: #fff; font-size: 15px; line-height: 1.5; }
+  [hidden] { display: none !important; }
+  .sim { padding: 12px; }
+  .instr { margin: 0 0 12px; padding: 10px 14px; border-radius: 10px; background: #f8f9fc;
+           border: 1px solid var(--line); color: var(--muted); }
+  .stage { position: relative; width: 100%; margin: 0 auto 12px; -webkit-user-select: none; user-select: none;
+           touch-action: manipulation; }
+  canvas { display: block; width: 100%; height: auto; aspect-ratio: 420 / 320; border-radius: 12px;
+           border: 1px solid var(--line); background: #fff; cursor: crosshair; }
+  .zone { position: absolute; width: var(--tap); height: var(--tap); transform: translate(-50%, -50%);
+          border: 2px solid transparent; border-radius: 50%; background: transparent; cursor: pointer; padding: 0;
+          color: transparent; font-size: 1px; }
+  .zone:focus-visible { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(78, 115, 223, .35); }
+  .zone[disabled] { cursor: default; }
+  .feedback { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border-radius: 10px;
+              margin: 0 0 12px; font-size: 15px; }
+  .feedback .mark { font-size: 20px; font-weight: 800; line-height: 1.2; }
+  .feedback.ok { background: var(--ok-bg); color: var(--ok); border: 1px solid #a7dcc8; }
+  .feedback.bad { background: var(--bad-bg); color: var(--bad); border: 1px solid #f1b8b4; }
+  .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+  .btn { min-height: var(--tap); padding: 10px 18px; border-radius: 10px; border: 1px solid #d1d3e2; background: #fff;
+         color: var(--text); font: 700 15px/1.2 inherit; font-family: inherit; cursor: pointer; }
+  .btn:focus-visible { outline: 3px solid rgba(78, 115, 223, .45); outline-offset: 2px; }
+  .btn-primary { background: var(--primary); border-color: var(--primary); color: #fff; }
+  .btn-primary:hover { background: var(--primary-dark); }
+  .hint { padding: 10px 14px; border-radius: 10px; background: var(--hint-bg); color: #2c3e8f; margin: 0 0 12px; }
+  .score { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .score div { background: #f8f9fc; border: 1px solid var(--line); border-radius: 10px; padding: 8px; text-align: center; }
+  .score b { display: block; font-size: 20px; }
+  .score span { font-size: 12.5px; color: var(--muted); }
+  @media (max-width: 400px) { .sim { padding: 8px; } .actions .btn { flex: 1 1 auto; } }
+</style>
+</head>
+<body>
+<main class="sim">
+  <p class="instr">{% block instruction %}{% endblock %}</p>
+  <div class="stage" id="stage">
+    <canvas id="canvas" width="420" height="320" role="img" aria-label="{% block picture_label %}{% endblock %}"></canvas>
+  </div>
+  <div class="feedback" id="feedback" role="status" aria-live="polite" hidden></div>
+  <div class="actions">
+    <button class="btn btn-primary" type="button" id="reset" hidden>Qayta urinish</button>
+    <button class="btn" type="button" id="hint-toggle" aria-expanded="false" aria-controls="hint">Maslahat</button>
+  </div>
+  <p class="hint" id="hint" hidden>{% block hint %}{% endblock %}</p>
+  <div class="score" aria-label="Natija">
+    <div><b id="score-ok">0</b><span>To'g'ri</span></div>
+    <div><b id="score-bad">0</b><span>Noto'g'ri</span></div>
+    <div><b id="score-pct">0%</b><span>Aniqlik</span></div>
+  </div>
+</main>
+<script nonce="{{ nonce }}">
+/* Shared engine. A simulation calls Simulation.start({draw, check, zones, right, wrong}):
+   draw(ctx)    paints the picture on a 420×320 canvas (W, H are globals);
+   check(x, y)  true when the point (canvas units) is in the correct area;
+   zones        [{id, x, y}] centres of the lettered areas (buttons for keyboard and screen readers);
+   right/wrong  explanations shown after an answer. */
+var W = 420, H = 320;
+var Simulation = (function () {
+  'use strict';
+  var canvas = document.getElementById('canvas');
+  var ctx = canvas.getContext('2d');
+  var feedback = document.getElementById('feedback');
+  var resetBtn = document.getElementById('reset');
+  var hintBtn = document.getElementById('hint-toggle');
+  var hint = document.getElementById('hint');
+  var stage = document.getElementById('stage');
+  var cfg, answered = false, mark = null, buttons = [], score = { ok: 0, bad: 0 };
+
+  function sharpen() {
+    var ratio = Math.min(window.devicePixelRatio || 1, 3);
+    canvas.width = Math.round(W * ratio);
+    canvas.height = Math.round(H * ratio);
+    render();
+  }
+
+  function render() {
+    var ratio = canvas.width / W;
+    ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+    cfg.draw(ctx);
+    if (mark) needle(mark.x, mark.y, mark.ok);
+  }
+
+  function needle(x, y, ok) {
+    var col = ok ? '#1D9E75' : '#E24B4A';
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#D3D1C7'; ctx.fillRect(x - 6, y - 48, 12, 36);
+    ctx.strokeStyle = '#888780'; ctx.lineWidth = 0.8; ctx.strokeRect(x - 6, y - 48, 12, 36);
+    ctx.fillStyle = col; ctx.fillRect(x - 4, y - 46, 8, 9);
+    ctx.strokeStyle = col; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(x, y - 12); ctx.lineTo(x, y + 16); ctx.stroke();
+    ctx.fillStyle = col;
+    ctx.beginPath(); ctx.moveTo(x - 4, y + 12); ctx.lineTo(x + 4, y + 12); ctx.lineTo(x, y + 22); ctx.fill();
+    ctx.font = 'bold 22px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText(ok ? '✓' : '✗', x, y - 54);
+  }
+
+  function updateScore() {
+    var total = score.ok + score.bad;
+    document.getElementById('score-ok').textContent = score.ok;
+    document.getElementById('score-bad').textContent = score.bad;
+    document.getElementById('score-pct').textContent = (total ? Math.round(score.ok / total * 100) : 0) + '%';
+  }
+
+  function answer(x, y) {
+    if (answered) return;
+    answered = true;
+    var ok = !!cfg.check(x, y);
+    if (ok) score.ok++; else score.bad++;
+    updateScore();
+    mark = { x: x, y: y, ok: ok };
+    render();
+    feedback.className = 'feedback ' + (ok ? 'ok' : 'bad');
+    feedback.innerHTML = '';
+    var sign = document.createElement('span');
+    sign.className = 'mark'; sign.setAttribute('aria-hidden', 'true'); sign.textContent = ok ? '✓' : '✗';
+    var text = document.createElement('span');
+    var head = document.createElement('strong');
+    head.textContent = ok ? "To'g'ri! " : "Noto'g'ri. ";
+    text.appendChild(head);
+    text.appendChild(document.createTextNode(ok ? cfg.right : cfg.wrong));
+    feedback.appendChild(sign); feedback.appendChild(text);
+    feedback.hidden = false;
+    buttons.forEach(function (b) { b.disabled = true; });
+    canvas.style.cursor = 'default';
+    resetBtn.hidden = false;
+    resetBtn.focus({ preventScroll: true });
+    reportSize();
+  }
+
+  function reset() {
+    answered = false; mark = null;
+    feedback.hidden = true;
+    resetBtn.hidden = true;
+    buttons.forEach(function (b) { b.disabled = false; });
+    canvas.style.cursor = '';
+    render();
+    if (buttons[0]) buttons[0].focus({ preventScroll: true });
+    reportSize();
+  }
+
+  // The parent page sizes the iframe to the content and tells us the screen height,
+  // so the whole picture fits on screen (also on phones in landscape).
+  function reportSize() {
+    try { var main = document.querySelector('.sim'); parent.postMessage({ type: 'sim-height', height: Math.ceil(main.getBoundingClientRect().bottom + window.scrollY) }, '*'); } catch (e) {}
+  }
+  window.addEventListener('message', function (e) {
+    if (e.source !== parent || !e.data || e.data.type !== 'sim-viewport') return;
+    var vh = Number(e.data.height) || 0, top = Number(e.data.top) || 0;
+    if (vh <= 0) return;
+    // Room for the picture below the frame's top edge; on short screens (phones in landscape)
+    // the page is scrolled so the frame starts at the top of the screen.
+    var room = vh - top - stage.offsetTop - 16;
+    if (room < vh * 0.55) room = vh - stage.offsetTop - 16;
+    stage.style.maxWidth = Math.max(260, Math.floor(room * W / H)) + 'px';
+    reportSize();
+  });
+
+  function start(config) {
+    cfg = config;
+    (cfg.zones || []).forEach(function (z) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'zone';
+      b.style.left = (z.x / W * 100) + '%';
+      b.style.top = (z.y / H * 100) + '%';
+      b.setAttribute('aria-label', z.id + ' zona');
+      b.textContent = z.id;
+      b.addEventListener('click', function (e) { e.stopPropagation(); answer(z.x, z.y); });
+      stage.appendChild(b);
+      buttons.push(b);
+    });
+    canvas.addEventListener('click', function (e) {
+      var rect = canvas.getBoundingClientRect();
+      answer((e.clientX - rect.left) * W / rect.width, (e.clientY - rect.top) * H / rect.height);
+    });
+    resetBtn.addEventListener('click', reset);
+    hintBtn.addEventListener('click', function () {
+      hint.hidden = !hint.hidden;
+      hintBtn.setAttribute('aria-expanded', String(!hint.hidden));
+      reportSize();
+    });
+    window.addEventListener('resize', function () { sharpen(); reportSize(); });
+    if (window.ResizeObserver) new ResizeObserver(reportSize).observe(document.querySelector('.sim'));
+    sharpen();
+    reportSize();
+  }
+
+  return { start: start };
+})();
+</script>
+{% block simulation %}{% endblock %}
+</body>
+</html>

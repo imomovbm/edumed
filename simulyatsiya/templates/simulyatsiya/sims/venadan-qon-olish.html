@@ -1,0 +1,54 @@
+{% extends "simulyatsiya/frame_base.html" %}
+{% block instruction %}<strong>Vazifa:</strong> kubital venadan qon olish uchun to'g'ri nuqtani toping va bosing (A, B, C yoki D zona).{% endblock %}
+{% block picture_label %}Tirsak bukilmasi (kubital zona): venalar va A, B, C, D zonalari{% endblock %}
+{% block hint %}Tirsak egilgan joy — kubital chuqurcha. Vena ko'pincha markazda yoki biroz medial tomonda joylashgan. Turniketdan keyin vena ko'tariladi.{% endblock %}
+{% block simulation %}
+<script nonce="{{ nonce }}">
+/* Drawing and correct area: inyeksiya_simulyatsiya_v3.html (unchanged). */
+var ZONE_FILL = 'rgba(180,178,169,0.18)', ZONE_STROKE = '#888780', ZONE_TEXT = '#444441';
+function zoneLabel(ctx, letter, x, y) { ctx.font = 'bold 13px sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = ZONE_TEXT; ctx.fillText(letter, x, y); }
+
+Simulation.start({
+  draw: function (ctx) {
+    var cx = W / 2, cy = H / 2;
+    // Arm outline
+    ctx.fillStyle = '#F5C9A8';
+    ctx.beginPath();
+    ctx.moveTo(cx - 80, 40);
+    ctx.bezierCurveTo(cx - 130, 60, cx - 145, 120, cx - 140, cy);
+    ctx.bezierCurveTo(cx - 138, cy + 60, cx - 120, cy + 100, cx - 80, cy + 120);
+    ctx.lineTo(cx + 80, cy + 120);
+    ctx.bezierCurveTo(cx + 120, cy + 100, cx + 138, cy + 60, cx + 140, cy);
+    ctx.bezierCurveTo(cx + 145, 120, cx + 130, 60, cx + 80, 40);
+    ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = '#D4956A'; ctx.lineWidth = 1.5; ctx.stroke();
+    // Skin crease at the elbow
+    ctx.strokeStyle = '#C8855A'; ctx.lineWidth = 1; ctx.setLineDash([3, 3]);
+    ctx.beginPath(); ctx.moveTo(cx - 130, cy + 10); ctx.bezierCurveTo(cx - 60, cy - 10, cx + 60, cy - 10, cx + 130, cy + 10); ctx.stroke();
+    ctx.setLineDash([]);
+    // Veins
+    ctx.save(); ctx.globalAlpha = 0.35; ctx.strokeStyle = '#4472C4'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(cx - 5, cy - 90); ctx.bezierCurveTo(cx - 3, cy - 30, cx - 2, cy + 20, cx - 5, cy + 90); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx - 75, cy - 80); ctx.bezierCurveTo(cx - 70, cy - 20, cx - 65, cy + 30, cx - 70, cy + 90); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx + 65, cy - 75); ctx.bezierCurveTo(cx + 60, cy - 15, cx + 58, cy + 35, cx + 65, cy + 90); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx - 70, cy - 8); ctx.bezierCurveTo(cx - 35, cy - 20, cx + 30, cy - 15, cx + 62, cy - 10); ctx.stroke();
+    ctx.restore();
+    // Zones
+    [{ id: 'A', cx: cx - 5, cy: cy - 8, rx: 36, ry: 26 }, { id: 'B', cx: cx - 75, cy: cy - 12, rx: 32, ry: 22 },
+     { id: 'C', cx: cx + 62, cy: cy - 8, rx: 32, ry: 22 }, { id: 'D', cx: cx, cy: cy + 65, rx: 36, ry: 22 }].forEach(function (z) {
+      ctx.fillStyle = ZONE_FILL;
+      ctx.beginPath(); ctx.ellipse(z.cx, z.cy, z.rx, z.ry, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = ZONE_STROKE; ctx.lineWidth = 1; ctx.setLineDash([4, 3]);
+      ctx.beginPath(); ctx.ellipse(z.cx, z.cy, z.rx, z.ry, 0, 0, Math.PI * 2); ctx.stroke();
+      ctx.setLineDash([]);
+      zoneLabel(ctx, z.id, z.cx, z.cy + 5);
+    });
+  },
+  check: function (x, y) { return Math.sqrt(Math.pow(x - (W / 2 - 5), 2) + Math.pow(y - (H / 2 - 8), 2)) < 40; },
+  zones: [{ id: 'A', x: W / 2 - 5, y: H / 2 - 8 }, { id: 'B', x: W / 2 - 75, y: H / 2 - 12 },
+          { id: 'C', x: W / 2 + 62, y: H / 2 - 8 }, { id: 'D', x: W / 2, y: H / 2 + 65 }],
+  right: "Igna kubital chuqurchadagi yirik venaga (v. mediana cubiti) to'g'ri kiritildi.",
+  wrong: "Bu zona xavfli — vena bu yerda yo'q yoki chuqur. Kubital chuqurchadagi yirik venani toping."
+});
+</script>
+{% endblock %}

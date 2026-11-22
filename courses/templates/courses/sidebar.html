@@ -115,6 +115,14 @@
         </a>
       </li>
 
+      <!-- Simulations -->
+      <li class="nav-item {% if vn == 'simulyatsiya:index' or vn == 'simulyatsiya:detail' %}active{% endif %}">
+        <a class="nav-link" href="{% url 'simulyatsiya:index' %}">
+          <i class="fas fa-fw fa-syringe"></i>
+          <span>Simulyatsiya</span>
+        </a>
+      </li>
+
       <!-- My Progress -->
       <li class="nav-item {% if vn == 'user:index' %}active{% endif %}">
         <a class="nav-link" href="{% url 'user:index' %}">

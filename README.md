@@ -1,16 +1,26 @@
 # EDUMED.UZ
 
-Interactive learning platform for future nurses (Uzbek). Students read topics,
-take timed quizzes with anti-cheat rules, discuss in forums and follow their
-progress; administrators and teachers manage content and check written answers.
+Interactive learning platform for future nurses (Uzbek). Built with Django 6 +
+SB Admin 2 (Bootstrap 4); the whole interface is in Uzbek.
 
-Built with Django 6 + SB Admin 2 (Bootstrap 4).
+What it has (sidebar sections):
+
+- **Mavzular** — lecture topics with sections, progress per topic.
+- **Simulyatsiya** — hands-on practice: choose the right injection site on a picture
+  (venadan qon olish, gluteal, deltoid, insulin). See [Simulations](#simulations-simulyatsiya).
+- **Mening progressim** — the student's own results; optional AI analysis.
+- **Topshiriqlar** — timed quizzes with anti-cheat rules; teachers check written answers
+  ("Javoblarni tekshirish").
+- **Forumlar** — discussions.
+- **Imtihonlar** — proctored exams imported from test files, with a students/groups panel.
+  See [Exams](#exams-imtihon).
+- **Admin panel** — topics, questions, quizzes, users and roles (administrators).
 
 ## Roles
 
 | Role (`UserProfile.role`) | Can do |
 |---|---|
-| `student` (Talaba) | read topics, take quizzes, see own results, forums |
+| `student` (Talaba) | read topics, practise in simulations, take quizzes and assigned exams, see own results, forums |
 | `teacher` (O'qituvchi) | + check short/essay answers ("Javoblarni tekshirish"), see students' results, run exams ("Imtihonlar") |
 | `moder` (Moder) | + delete any forum post / comment / topic comment |
 | `superadmin` (SuperAdmin) | everything: topics, questions, quizzes, users, roles, password resets, CSV report |
@@ -124,36 +134,35 @@ For developers: file formats live in `imtihon/importers/` — a new format is a
 created only through `user.students.create_student(login, password, full_name, group)`,
 which a future Excel/CSV import of students can reuse.
 
-## Retiring the old "oraliq" exam (one-time, on the server)
+## Simulations (`/simulyatsiya/`)
 
-The one-off midterm exam has been removed. Only a small shell (`oraliq_nazorat/`)
-is left so its data can be retired safely, in this order:
+Every signed-in user with a profile (students, teachers, administrators) can open the
+**Simulyatsiya** panel. Each card opens one exercise: the student taps (or clicks, or
+selects with the keyboard) the area where the injection should go and gets an immediate
+"To'g'ri / Noto'g'ri" explanation, a hint and a "Qayta urinish" button. Nothing is saved.
 
-1. Back up the database:
-   ```bash
-   mysqldump -u edumed -p --single-transaction edumed > edumed_backup_$(date +%Y%m%d).sql
-   ```
-2. Export the old exam's results and student data (CSV files that open in Excel,
-   saved to `oraliq_eksport_<date>/` next to `manage.py`; git-ignored):
-   ```bash
-   python manage.py export_oraliq_results
-   ```
-3. Migrate. `oraliq_nazorat.0002` runs the same export again automatically, then
-   deletes the exam's student accounts (`student<N>@mail.uz`) and drops the old tables:
-   ```bash
-   python manage.py migrate
-   ```
+Each simulation runs in a sandboxed iframe (`sandbox="allow-scripts"`, no same-origin):
+it cannot read the site's cookies or storage, cannot navigate the page, and its own
+Content-Security-Policy blocks every network request — all code is inline, nothing is
+loaded from a CDN.
 
-Set `ORALIQ_EXPORT_DIR=/some/folder` if the project folder is not writable. Once every
-database is migrated, remove `'oraliq_nazorat'` from `INSTALLED_APPS` and delete the
-folder. To undo: restore the backup (`mysql -u edumed -p edumed < edumed_backup_<date>.sql`)
-and revert the removal commit.
+**Adding a simulation** (no other changes needed):
+
+1. Copy one of `simulyatsiya/templates/simulyatsiya/sims/*.html` to `<id>.html`. It extends
+   `simulyatsiya/frame_base.html` and calls `Simulation.start({...})` with:
+   `draw(ctx)` (paints the picture on a 420×320 canvas), `check(x, y)` (true inside the
+   correct area), `zones` (the lettered areas, used for keyboard and screen readers) and
+   the `right` / `wrong` explanations. The instruction and hint are template blocks.
+2. Add an entry to `SIMULATIONS` in `simulyatsiya/registry.py`: `id` (the file name and
+   the URL), `title`, `description`, `icon` (a Font Awesome icon) and optionally
+   `enabled=False` to hide it.
 
 ## Tests
 
 ```bash
 DB_ENGINE=sqlite DJANGO_SECRET_KEY=test python manage.py test           # everything
 DB_ENGINE=sqlite DJANGO_SECRET_KEY=test python manage.py test imtihon   # the exam platform only
+DB_ENGINE=sqlite DJANGO_SECRET_KEY=test python manage.py test simulyatsiya
 ```
 
 The importer tests read the teachers' sample file `imtihon/tests/fixtures/q.txt`.

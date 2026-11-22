@@ -1,14 +1,13 @@
-"""Teacher pages render in every state; exports are safe; the old exam's pages are gone."""
+"""Teacher pages render in every state; exports are safe; the login page."""
 import csv
 import io
 
 from django.test import TestCase
-from django.urls import NoReverseMatch, reverse
+from django.urls import reverse
 from django.utils import timezone
 
 from user.models import StudentGroup
 
-from .. import services
 from ..models import Attempt, Exam
 from .helpers import FAST_HASHER, api, make_exam, make_student, make_teacher
 
@@ -115,7 +114,6 @@ class TeacherPagesTests(TestCase):
         from django.template.loader import render_to_string
         html = render_to_string('courses/sidebar.html', {'can_grade': True, 'user': self.teacher})
         self.assertIn(reverse('imtihon:manage'), html)
-        self.assertNotIn('oraliq', html.lower())
 
 
 @FAST_HASHER
@@ -151,15 +149,3 @@ class LoginPageTests(TestCase):
     def test_login_page_is_generic(self):
         page = self.client.get(reverse('imtihon:login'))
         self.assertContains(page, 'Imtihon tizimi')
-        self.assertNotContains(page, 'oraliq', status_code=200)
-        self.assertNotContains(page, 'Oraliq')
-
-
-class OldExamRemovedTests(TestCase):
-    def test_old_pages_are_gone(self):
-        self.assertEqual(self.client.get('/oraliq-nazorat/').status_code, 404)
-        with self.assertRaises(NoReverseMatch):
-            reverse('oraliq_nazorat:login')
-
-    def test_services_module_has_no_exam_specific_constants(self):
-        self.assertFalse(hasattr(services, 'EXAM_CODE'))

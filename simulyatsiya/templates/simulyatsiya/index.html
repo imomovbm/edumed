@@ -1,0 +1,43 @@
+{% extends "courses/layout.html" %}
+{% block title %}Simulyatsiya — EDUMED.UZ{% endblock title %}
+{% block extra_css %}
+<style>
+  .sim-card { border-radius: 12px; }
+  .sim-card .sim-icon { width: 56px; height: 56px; border-radius: 14px; display: flex; align-items: center;
+                        justify-content: center; background: #eaf0ff; color: #4e73df; font-size: 24px; flex-shrink: 0; }
+  .sim-card .card-title { font-size: 1.05rem; font-weight: 700; color: #3a3b45; }
+  .sim-card .btn { min-height: 48px; display: flex; align-items: center; justify-content: center; font-weight: 700; }
+</style>
+{% endblock extra_css %}
+
+{% block main %}
+<div class="container-fluid">
+  <div class="mb-4">
+    <h1 class="h3 mb-1 text-gray-800"><i class="fas fa-syringe mr-2 text-primary"></i>Simulyatsiya</h1>
+    <p class="mb-0 text-gray-600">Amaliy ko'nikmalarni rasm ustida mashq qiling: to'g'ri zonani tanlang va javobni darhol ko'ring.</p>
+  </div>
+
+  {% if simulations %}
+  <div class="row">
+    {% for sim in simulations %}
+    <div class="col-12 col-sm-6 col-xl-3 mb-4">
+      <div class="card shadow h-100 sim-card">
+        <div class="card-body d-flex flex-column">
+          <div class="d-flex align-items-center mb-3">
+            <div class="sim-icon mr-3" aria-hidden="true"><i class="fas {{ sim.icon }}"></i></div>
+            <h2 class="card-title mb-0">{{ sim.title }}</h2>
+          </div>
+          <p class="text-gray-700 flex-grow-1">{{ sim.description }}</p>
+          <a class="btn btn-primary btn-block" href="{% url 'simulyatsiya:detail' sim.id %}">
+            <i class="fas fa-play mr-2" aria-hidden="true"></i>Boshlash<span class="sr-only">: {{ sim.title }}</span>
+          </a>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="card shadow"><div class="card-body text-center text-gray-600">Hozircha simulyatsiyalar yo'q.</div></div>
+  {% endif %}
+</div>
+{% endblock main %}
