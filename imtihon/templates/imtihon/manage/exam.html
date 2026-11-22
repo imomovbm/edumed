@@ -1,0 +1,205 @@
+{% extends "imtihon/manage/base.html" %}
+{% block title %}{{ exam.title }} — Imtihon tizimi{% endblock %}
+{% block page_style %}
+  .status-draft { background: #eef0f4; color: #475467; }
+  .head-badges { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+  .steps { margin: 0; padding-left: 20px; }
+  .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-bottom: 12px; }
+  .stat { border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px; background: #fafbfd; }
+  .stat b { display: block; font-size: 22px; line-height: 1.2; }
+  .stat span { font-size: 13px; color: var(--muted); }
+  .assign-tools { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; }
+  .assign-tools input { max-width: 320px; }
+  .q { border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; margin-bottom: 10px; }
+  .q-top { display: flex; justify-content: space-between; gap: 10px; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+  .q-text { font-weight: 600; white-space: pre-wrap; overflow-wrap: anywhere; margin-bottom: 8px; }
+  .q ol { margin: 0; padding-left: 26px; list-style-type: upper-alpha; }
+  .q li { padding: 3px 8px; border-radius: 6px; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .q li.correct { background: var(--success-soft); font-weight: 600; }
+  .q li.correct::after { content: "  ✓ toʻgʻri"; color: var(--success); font-size: 12.5px; }
+  details > summary { cursor: pointer; font-weight: 700; font-size: 17px; min-height: var(--tap); display: flex; align-items: center; }
+  fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+  legend { font-weight: 700; font-size: 15px; margin-bottom: 8px; padding: 0; }
+  .subhead { font-size: 15px; font-weight: 700; margin: 20px 0 10px; padding-top: 16px; border-top: 1px solid var(--line); }
+  @media (max-width: 640px) { .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+{% endblock %}
+
+{% block content %}
+<a class="back" href="{% url 'imtihon:manage' %}">← Imtihonlar</a>
+<div class="page-head">
+  <div>
+    <h1>{{ exam.title }}</h1>
+    <div class="sub">{% if exam.subject %}{{ exam.subject }} · {% endif %}{{ questions|length }} ta savol{% if exam.source_name %} · {{ exam.source_name }}{% endif %}</div>
+    <div class="head-badges">
+      <span class="badge {% if exam.status == 'published' %}badge-green{% elif exam.status == 'finished' %}badge-blue{% else %}status-draft{% endif %}">{{ exam.get_status_display }}</span>
+      {% if exam.status == 'published' %}
+        {% with window=exam.window_state %}
+          {% if window == 'upcoming' %}<span class="badge badge-yellow">{{ exam.starts_at|date:"d.m.Y H:i" }} da ochiladi</span>
+          {% elif window == 'closed' %}<span class="badge badge-red">Vaqt oynasi tugagan</span>
+          {% else %}<span class="badge badge-green">Hozir topshirish mumkin</span>{% endif %}
+        {% endwith %}
+      {% endif %}
+    </div>
+  </div>
+  <div class="page-actions">
+    {% if exam.status == 'draft' %}
+      <form class="inline-form" method="post" action="{% url 'imtihon:manage_exam_status' exam.pk %}">{% csrf_token %}
+        <input type="hidden" name="action" value="publish">
+        <button class="btn btn-success" type="submit" {% if publish_problems %}disabled title="Avval quyidagi muammolarni hal qiling"{% endif %}>Eʼlon qilish</button>
+      </form>
+      {% if not has_attempts %}<a class="btn" href="{% url 'imtihon:manage_reimport' exam.pk %}">Savollarni fayldan almashtirish</a>{% endif %}
+    {% else %}
+      <a class="btn btn-primary" href="{% url 'imtihon:manage_dashboard' exam.pk %}">Kuzatuv va natijalar</a>
+      <a class="btn" href="{% url 'imtihon:manage_export' exam.pk 'xlsx' %}">Excel</a>
+      <a class="btn" href="{% url 'imtihon:manage_export' exam.pk 'csv' %}">CSV</a>
+    {% endif %}
+  </div>
+</div>
+
+{% if exam.status == 'draft' %}
+  <section class="card panel">
+    <h2>Eʼlon qilishdan oldin</h2>
+    {% if publish_problems %}
+      <div class="alert alert-warning"><ul style="margin:0">{% for p in publish_problems %}<li>{{ p }}</li>{% endfor %}</ul></div>
+    {% else %}
+      <div class="alert alert-success" style="margin-bottom:0">Imtihon tayyor. «Eʼlon qilish» tugmasini bosing — u {{ assigned_count }} ta talabaga koʻrinadi.</div>
+    {% endif %}
+    {% if publish_problems %}
+    <ol class="steps small muted">
+      <li>Sozlamalarni tekshiring (vaqt, savollar soni, aralashtirish).</li>
+      <li>Imtihonni guruh(lar)ga yoki alohida talabalarga biriktiring va saqlang.</li>
+      <li>«Eʼlon qilish» tugmasini bosing.</li>
+    </ol>
+    {% endif %}
+  </section>
+{% else %}
+  <section class="card panel">
+    <div class="stats">
+      <div class="stat"><b>{{ assigned_count }}</b><span>biriktirilgan talaba</span></div>
+      <div class="stat"><b>{{ attempt_counts.started }}</b><span>boshlagan</span></div>
+      <div class="stat"><b style="color:var(--primary)">{{ attempt_counts.running }}</b><span>hozir ishlamoqda</span></div>
+      <div class="stat"><b style="color:var(--success)">{{ attempt_counts.finished }}</b><span>yakunlagan</span></div>
+    </div>
+    <div class="form-actions" style="margin-top:0">
+      {% if exam.status == 'published' %}
+        <form class="inline-form" method="post" action="{% url 'imtihon:manage_exam_status' exam.pk %}"
+              onsubmit="return confirm('Imtihonni yakunlaysizmi? Talabalar endi boshlay olmaydi, davom etayotgan testlar shu zahoti yakunlanib baholanadi.')">{% csrf_token %}
+          <input type="hidden" name="action" value="finish">
+          <button class="btn btn-danger" type="submit">Imtihonni yakunlash</button>
+        </form>
+        {% if not has_attempts %}
+        <form class="inline-form" method="post" action="{% url 'imtihon:manage_exam_status' exam.pk %}">{% csrf_token %}
+          <input type="hidden" name="action" value="unpublish">
+          <button class="btn" type="submit">Qoralamaga qaytarish</button>
+        </form>
+        {% endif %}
+      {% else %}
+        <form class="inline-form" method="post" action="{% url 'imtihon:manage_exam_status' exam.pk %}"
+              onsubmit="return confirm('Imtihonni qayta ochasizmi? Hali boshlamagan talabalar uni boshlay oladi.')">{% csrf_token %}
+          <input type="hidden" name="action" value="reopen">
+          <button class="btn" type="submit">Imtihonni qayta ochish</button>
+        </form>
+      {% endif %}
+    </div>
+  </section>
+{% endif %}
+
+{% if not exam.shuffle_options and correct_first %}
+  <div class="alert alert-warning">Javob variantlarini aralashtirish oʻchirilgan, lekin {{ correct_first }} ta savolda toʻgʻri javob birinchi oʻrinda turibdi — talabalar buni sezib qolishi mumkin. Aralashtirishni yoqish tavsiya etiladi.</div>
+{% endif %}
+
+<form class="card panel" method="post" novalidate>{% csrf_token %}
+  <h2>Sozlamalar</h2>
+  {% if form.non_field_errors %}<div class="alert alert-error">{{ form.non_field_errors }}</div>{% endif %}
+  <div class="form-grid">
+    {% include "imtihon/manage/_field.html" with field=form.title %}
+    {% include "imtihon/manage/_field.html" with field=form.subject %}
+    {% include "imtihon/manage/_field.html" with field=form.duration_minutes %}
+    {% include "imtihon/manage/_field.html" with field=form.question_count %}
+    {% include "imtihon/manage/_field.html" with field=form.starts_at %}
+    {% include "imtihon/manage/_field.html" with field=form.ends_at %}
+  </div>
+  <p class="muted small" style="margin:8px 0 0">Boshlanish va tugash vaqti ixtiyoriy. Tugash vaqti kelganda davom etayotgan testlar ham yakunlanadi.</p>
+
+  <div class="subhead">Aralashtirish va qoidalar</div>
+  <div class="form-grid">
+    {% include "imtihon/manage/_field.html" with field=form.shuffle_questions %}
+    {% include "imtihon/manage/_field.html" with field=form.shuffle_options %}
+    {% include "imtihon/manage/_field.html" with field=form.max_leaves %}
+    {% include "imtihon/manage/_field.html" with field=form.show_score %}
+    {% include "imtihon/manage/_field.html" with field=form.count_fullscreen_exit wide=True %}
+  </div>
+
+  <div class="subhead">Kimlar topshiradi</div>
+  <fieldset class="field{% if form.groups.errors %} has-error{% endif %}" style="margin-bottom:16px">
+    <legend>Guruhlar</legend>
+    {% if form.groups.field.queryset %}
+      <div class="check-list">{% for box in form.groups %}<label for="{{ box.id_for_label }}">{{ box.tag }} <span>{{ box.choice_label }}</span></label>{% endfor %}</div>
+    {% else %}
+      <p class="muted small">Hali guruh yoʻq. <a href="{% url 'imtihon:manage_groups' %}">Guruh yarating</a> yoki <a href="{% url 'imtihon:manage_students' %}">talaba qoʻshganda yangi guruh oching</a>.</p>
+    {% endif %}
+    {% if form.groups.errors %}<ul class="errorlist">{% for e in form.groups.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+  </fieldset>
+  <fieldset class="field{% if form.students.errors %} has-error{% endif %}">
+    <legend>Alohida talabalar <span class="muted small" style="font-weight:500">(guruhidan tashqari qoʻshimcha)</span></legend>
+    {% if form.students.field.queryset %}
+      <div class="assign-tools">
+        <label class="sr-only" for="student-filter">Talabani qidirish</label>
+        <input type="search" id="student-filter" placeholder="Ism, login yoki guruh boʻyicha qidirish…">
+        <span class="muted small" id="student-picked"></span>
+      </div>
+      <div class="check-list" id="student-list">{% for box in form.students %}<label for="{{ box.id_for_label }}">{{ box.tag }} <span>{{ box.choice_label }}</span></label>{% endfor %}</div>
+    {% else %}
+      <p class="muted small">Talabalar yoʻq. <a href="{% url 'imtihon:manage_students' %}">Talaba qoʻshish</a></p>
+    {% endif %}
+  </fieldset>
+
+  <div class="form-actions"><button class="btn btn-primary" type="submit">Sozlamalarni saqlash</button></div>
+</form>
+
+<section class="card panel">
+  <details {% if questions|length <= 5 %}open{% endif %}>
+    <summary>Savollar ({{ questions|length }} ta)</summary>
+    <div style="margin-top:10px">
+    {% for q in questions %}
+      <div class="q">
+        <div class="q-top"><b>{{ q.order }}-savol</b>{% if q.source_line %}<span>faylda {{ q.source_line }}-qator</span>{% endif %}</div>
+        <div class="q-text">{{ q.text }}</div>
+        <ol>{% for c in q.choices.all %}<li class="{% if c.is_correct %}correct{% endif %}">{{ c.text }}</li>{% endfor %}</ol>
+      </div>
+    {% empty %}
+      <p class="muted">Savollar yoʻq.</p>
+    {% endfor %}
+    </div>
+  </details>
+</section>
+
+<section class="card panel">
+  <h2>Imtihonni oʻchirish</h2>
+  <p class="muted small">Imtihon, uning savollari va barcha natijalari oʻchiriladi.</p>
+  <a class="btn btn-ghost" style="color:var(--danger)" href="{% url 'imtihon:manage_exam_delete' exam.pk %}">Imtihonni oʻchirish…</a>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  'use strict';
+  var input = document.getElementById('student-filter');
+  var list = document.getElementById('student-list');
+  if (!input || !list) return;
+  var labels = Array.prototype.slice.call(list.querySelectorAll('label'));
+  var picked = document.getElementById('student-picked');
+  function count() {
+    var n = list.querySelectorAll('input:checked').length;
+    picked.textContent = n ? 'Tanlangan: ' + n : '';
+  }
+  input.addEventListener('input', function () {
+    var q = input.value.trim().toLowerCase();
+    labels.forEach(function (label) { label.hidden = q && label.textContent.toLowerCase().indexOf(q) === -1; });
+  });
+  list.addEventListener('change', count);
+  count();
+})();
+</script>
+{% endblock %}

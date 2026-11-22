@@ -1,0 +1,23 @@
+{% extends "imtihon/manage/base.html" %}
+{% block title %}{{ title }} — Imtihon tizimi{% endblock %}
+{% block page_style %}
+  .confirm { max-width: 620px; padding: 24px 22px; }
+  .confirm h1 { font-size: 21px; margin-bottom: 10px; }
+{% endblock %}
+
+{% block content %}
+<section class="card confirm">
+  <h1>{{ title }}</h1>
+  <p>Rostdan ham <b>{{ object_name }}</b> ni oʻchirmoqchimisiz? Bu amalni ortga qaytarib boʻlmaydi.</p>
+  {% if warnings %}
+    <div class="alert alert-warning"><ul style="margin:0">{% for w in warnings %}<li>{{ w }}</li>{% endfor %}</ul></div>
+  {% endif %}
+  <form method="post">{% csrf_token %}
+    <div class="form-actions">
+      <button class="btn btn-danger" type="submit">Ha, oʻchirish</button>
+      {% if export_url %}<a class="btn" href="{{ export_url }}">Natijalarni yuklab olish (Excel)</a>{% endif %}
+      <a class="btn btn-ghost" href="{{ cancel_url }}">Bekor qilish</a>
+    </div>
+  </form>
+</section>
+{% endblock %}

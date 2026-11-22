@@ -1,0 +1,68 @@
+{% extends "imtihon/manage/base.html" %}
+{% block title %}{{ student.get_full_name|default:student.username }} — Talabalar{% endblock %}
+{% block page_style %}
+  .two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+  @media (max-width: 900px) { .two { grid-template-columns: 1fr; } }
+{% endblock %}
+
+{% block content %}
+<a class="back" href="{% url 'imtihon:manage_students' %}">← Talabalar</a>
+<div class="page-head">
+  <div>
+    <h1>{{ student.get_full_name|default:student.username }}</h1>
+    <div class="sub">{{ student.username }}{% if student.userprofile.group %} · {{ student.userprofile.group.name }}{% endif %}</div>
+  </div>
+</div>
+
+<div class="two">
+  <form class="card panel" method="post" novalidate>{% csrf_token %}
+    <input type="hidden" name="action" value="details">
+    <h2>Maʼlumotlar</h2>
+    {% if form.non_field_errors %}<div class="alert alert-error">{{ form.non_field_errors }}</div>{% endif %}
+    <div class="form-grid" style="grid-template-columns:1fr">
+      {% include "imtihon/manage/_field.html" with field=form.login %}
+      {% include "imtihon/manage/_field.html" with field=form.full_name %}
+      {% include "imtihon/manage/_group_select.html" %}
+    </div>
+    <div class="form-actions"><button class="btn btn-primary" type="submit">Saqlash</button></div>
+  </form>
+
+  <form class="card panel" method="post" novalidate>{% csrf_token %}
+    <input type="hidden" name="action" value="password">
+    <h2>Parolni tiklash</h2>
+    <p class="muted small">Joriy parol koʻrsatilmaydi — u faqat shifrlangan (hash) koʻrinishda saqlanadi. Yangi parol kiriting va uni talabaga ayting.</p>
+    {% include "imtihon/manage/_field.html" with field=password_form.password %}
+    <div class="form-actions"><button class="btn" type="submit">Yangi parolni saqlash</button></div>
+  </form>
+</div>
+
+<section class="card panel">
+  <h2>Imtihonlari</h2>
+  {% if attempts %}
+  <table class="data">
+    <thead><tr><th>Imtihon</th><th>Holat</th><th>Natija</th><th>Sana</th><th></th></tr></thead>
+    <tbody>
+      {% for a in attempts %}
+      <tr>
+        <td class="main">{{ a.exam.title }}</td>
+        <td data-label="Holat"><span class="badge {% if a.status == 'running' %}badge-blue{% elif a.status == 'finished' %}badge-green{% endif %}">{{ a.get_status_display }}</span></td>
+        <td class="num" data-label="Natija">{% if a.score is not None %}{{ a.correct_count }}/{{ a.question_count }} ({{ a.score }}%){% else %}—{% endif %}</td>
+        <td class="num" data-label="Sana">{{ a.started_at|date:"d.m.Y H:i"|default:"—" }}</td>
+        <td class="actions-cell"><div class="actions"><a class="btn" href="{% url 'imtihon:manage_attempt' a.pk %}">Batafsil</a></div></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+    <p class="muted">Talaba hali imtihon topshirmagan.</p>
+  {% endif %}
+</section>
+
+<section class="card panel">
+  <h2>Talabani oʻchirish</h2>
+  <p class="muted small">Hisob va uning barcha imtihon natijalari oʻchiriladi.</p>
+  <a class="btn btn-ghost" style="color:var(--danger)" href="{% url 'imtihon:manage_student_delete' student.pk %}">Talabani oʻchirish…</a>
+</section>
+{% endblock %}
+
+{% block scripts %}{% include "imtihon/manage/_group_select_js.html" %}{% endblock %}

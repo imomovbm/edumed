@@ -1,0 +1,18 @@
+<script>
+(function () {
+  'use strict';
+  document.querySelectorAll('.new-group-field').forEach(function (box) {
+    var form = box.closest('form');
+    var select = form && form.querySelector('select[name="group"]');
+    if (!select) return;
+    var input = box.querySelector('input');
+    function sync() {
+      var on = select.value === box.getAttribute('data-new-group');
+      box.hidden = !on;
+      if (on && document.activeElement === select) input.focus();
+    }
+    select.addEventListener('change', sync);
+    box.hidden = select.value !== box.getAttribute('data-new-group') && !input.value;
+  });
+})();
+</script>

@@ -1,0 +1,20 @@
+Faqat elementlarining tartibi bilan farqlanuvchi kombinatorika elementi bu-… . Nuqtalar o’rnini to’ldiring.
+====
+#O’rin almashtirish
+====
+O’rinlashtirish
+====
+Guruhlash
+====
+Qo’shish qonuni
+++++
+n ta elementdan m tadan tuzilgan guruhlashda kombinatsiyalar nimasi bilan farqlanadi?
+====
+#Elementi bilan
+====
+Elementi yoki tartibi bilan
+====
+Faqat tartibi bilan
+====
+To’g’ri javob yo’q
+++++

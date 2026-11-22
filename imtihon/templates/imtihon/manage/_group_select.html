@@ -1,0 +1,12 @@
+{# Group picker with "+ Yangi guruh…" that reveals a name field (works without JavaScript too). #}
+<div class="field{% if form.group.errors or form.new_group.errors %} has-error{% endif %}">
+  <label for="{{ form.group.id_for_label }}">{{ form.group.label }}</label>
+  {{ form.group }}
+  {% if form.group.errors %}<ul class="errorlist">{% for e in form.group.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+</div>
+<div class="field new-group-field{% if form.new_group.errors %} has-error{% endif %}" data-new-group="{{ new_group_value }}">
+  <label for="{{ form.new_group.id_for_label }}">{{ form.new_group.label }}</label>
+  {{ form.new_group }}
+  <div class="help">«+ Yangi guruh…» tanlanganda shu nom bilan guruh yaratiladi.</div>
+  {% if form.new_group.errors %}<ul class="errorlist">{% for e in form.new_group.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+</div>

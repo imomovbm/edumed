@@ -1,0 +1,50 @@
+{% extends "imtihon/manage/base.html" %}
+{% block title %}Guruhlar — Imtihon tizimi{% endblock %}
+{% block page_style %}
+  .add-row { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
+  .add-row .field { flex: 1 1 260px; margin: 0; }
+  @media (max-width: 640px) { .add-row .btn { width: 100%; } }
+{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Guruhlar</h1>
+    <div class="sub">Imtihonlar guruhlarga biriktiriladi: guruhdagi har bir talaba imtihonni koʻradi.</div>
+  </div>
+</div>
+
+<form class="card panel" method="post" novalidate>{% csrf_token %}
+  <h2>Yangi guruh</h2>
+  <div class="add-row">
+    {% include "imtihon/manage/_field.html" with field=form.name %}
+    <button class="btn btn-primary" type="submit">Guruh yaratish</button>
+  </div>
+</form>
+
+<section class="card">
+  {% if groups %}
+  <table class="data">
+    <thead><tr><th>Guruh</th><th>Talabalar</th><th>Imtihonlar</th><th></th></tr></thead>
+    <tbody>
+      {% for g in groups %}
+      <tr>
+        <td class="main"><a href="{% url 'imtihon:manage_group' g.pk %}"><b>{{ g.name }}</b></a></td>
+        <td class="num" data-label="Talabalar">{{ g.student_count }}</td>
+        <td class="num" data-label="Imtihonlar">{{ g.exam_count }}</td>
+        <td class="actions-cell">
+          <div class="actions">
+            <a class="btn" href="{% url 'imtihon:manage_students' %}?guruh={{ g.pk }}">Talabalar</a>
+            <a class="btn" href="{% url 'imtihon:manage_group' g.pk %}">Nomini oʻzgartirish</a>
+            <a class="btn btn-ghost" style="color:var(--danger)" href="{% url 'imtihon:manage_group_delete' g.pk %}">Oʻchirish</a>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+    <div class="empty">Hali guruh yoʻq.</div>
+  {% endif %}
+</section>
+{% endblock %}
