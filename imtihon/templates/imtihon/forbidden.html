@@ -1,0 +1,22 @@
+{% extends "imtihon/base.html" %}
+{% block title %}Ruxsat yoʻq — Imtihon tizimi{% endblock %}
+
+{% block style %}
+  body { min-height: 100vh; display: grid; place-items: center; padding: 24px 16px; }
+  .box { width: 100%; max-width: 460px; padding: 30px 26px; text-align: center; }
+  .box h1 { font-size: 22px; margin-bottom: 10px; }
+  .box .actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 18px; }
+{% endblock %}
+
+{% block body %}
+<main class="card box">
+  <h1>Bu sahifaga ruxsat yoʻq</h1>
+  <p class="muted">Bu boʻlim faqat oʻqituvchilar va administratorlar uchun.</p>
+  <div class="actions">
+    <a class="btn btn-primary" href="{% url 'imtihon:my_exams' %}">Mening imtihonlarim</a>
+    <form class="inline-form" method="post" action="{% url 'imtihon:logout' %}">{% csrf_token %}
+      <button class="btn" type="submit">Boshqa hisob bilan kirish</button>
+    </form>
+  </div>
+</main>
+{% endblock %}

@@ -1,0 +1,84 @@
+{% extends "imtihon/base.html" %}
+{% block title %}Kirish — Imtihon tizimi{% endblock %}
+
+{% block style %}
+  body { min-height: 100vh; display: grid; place-items: center; padding: 24px 16px;
+         background: radial-gradient(1200px 600px at 10% -10%, #dfe7ff 0%, transparent 60%), var(--bg); }
+  .login { width: 100%; max-width: 420px; padding: 30px 28px 24px; }
+  .login-head { display: flex; align-items: center; gap: 14px; margin-bottom: 22px; }
+  .login-head h1 { font-size: 22px; }
+  .login-head p { margin: 2px 0 0; color: var(--muted); font-size: 14px; }
+  .field { margin-bottom: 16px; }
+  .pw-wrap { position: relative; }
+  .pw-wrap input { padding-right: 56px; }
+  .pw-toggle { position: absolute; right: 0; top: 0; border: 0; background: none;
+               cursor: pointer; width: var(--tap); height: 100%; min-height: var(--tap); color: var(--muted);
+               border-radius: 0 10px 10px 0; display: grid; place-items: center; }
+  .pw-toggle:hover { background: #f2f4f7; }
+  .login .btn-primary { width: 100%; margin-top: 6px; }
+  .login-foot { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted); }
+  .login-foot ul { margin: 6px 0 0; padding-left: 18px; }
+  @media (max-width: 400px) { .login { padding: 24px 18px 20px; } }
+{% endblock %}
+
+{% block body %}
+<main class="card login">
+  <div class="login-head">
+    <div class="brand-mark" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+    </div>
+    <div>
+      <h1>Imtihon tizimi</h1>
+      <p>Onlayn test topshirish</p>
+    </div>
+  </div>
+
+  {% include "imtihon/_messages.html" %}
+  {% if error %}<div class="alert alert-error" role="alert">{{ error }}</div>{% endif %}
+
+  <form method="post" action="{% url 'imtihon:login' %}" autocomplete="off" novalidate>
+    {% csrf_token %}
+    {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+    <div class="field">
+      <label for="login">Login</label>
+      <input id="login" type="text" name="login" value="{{ login_value }}" maxlength="254"
+             autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" required
+             {% if not login_value %}autofocus{% endif %}>
+    </div>
+    <div class="field">
+      <label for="password">Parol</label>
+      <div class="pw-wrap">
+        <input id="password" type="password" name="password" autocomplete="current-password" required
+               {% if login_value %}autofocus{% endif %}>
+        <button class="pw-toggle" type="button" id="pw-toggle" aria-label="Parolni koʻrsatish" aria-pressed="false">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+      </div>
+    </div>
+    <button class="btn btn-primary btn-lg" type="submit">Kirish</button>
+  </form>
+
+  <div class="login-foot">
+    <b>Eslatma</b>
+    <ul>
+      <li>Login va parolni oʻqituvchingizdan oling.</li>
+      <li>Kirgandan soʻng sizga biriktirilgan imtihonlar koʻrsatiladi; test «Testni boshlash» tugmasi bosilganda boshlanadi.</li>
+      <li>Muammo boʻlsa, joyingizdan turmasdan nazoratchiga murojaat qiling.</li>
+    </ul>
+  </div>
+</main>
+<script>
+  (function () {
+    var btn = document.getElementById('pw-toggle');
+    var input = document.getElementById('password');
+    if (!btn || !input) return;
+    btn.addEventListener('click', function () {
+      var show = input.type === 'password';
+      input.type = show ? 'text' : 'password';
+      btn.setAttribute('aria-label', show ? 'Parolni yashirish' : 'Parolni koʻrsatish');
+      btn.setAttribute('aria-pressed', show ? 'true' : 'false');
+      input.focus();
+    });
+  })();
+</script>
+{% endblock %}

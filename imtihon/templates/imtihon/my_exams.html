@@ -1,0 +1,117 @@
+{% extends "imtihon/base.html" %}
+{% block title %}Mening imtihonlarim — Imtihon tizimi{% endblock %}
+{% block head %}{% if upcoming and not active %}<meta http-equiv="refresh" content="60">{% endif %}{% endblock %}
+
+{% block style %}
+  .sbar { background: #14213d; color: #fff; padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .sbar-brand { display: flex; align-items: center; gap: 12px; color: #fff; min-width: 0; min-height: var(--tap); }
+  .sbar-brand:hover { text-decoration: none; }
+  .sbar .brand-mark { width: 36px; height: 36px; background: rgba(255,255,255,.12); }
+  .sbar-text { display: flex; flex-direction: column; min-width: 0; }
+  .sbar-text b { font-size: 15px; }
+  .sbar-text small { font-size: 12.5px; color: #c4cde3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sbar-out { color: #dbe3f7; }
+  .sbar-out:hover { background: rgba(255,255,255,.1); }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 22px 16px 48px; }
+  .wrap h1 { font-size: 22px; margin-bottom: 4px; }
+  .lead { color: var(--muted); margin-bottom: 18px; }
+  .section-title { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 26px 0 10px; }
+  .exam-card { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 18px 20px; margin-bottom: 12px; }
+  .exam-card h2 { font-size: 18px; margin-bottom: 2px; }
+  .exam-main { min-width: 0; }
+  .facts { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 8px 0 0; padding: 0; list-style: none; font-size: 14px; color: #475467; }
+  .exam-action { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; flex-shrink: 0; text-align: right; }
+  .score { font-size: 22px; font-weight: 800; }
+  .score small { font-size: 14px; color: var(--muted); font-weight: 600; }
+  .empty { padding: 30px 22px; text-align: center; color: var(--muted); }
+  @media (max-width: 600px) {
+    .exam-card { flex-direction: column; align-items: stretch; }
+    .exam-action { align-items: stretch; text-align: left; }
+    .exam-action .btn { width: 100%; }
+  }
+{% endblock %}
+
+{% block body %}
+{% include "imtihon/_student_bar.html" %}
+<main class="wrap">
+  {% include "imtihon/_messages.html" %}
+  <h1>Mening imtihonlarim</h1>
+  <p class="lead">Bu yerda faqat sizga biriktirilgan imtihonlar koʻrinadi.</p>
+
+  {% if not active and not upcoming and not past %}
+    <div class="card empty">Sizga hozircha imtihon biriktirilmagan. Imtihon eʼlon qilinganda u shu yerda paydo boʻladi.</div>
+  {% endif %}
+
+  {% if active %}
+    <h2 class="section-title">Hozir topshirish mumkin</h2>
+    {% for c in active %}
+      <article class="card exam-card">
+        <div class="exam-main">
+          <h2>{{ c.exam.title }}</h2>
+          {% if c.exam.subject %}<div class="muted small">{{ c.exam.subject }}</div>{% endif %}
+          <ul class="facts">
+            <li>{{ c.question_count }} ta savol</li>
+            <li>{{ c.exam.duration_minutes }} daqiqa</li>
+            {% if c.exam.ends_at %}<li>{{ c.exam.ends_at|date:"d.m.Y H:i" }} gacha</li>{% endif %}
+          </ul>
+        </div>
+        <div class="exam-action">
+          {% if c.state == 'running' %}
+            <span class="badge badge-blue">Davom etmoqda</span>
+            <a class="btn btn-primary" href="{% url 'imtihon:exam' c.exam.pk %}">Davom ettirish</a>
+          {% else %}
+            <a class="btn btn-primary" href="{% url 'imtihon:exam' c.exam.pk %}">Imtihonga kirish</a>
+          {% endif %}
+        </div>
+      </article>
+    {% endfor %}
+  {% endif %}
+
+  {% if upcoming %}
+    <h2 class="section-title">Kutilayotgan</h2>
+    {% for c in upcoming %}
+      <article class="card exam-card">
+        <div class="exam-main">
+          <h2>{{ c.exam.title }}</h2>
+          {% if c.exam.subject %}<div class="muted small">{{ c.exam.subject }}</div>{% endif %}
+          <ul class="facts">
+            <li>{{ c.question_count }} ta savol</li>
+            <li>{{ c.exam.duration_minutes }} daqiqa</li>
+          </ul>
+        </div>
+        <div class="exam-action">
+          <span class="badge badge-yellow">{{ c.exam.starts_at|date:"d.m.Y H:i" }} da boshlanadi</span>
+          <a class="btn" href="{% url 'imtihon:exam' c.exam.pk %}">Qoidalar bilan tanishish</a>
+        </div>
+      </article>
+    {% endfor %}
+  {% endif %}
+
+  {% if past %}
+    <h2 class="section-title">Oʻtgan imtihonlar</h2>
+    {% for c in past %}
+      <article class="card exam-card">
+        <div class="exam-main">
+          <h2>{{ c.exam.title }}</h2>
+          {% if c.exam.subject %}<div class="muted small">{{ c.exam.subject }}</div>{% endif %}
+          <ul class="facts">
+            {% if c.attempt.finished_at %}<li>Topshirilgan: {{ c.attempt.finished_at|date:"d.m.Y H:i" }}</li>{% endif %}
+          </ul>
+        </div>
+        <div class="exam-action">
+          {% if c.state == 'finished' %}
+            {% if c.exam.show_score and c.attempt.score is not None %}
+              <div class="score">{{ c.attempt.correct_count }} <small>/ {{ c.attempt.question_count }} · {{ c.attempt.score }}%</small></div>
+            {% else %}
+              <span class="badge badge-green">Topshirilgan</span>
+            {% endif %}
+            <a class="btn" href="{% url 'imtihon:result' c.exam.pk %}">Natija</a>
+          {% else %}
+            <span class="badge">Qatnashmagansiz</span>
+          {% endif %}
+        </div>
+      </article>
+    {% endfor %}
+  {% endif %}
+</main>
+{% endblock %}

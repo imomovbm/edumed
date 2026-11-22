@@ -1,0 +1,64 @@
+{% extends "imtihon/manage/base.html" %}
+{% block title %}Imtihonlar — Imtihon tizimi{% endblock %}
+{% block page_style %}
+  .status-draft { background: #eef0f4; color: #475467; }
+  .exam-title { font-weight: 700; font-size: 15px; }
+  .groups { font-size: 13px; color: var(--muted); }
+{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Imtihonlar</h1>
+    <div class="sub">Testlarni fayldan import qiling, sozlang, guruhlarga biriktirib eʼlon qiling.</div>
+  </div>
+  <div class="page-actions">
+    <a class="btn btn-primary" href="{% url 'imtihon:manage_import' %}">+ Yangi imtihon (testlarni import qilish)</a>
+  </div>
+</div>
+
+<section class="card">
+  {% if exams %}
+  <table class="data">
+    <thead>
+      <tr><th>Imtihon</th><th>Holat</th><th>Savollar</th><th>Kimga</th><th>Vaqt</th><th>Natijalar</th><th></th></tr>
+    </thead>
+    <tbody>
+      {% for exam in exams %}
+      <tr>
+        <td class="main">
+          <a class="exam-title" href="{% url 'imtihon:manage_exam' exam.pk %}">{{ exam.title }}</a>
+          {% if exam.subject %}<div class="muted small">{{ exam.subject }}</div>{% endif %}
+        </td>
+        <td data-label="Holat">
+          <span class="badge {% if exam.status == 'published' %}badge-green{% elif exam.status == 'finished' %}badge-blue{% else %}status-draft{% endif %}">{{ exam.get_status_display }}</span>
+        </td>
+        <td class="num" data-label="Savollar">{% if exam.question_count %}{{ exam.question_count }} / {% endif %}{{ exam.question_total }}</td>
+        <td data-label="Kimga"><span class="groups">{% for g in exam.groups.all %}{{ g.name }}{% if not forloop.last %}, {% endif %}{% empty %}—{% endfor %}</span></td>
+        <td data-label="Vaqt" class="small">
+          {{ exam.duration_minutes }} daq
+          {% if exam.starts_at or exam.ends_at %}<div class="muted">{{ exam.starts_at|date:"d.m H:i"|default:"…" }} – {{ exam.ends_at|date:"d.m H:i"|default:"…" }}</div>{% endif %}
+        </td>
+        <td class="num" data-label="Natijalar">
+          {% if exam.started %}{{ exam.finished }}/{{ exam.started }}{% if exam.average is not None %} · {{ exam.average|floatformat:1 }}%{% endif %}{% else %}—{% endif %}
+        </td>
+        <td class="actions-cell">
+          <div class="actions">
+            <a class="btn" href="{% url 'imtihon:manage_exam' exam.pk %}">Ochish</a>
+            {% if exam.status != 'draft' %}<a class="btn" href="{% url 'imtihon:manage_dashboard' exam.pk %}">Kuzatuv</a>{% endif %}
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+    <div class="empty">
+      <p>Hali imtihon yoʻq.</p>
+      <p>Testlarni <b>.txt</b> faylga yozing (savol, <code>====</code>, javoblar, toʻgʻri javob oldida <code>#</code>,
+        savollar orasida <code>++++</code>) va import qiling.</p>
+      <a class="btn btn-primary" href="{% url 'imtihon:manage_import' %}">Testlarni import qilish</a>
+    </div>
+  {% endif %}
+</section>
+{% endblock %}

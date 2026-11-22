@@ -1,0 +1,99 @@
+{% extends "imtihon/manage/base.html" %}
+{% block title %}Talabalar — Imtihon tizimi{% endblock %}
+{% block page_style %}
+  .add-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px 16px; }
+  .filters { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) auto; gap: 10px; align-items: end; margin-bottom: 14px; }
+  .filters .field { margin: 0; }
+  .soon { position: relative; }
+  .count { color: var(--muted); font-weight: 600; font-size: 15px; }
+  @media (max-width: 900px) { .add-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 640px) {
+    .add-grid, .filters { grid-template-columns: 1fr; }
+    .filters .btn { width: 100%; }
+  }
+{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Talabalar <span class="count">({{ total }})</span></h1>
+    <div class="sub">Talabalar oʻz login va paroli bilan kiradi va faqat oʻz guruhiga biriktirilgan imtihonlarni koʻradi.</div>
+  </div>
+  <div class="page-actions">
+    <button class="btn soon" type="button" disabled aria-disabled="true" title="Tez kunda">Excel/CSV dan import (tez kunda)</button>
+  </div>
+</div>
+
+<form class="card panel" method="post" id="qoshish" novalidate>{% csrf_token %}
+  <h2>Talaba qoʻshish</h2>
+  {% if form.non_field_errors %}<div class="alert alert-error">{{ form.non_field_errors }}</div>{% endif %}
+  <div class="add-grid">
+    {% include "imtihon/manage/_field.html" with field=form.login %}
+    {% include "imtihon/manage/_field.html" with field=form.password %}
+    {% include "imtihon/manage/_field.html" with field=form.full_name %}
+    {% include "imtihon/manage/_group_select.html" %}
+  </div>
+  <div class="form-actions">
+    <button class="btn btn-primary" type="submit">Qoʻshish</button>
+    <span class="muted small">Saqlangandan soʻng forma keyingi talaba uchun ochiq qoladi (guruh saqlanadi).</span>
+  </div>
+</form>
+
+<section class="card panel">
+  <form class="filters" method="get" role="search">
+    <div class="field">
+      <label for="q">Qidirish</label>
+      <input type="search" id="q" name="q" value="{{ query }}" placeholder="Ism yoki login…">
+    </div>
+    <div class="field">
+      <label for="guruh">Guruh</label>
+      <select id="guruh" name="guruh">
+        <option value="">Barcha guruhlar</option>
+        {% for g in groups %}<option value="{{ g.pk }}" {% if selected_group == g.pk|stringformat:"d" %}selected{% endif %}>{{ g.name }} ({{ g.student_count }})</option>{% endfor %}
+        <option value="none" {% if selected_group == 'none' %}selected{% endif %}>Guruhsiz</option>
+      </select>
+    </div>
+    <button class="btn" type="submit">Koʻrsatish</button>
+  </form>
+
+  {% if people %}
+  <table class="data">
+    <thead><tr><th>Talaba</th><th>Login</th><th>Guruh</th><th>Imtihonlar</th><th></th></tr></thead>
+    <tbody>
+      {% for p in people %}
+      <tr>
+        <td class="main"><a href="{% url 'imtihon:manage_student' p.pk %}"><b>{{ p.get_full_name|default:p.username }}</b></a></td>
+        <td data-label="Login" style="overflow-wrap:anywhere">{{ p.username }}</td>
+        <td data-label="Guruh">{{ p.userprofile.group.name|default:"—" }}</td>
+        <td class="num" data-label="Imtihonlar">{{ p.attempt_total }}</td>
+        <td class="actions-cell">
+          <div class="actions">
+            <a class="btn" href="{% url 'imtihon:manage_student' p.pk %}">Tahrirlash</a>
+            <a class="btn btn-ghost" style="color:var(--danger)" href="{% url 'imtihon:manage_student_delete' p.pk %}">Oʻchirish</a>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+    <div class="empty">{% if query or selected_group %}Mos talaba topilmadi.{% else %}Hali talaba yoʻq — yuqoridagi forma orqali qoʻshing.{% endif %}</div>
+  {% endif %}
+</section>
+{% endblock %}
+
+{% block scripts %}
+{% include "imtihon/manage/_group_select_js.html" %}
+<script>
+  (function () {
+    // After a successful add the page opens at #qoshish: continue with the next login.
+    // Runs after "load", because jumping to the #qoshish anchor moves the focus itself.
+    function focusForm() {
+      var target = document.querySelector('#qoshish .has-error input, #qoshish .has-error select');
+      if (!target && location.hash === '#qoshish') target = document.getElementById('id_login');
+      if (target) target.focus();
+    }
+    window.addEventListener('load', function () { setTimeout(focusForm, 0); });
+  })();
+</script>
+{% endblock %}

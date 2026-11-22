@@ -1,0 +1,46 @@
+{% extends "imtihon/manage/base.html" %}
+{% block title %}{{ group.name }} — Guruhlar{% endblock %}
+
+{% block content %}
+<a class="back" href="{% url 'imtihon:manage_groups' %}">← Guruhlar</a>
+<div class="page-head">
+  <div>
+    <h1>{{ group.name }}</h1>
+    <div class="sub">{{ members|length }} ta talaba</div>
+  </div>
+  <div class="page-actions">
+    <a class="btn" href="{% url 'imtihon:manage_students' %}?guruh={{ group.pk }}#qoshish">Talaba qoʻshish</a>
+  </div>
+</div>
+
+<form class="card panel" method="post" novalidate>{% csrf_token %}
+  <h2>Nomini oʻzgartirish</h2>
+  <div class="form-grid">
+    {% include "imtihon/manage/_field.html" with field=form.name %}
+  </div>
+  <div class="form-actions">
+    <button class="btn btn-primary" type="submit">Saqlash</button>
+    <a class="btn btn-ghost" style="color:var(--danger)" href="{% url 'imtihon:manage_group_delete' group.pk %}">Guruhni oʻchirish…</a>
+  </div>
+</form>
+
+<section class="card panel">
+  <h2>Talabalar</h2>
+  {% if members %}
+  <table class="data">
+    <thead><tr><th>Talaba</th><th>Login</th><th></th></tr></thead>
+    <tbody>
+      {% for m in members %}
+      <tr>
+        <td class="main">{{ m.user.get_full_name|default:m.user.username }}</td>
+        <td data-label="Login" style="overflow-wrap:anywhere">{{ m.user.username }}</td>
+        <td class="actions-cell"><div class="actions"><a class="btn" href="{% url 'imtihon:manage_student' m.user.pk %}">Tahrirlash</a></div></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+    <p class="muted">Guruhda talaba yoʻq.</p>
+  {% endif %}
+</section>
+{% endblock %}

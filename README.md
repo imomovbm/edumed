@@ -11,7 +11,7 @@ Built with Django 6 + SB Admin 2 (Bootstrap 4).
 | Role (`UserProfile.role`) | Can do |
 |---|---|
 | `student` (Talaba) | read topics, take quizzes, see own results, forums |
-| `teacher` (O'qituvchi) | + check short/essay answers ("Javoblarni tekshirish"), see students' results |
+| `teacher` (O'qituvchi) | + check short/essay answers ("Javoblarni tekshirish"), see students' results, run exams ("Imtihonlar") |
 | `moder` (Moder) | + delete any forum post / comment / topic comment |
 | `superadmin` (SuperAdmin) | everything: topics, questions, quizzes, users, roles, password resets, CSV report |
 
@@ -77,6 +77,53 @@ were always marked wrong) and recomputes every student's topic progress.
 If you enable the AI analysis, the request can take 10–30 seconds: give the WSGI
 server enough time (e.g. `gunicorn --timeout 90`).
 
+## Exams (`/imtihon/`)
+
+A proctored exam platform for any number of exams. Teachers and administrators open it
+from the sidebar ("Imtihonlar", `/imtihon/boshqaruv/`); students sign in at `/imtihon/`
+with the login and password their teacher gave them and see only the exams assigned to
+their group (or to them personally).
+
+1. **Talabalar** — add students quickly: login, password (at least 6 characters, digits
+   only are fine), full name and group (a new group can be created on the spot; the form
+   stays open for the next student). Passwords are stored only as hashes and are never
+   shown again — reset one on the student's page. **Guruhlar** — create, rename, delete.
+2. **Imtihonlar → Yangi imtihon** — upload the tests as a `.txt` file. Every problem is
+   listed with its question and line number (no correct answer, more than one correct
+   answer, fewer than 2 options, duplicate options, empty question, wrong file type, file
+   too large, unreadable encoding); fix them in the editor on the same page, re-check and
+   save. The exam is created as a draft.
+3. On the exam page set the duration, an optional start/end time (a running test ends at
+   the end time), how many questions each student gets (all, or a random N), shuffling of
+   questions and options, the leave limit, and the groups/students; then **Eʼlon qilish**.
+4. **Kuzatuv va natijalar** — live dashboard (who is writing, time left, leaves of the exam
+   window, scores), each student's answers and event log, proctor actions (extra time,
+   another computer, reopen, reset), and CSV / Excel export. **Imtihonni yakunlash** closes
+   the exam and grades the tests still running.
+
+Test file format (UTF-8 or Windows-1251 text; Uzbek Latin/Cyrillic, Russian and symbols are fine):
+
+```text
+Savol matni?
+====
+#Toʻgʻri javob
+====
+Notoʻgʻri javob
+====
+Notoʻgʻri javob
+++++
+Keyingi savol?
+...
+```
+
+`++++` ends a question, `====` separates the options, `#` marks the one correct option
+(`\#` for a text that really starts with `#`). Questions and options may span several lines.
+
+For developers: file formats live in `imtihon/importers/` — a new format is a
+`BaseParser` subclass (`extensions` + `parse_text`) added to `PARSERS`. Students are
+created only through `user.students.create_student(login, password, full_name, group)`,
+which a future Excel/CSV import of students can reuse.
+
 ## Retiring the old "oraliq" exam (one-time, on the server)
 
 The one-off midterm exam has been removed. Only a small shell (`oraliq_nazorat/`)
@@ -105,5 +152,8 @@ and revert the removal commit.
 ## Tests
 
 ```bash
-DB_ENGINE=sqlite DJANGO_SECRET_KEY=test python manage.py test
+DB_ENGINE=sqlite DJANGO_SECRET_KEY=test python manage.py test           # everything
+DB_ENGINE=sqlite DJANGO_SECRET_KEY=test python manage.py test imtihon   # the exam platform only
 ```
+
+The importer tests read the teachers' sample file `imtihon/tests/fixtures/q.txt`.

@@ -1,0 +1,223 @@
+{% extends "imtihon/manage/base.html" %}
+{% block title %}{% if exam %}Savollarni almashtirish{% else %}Testlarni import qilish{% endif %} — Imtihon tizimi{% endblock %}
+{% block page_style %}
+  .format-help pre.sample, pre.sample { background: #0f172a; color: #e2e8f0; border-radius: 10px; padding: 12px 14px;
+      font-size: 13.5px; line-height: 1.5; white-space: pre-wrap; margin: 0 0 12px; }
+  .format-help ul { margin: 0; padding-left: 20px; }
+  .summary-line { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; margin-bottom: 12px; }
+  .summary-line .big { font-size: 20px; font-weight: 800; }
+  .problems { list-style: none; margin: 0; padding: 0; max-height: 360px; overflow-y: auto; }
+  .problems li { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 6px 10px;
+                 border-radius: 8px; margin-bottom: 6px; font-size: 14px; }
+  .problems li.error { background: var(--danger-soft); color: #8f2414; }
+  .problems li.warning { background: var(--warning-soft); color: #7a4f10; }
+  .problems .where { font-weight: 700; }
+  .goto { flex-shrink: 0; padding: 6px 12px; font-size: 13px; }
+  .editor { font: 14px/1.5 var(--mono); min-height: 320px; }
+  .editor-status { font-size: 13px; color: var(--muted); margin-top: 6px; display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+  .changed-note { color: var(--warning); font-weight: 600; }
+  .pq { border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; margin-bottom: 10px; }
+  .pq.pq-error { border-color: #f1b3a9; border-left: 4px solid var(--danger); background: #fffafa; }
+  .pq.pq-warn { border-left: 4px solid var(--warning); }
+  .pq-head { display: flex; justify-content: space-between; gap: 10px; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+  .pq-text { font-weight: 600; white-space: pre-wrap; margin-bottom: 8px; overflow-wrap: anywhere; }
+  .pq-opts { margin: 0; padding-left: 26px; list-style-type: upper-alpha; }
+  .pq-opts li { padding: 3px 8px; border-radius: 6px; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .pq-opts li.correct { background: var(--success-soft); font-weight: 600; }
+  .pq-opts li.correct::after { content: "  ✓ toʻgʻri"; color: var(--success); font-size: 12.5px; }
+  .pq-problem { font-size: 13.5px; font-weight: 600; margin-top: 6px; }
+  .pq-problem.error { color: var(--danger); }
+  .pq-problem.warning { color: var(--warning); }
+  .empty-value { color: var(--danger); font-style: italic; font-weight: 500; }
+  details.more > summary { cursor: pointer; font-weight: 600; min-height: var(--tap); display: flex; align-items: center; }
+{% endblock %}
+
+{% block content %}
+{% if exam %}<a class="back" href="{% url 'imtihon:manage_exam' exam.pk %}">← {{ exam.title }}</a>{% else %}<a class="back" href="{% url 'imtihon:manage' %}">← Imtihonlar</a>{% endif %}
+<div class="page-head">
+  <div>
+    <h1>{% if exam %}Savollarni fayldan almashtirish{% else %}Testlarni import qilish{% endif %}</h1>
+    <div class="sub">{% if exam %}Imtihondagi barcha savollar yangi fayldagilar bilan almashtiriladi.{% else %}Fayl tekshiriladi, xatolar koʻrsatiladi; xatosiz testlar qoralama imtihon sifatida saqlanadi.{% endif %}</div>
+  </div>
+</div>
+
+{% if not result %}
+  <form class="card panel" method="post" enctype="multipart/form-data">{% csrf_token %}
+    <h2>1. Faylni tanlang</h2>
+    {% if not exam %}
+    <div class="form-grid" style="margin-bottom:14px">
+      <div class="field">
+        <label for="title">Imtihon nomi</label>
+        <input id="title" type="text" name="title" maxlength="200" value="{{ title }}" placeholder="Masalan: Kombinatorika — 1-nazorat ishi">
+        <div class="help">Boʻsh qolsa, fayl nomi olinadi. Keyin oʻzgartirish mumkin.</div>
+      </div>
+      <div class="field">
+        <label for="subject">Fan (ixtiyoriy)</label>
+        <input id="subject" type="text" name="subject" maxlength="200" value="{{ subject }}">
+      </div>
+    </div>
+    {% endif %}
+    <div class="field">
+      <label for="file">Testlar fayli ({{ accept_label }}, eng koʻpi {{ max_mb }} MB)</label>
+      <input id="file" type="file" name="file" accept="{{ accept }}" required>
+    </div>
+    <div class="form-actions"><button class="btn btn-primary" type="submit">Faylni tekshirish</button></div>
+  </form>
+
+  <details class="card panel more">
+    <summary>Yoki testlar matnini shu yerga qoʻying</summary>
+    <form method="post">{% csrf_token %}
+      {% if not exam %}<input type="hidden" name="title" value="{{ title }}"><input type="hidden" name="subject" value="{{ subject }}">{% endif %}
+      <label class="sr-only" for="paste">Testlar matni</label>
+      <textarea class="editor" id="paste" name="text" rows="12" spellcheck="false" placeholder="Savol matni?&#10;====&#10;#Toʻgʻri javob&#10;====&#10;Notoʻgʻri javob&#10;++++"></textarea>
+      <div class="form-actions"><button class="btn btn-primary" type="submit" name="action" value="check">Matnni tekshirish</button></div>
+    </form>
+  </details>
+
+  {% include "imtihon/manage/_format_help.html" %}
+
+{% else %}
+  {# ── preview ── #}
+  <section class="card panel">
+    <h2>2. Tekshiruv natijasi</h2>
+    <div class="summary-line">
+      <span class="big">{{ result.questions|length }} ta savol</span>
+      {% if result.errors %}<span class="badge badge-red">{{ result.errors|length }} ta xato</span>{% else %}<span class="badge badge-green">Xato yoʻq</span>{% endif %}
+      {% if result.warnings %}<span class="badge badge-yellow">{{ result.warnings|length }} ta ogohlantirish</span>{% endif %}
+    </div>
+    <div class="muted small" style="margin-bottom:12px">
+      {% if source_name %}Fayl: {{ source_name }} · {% endif %}{% if result.encoding %}Kodlash: {{ result.encoding }} · {% endif %}{% if result.format_name %}Format: {{ result.format_name }}{% endif %}
+    </div>
+
+    {% if save_error %}<div class="alert alert-error" role="alert">{{ save_error }}</div>{% endif %}
+    {% if result.ok %}
+      <div class="alert alert-success">Fayl toʻgʻri. Savollarni koʻrib chiqing va saqlang{% if result.warnings %} (ogohlantirishlar saqlashga xalaqit bermaydi){% endif %}.</div>
+    {% elif result.text is not None %}
+      <div class="alert alert-error">Xatolar tuzatilmaguncha saqlab boʻlmaydi. Pastdagi muharrirda tuzatib, «Qayta tekshirish» tugmasini bosing — yoki faylni tuzatib, qayta yuklang.</div>
+    {% endif %}
+
+    {% if result.problems %}
+    <ul class="problems" aria-label="Topilgan muammolar">
+      {% for p in result.problems %}
+        <li class="{{ p.level }}">
+          <span>{% if p.number or p.line %}<span class="where">{% if p.number %}{{ p.number }}-savol{% endif %}{% if p.number and p.line %}, {% endif %}{% if p.line %}{{ p.line }}-qator{% endif %}:</span> {% endif %}{{ p.message }}</span>
+          {% if p.line and result.text is not None %}<button class="btn goto" type="button" data-line="{{ p.line }}">Qatorga oʻtish</button>{% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+
+    {% if result.text is not None %}
+    <div class="form-grid" style="margin-top:14px">
+      {% if not exam %}
+      <div class="field">
+        <label for="title">Imtihon nomi</label>
+        <input id="title" type="text" name="title" form="import-form" maxlength="200" value="{{ title }}" required>
+      </div>
+      <div class="field">
+        <label for="subject">Fan (ixtiyoriy)</label>
+        <input id="subject" type="text" name="subject" form="import-form" maxlength="200" value="{{ subject }}">
+      </div>
+      {% endif %}
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-success save-btn" type="submit" form="import-form" name="action" value="save" {% if not result.ok %}disabled{% endif %}>
+        {% if exam %}Savollarni almashtirish{% else %}Qoralama sifatida saqlash{% endif %}
+      </button>
+      <a class="btn btn-ghost" href="{% if exam %}{% url 'imtihon:manage_reimport' exam.pk %}{% else %}{% url 'imtihon:manage_import' %}{% endif %}">Boshqa fayl tanlash</a>
+    </div>
+    {% endif %}
+  </section>
+
+  {% if result.text is not None %}
+  <form class="card panel" method="post" id="import-form">{% csrf_token %}
+    <input type="hidden" name="source_name" value="{{ source_name }}">
+    <h2>3. Matnni tuzatish</h2>
+    <p class="muted small">Xatolarni shu yerda tuzating va «Qayta tekshirish»ni bosing. Saqlashda aynan shu matn qayta tekshirilib saqlanadi.</p>
+    <label class="sr-only" for="editor">Testlar matni</label>
+    <textarea class="editor" id="editor" name="text" rows="18" spellcheck="false">
+{{ result.text }}</textarea>
+    <div class="editor-status"><span id="cursor-line"></span><span class="changed-note" id="changed-note" hidden>Matn oʻzgardi — saqlashdan oldin «Qayta tekshirish»ni bosing.</span></div>
+    <div class="form-actions">
+      <button class="btn btn-primary" type="submit" name="action" value="check">Qayta tekshirish</button>
+      <button class="btn btn-success save-btn" type="submit" name="action" value="save" {% if not result.ok %}disabled{% endif %}>
+        {% if exam %}Savollarni almashtirish{% else %}Qoralama sifatida saqlash{% endif %}
+      </button>
+    </div>
+  </form>
+  {% else %}
+  <form class="card panel" method="post" enctype="multipart/form-data">{% csrf_token %}
+    {% if not exam %}<input type="hidden" name="title" value="{{ title }}"><input type="hidden" name="subject" value="{{ subject }}">{% endif %}
+    <div class="field">
+      <label for="file">Boshqa fayl ({{ accept_label }}, eng koʻpi {{ max_mb }} MB)</label>
+      <input id="file" type="file" name="file" accept="{{ accept }}" required>
+    </div>
+    <div class="form-actions"><button class="btn btn-primary" type="submit">Faylni tekshirish</button></div>
+  </form>
+  {% include "imtihon/manage/_format_help.html" %}
+  {% endif %}
+
+  {% if result.questions %}
+  <section class="card panel">
+    <h2>Savollar ({{ result.questions|length }} ta)</h2>
+    {% for q in result.questions %}
+      <div class="pq {% if q.has_errors %}pq-error{% elif q.problems %}pq-warn{% endif %}" id="savol-{{ q.number }}">
+        <div class="pq-head"><b>{{ q.number }}-savol</b>{% if q.line %}<span>{{ q.line }}-qator</span>{% endif %}</div>
+        <div class="pq-text">{% if q.text %}{{ q.text }}{% else %}<span class="empty-value">(savol matni boʻsh)</span>{% endif %}</div>
+        <ol class="pq-opts">
+          {% for o in q.options %}
+            <li class="{% if o.is_correct %}correct{% endif %}">{% if o.text %}{{ o.text }}{% else %}<span class="empty-value">(boʻsh variant)</span>{% endif %}</li>
+          {% endfor %}
+        </ol>
+        {% for p in q.problems %}<div class="pq-problem {{ p.level }}">{% if p.line %}{{ p.line }}-qator: {% endif %}{{ p.message }}</div>{% endfor %}
+      </div>
+    {% endfor %}
+  </section>
+  {% endif %}
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  'use strict';
+  var editor = document.getElementById('editor');
+  if (!editor) return;
+  var original = editor.value;
+  var note = document.getElementById('changed-note');
+  var lineInfo = document.getElementById('cursor-line');
+  var saveButtons = document.querySelectorAll('.save-btn');
+  var wasDisabled = Array.prototype.map.call(saveButtons, function (b) { return b.disabled; });
+
+  function currentLine() {
+    return editor.value.slice(0, editor.selectionStart).split('\n').length;
+  }
+  function showLine() { lineInfo.textContent = 'Kursor: ' + currentLine() + '-qator'; }
+
+  editor.addEventListener('input', function () {
+    var changed = editor.value !== original;
+    note.hidden = !changed;
+    Array.prototype.forEach.call(saveButtons, function (b, i) { b.disabled = changed || wasDisabled[i]; });
+    showLine();
+  });
+  ['click', 'keyup', 'focus'].forEach(function (type) { editor.addEventListener(type, showLine); });
+
+  // "Go to line": select that line in the editor and scroll to it.
+  document.querySelectorAll('.goto').forEach(function (button) {
+    button.addEventListener('click', function () {
+      var line = parseInt(button.getAttribute('data-line'), 10) || 1;
+      var lines = editor.value.split('\n');
+      var start = 0;
+      for (var i = 0; i < line - 1 && i < lines.length; i++) start += lines[i].length + 1;
+      var end = start + (lines[line - 1] || '').length;
+      editor.focus();
+      editor.setSelectionRange(start, end);
+      var height = parseFloat(getComputedStyle(editor).lineHeight) || 21;
+      editor.scrollTop = Math.max(0, (line - 4) * height);
+      editor.scrollIntoView({ block: 'center' });
+      showLine();
+    });
+  });
+})();
+</script>
+{% endblock %}
