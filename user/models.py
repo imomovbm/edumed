@@ -1,7 +1,21 @@
 from django.contrib.auth.models import User
 from django.db import models
 
-# Create your models here.
+class StudentGroup(models.Model):
+    """A class of students (e.g. "Hamshiralik 2-kurs"). Exams are assigned to groups."""
+
+    name = models.CharField("Guruh nomi", max_length=100, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Guruh'
+        verbose_name_plural = 'Guruhlar'
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name
+
+
 class UserProfile(models.Model):
     # Field Choices
     ROLE_CHOICES = [
@@ -21,6 +35,10 @@ class UserProfile(models.Model):
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='student', db_index=True) 
     phone = models.CharField(max_length=30, blank=True, null=True)
     avatar = models.CharField(max_length=255, blank=True, null=True)
+    group = models.ForeignKey(
+        StudentGroup, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='members', verbose_name='Guruh',
+    )
 
     # New Fields from Registration Form
     gender = models.IntegerField(choices=GENDER_CHOICES, null=True, blank=True)

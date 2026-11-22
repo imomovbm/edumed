@@ -1,6 +1,5 @@
 from django.contrib import admin
-from .models import UserProfile 
-from .models import PasswordResetRequest
+from .models import PasswordResetRequest, StudentGroup, UserProfile
 
 # Create a custom ModelAdmin for better display and filtering
 class UserProfileAdmin(admin.ModelAdmin):
@@ -15,6 +14,7 @@ class UserProfileAdmin(admin.ModelAdmin):
         'date_of_birth',   # <-- NEW: Display Date of Birth
         'region',
         'otm',
+        'group',
     )
     
     # Fields to use for searching
@@ -68,3 +68,13 @@ class PasswordResetRequestAdmin(admin.ModelAdmin):
     search_fields = ('contact_input', 'linked_user__username', 'linked_user__email')
     list_editable = ('is_resolved',)
     raw_id_fields = ('linked_user',)
+
+
+@admin.register(StudentGroup)
+class StudentGroupAdmin(admin.ModelAdmin):
+    list_display = ('name', 'member_count', 'created_at')
+    search_fields = ('name',)
+
+    @admin.display(description="Talabalar soni")
+    def member_count(self, obj):
+        return obj.members.count()
